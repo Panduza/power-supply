@@ -13,6 +13,9 @@ dirs = "6.0.0"
 serde_json5 = "0.2.1"
 tracing = "0.1.41"
 dioxus-logger = "0.6.2"
+serde_json = "1.0.145"
+async-trait = "0.1.89"
+thiserror = "2.0.16"
 
 [features]
 default = ["desktop"]

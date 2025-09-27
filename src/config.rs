@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use tracing::{error, info};
 
 
@@ -123,8 +124,8 @@ impl GlobalConfig {
         // Create default configuration
         let default_config = Self::default();
 
-        // Serialize to JSON5 format
-        let config_content = serde_json5::to_string(&default_config)
+        // Serialize to JSON format with pretty printing
+        let config_content = serde_json::to_string_pretty(&default_config)
             .expect("Failed to serialize default configuration");
 
         // Write the configuration file
