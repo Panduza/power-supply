@@ -1,4 +1,7 @@
+mod path;
 mod config;
+
+use tracing::{debug, Level};
 
 use dioxus::prelude::*;
 
@@ -8,6 +11,14 @@ const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 fn main() {
+    // Init logger
+    dioxus_logger::init(Level::DEBUG).expect("failed to init logger");
+
+    // Get user configuration
+    let config = config::GlobalConfig::from_user_file();
+    debug!("Loaded configuration: {:?}", config);
+
+
     dioxus::launch(App);
 }
 
