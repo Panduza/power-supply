@@ -1,6 +1,7 @@
-mod path;
 mod config;
 mod drivers;
+mod factory;
+mod path;
 
 use tracing::{debug, Level};
 
@@ -19,6 +20,9 @@ fn main() {
     let config = config::GlobalConfig::from_user_file();
     debug!("Loaded configuration: {:?}", config);
 
+    // Create factory
+    let factory = factory::Factory::new();
+    debug!("Factory initialized with drivers: {:?}", factory.map.keys());
 
     dioxus::launch(App);
 }

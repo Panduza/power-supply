@@ -14,6 +14,7 @@ pub enum DriverError {
 
 #[async_trait]
 pub trait PowerSupplyDriver {
+
     ///
     async fn output_enabled(&mut self) -> Result<bool, DriverError>;
     async fn enable_output(&mut self) -> Result<(), DriverError>;
