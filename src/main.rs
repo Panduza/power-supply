@@ -31,6 +31,7 @@ fn main() {
     let _broker_handle = broker::start(&config);
 
     // Initialize devices
+    let mut instances = Vec::new();
     if let Some(devices) = &config.devices {
         for (name, config) in devices {
             let instance = factory
@@ -39,7 +40,9 @@ fn main() {
                     panic!("Failed to create driver for device '{}': {}", name, err)
                 });
 
-            Runner::new(name.clone(), instance).start();
+            let runner = Runner::new(name.clone(), instance);
+            runner.start();
+            instances.push(runner);
         }
     }
 

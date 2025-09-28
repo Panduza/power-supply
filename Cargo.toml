@@ -19,6 +19,9 @@ thiserror = "2.0.16"
 
 
 # ---
+# Main async framework for the platform
+tokio = { version = "1.43.0", features = ["full", "tracing"] }
+# ---
 # Random string generator
 rand = "0.8.5"
 # ---
