@@ -19,6 +19,9 @@ thiserror = "2.0.16"
 
 
 # ---
+# Random string generator
+rand = "0.8.5"
+# ---
 # MQTT async client
 rumqttc = "0.25.0"
 # ---
