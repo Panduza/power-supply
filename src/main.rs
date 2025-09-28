@@ -5,6 +5,7 @@ mod factory;
 mod path;
 mod runner;
 
+use runner::Runner;
 use tracing::{debug, Level};
 
 use dioxus::prelude::*;
@@ -38,7 +39,7 @@ fn main() {
                     panic!("Failed to create driver for device '{}': {}", name, err)
                 });
 
-            // Runner::new(name.clone(), instance).start();
+            Runner::new(name.clone(), instance).start();
         }
     }
 

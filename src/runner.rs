@@ -13,7 +13,7 @@ fn generate_random_string(length: usize) -> String {
         .collect()
 }
 
-struct Runner {
+pub struct Runner {
     name: String,
     driver: Box<dyn PowerSupplyDriver>,
 }
