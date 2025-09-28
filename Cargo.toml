@@ -17,6 +17,19 @@ serde_json = "1.0.145"
 async-trait = "0.1.89"
 thiserror = "2.0.16"
 
+
+# ---
+# MQTT async client
+rumqttc = "0.25.0"
+# ---
+# MQTT Broker
+rumqttd = { git = "https://github.com/Panduza/rumqtt", tag = "0.1.0" }
+# ---
+# Config for rumqttd
+config = "0.15.17"
+# ---
+
+
 [features]
 default = ["desktop"]
 web = ["dioxus/web"]

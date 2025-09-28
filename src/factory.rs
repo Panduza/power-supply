@@ -1,6 +1,13 @@
 use std::{collections::HashMap, hash::Hash};
+use thiserror::Error as ThisError;
 
 use crate::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
+
+#[derive(ThisError, Debug, Clone)]
+pub enum FactoryError {
+    #[error("No driver found for model: {0}")]
+    NoDriver(String),
+}
 
 pub struct Factory {
     /// This map store Driver generators.
@@ -31,17 +38,14 @@ impl Factory {
         self.map.insert(model.into(), generator);
     }
 
-    // pub fn create_driver(
-    //     &self,
-    //     config: PowerSupplyConfig,
-    // ) -> Result<Box<dyn PowerSupplyDriver>, DriverError> {
-    //     if let Some(generator) = self.map.get(&config.model) {
-    //         Ok(generator(config))
-    //     } else {
-    //         Err(DriverError::Generic(format!(
-    //             "No driver found for model: {}",
-    //             config.model
-    //         )))
-    //     }
-    // }
+    pub fn instanciate_driver(
+        &self,
+        config: PowerSupplyConfig,
+    ) -> Result<Box<dyn PowerSupplyDriver>, FactoryError> {
+        if let Some(generator) = self.map.get(&config.model) {
+            Ok(generator(config))
+        } else {
+            Err(FactoryError::NoDriver(config.model))
+        }
+    }
 }

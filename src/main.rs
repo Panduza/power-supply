@@ -1,7 +1,9 @@
+mod broker;
 mod config;
 mod drivers;
 mod factory;
 mod path;
+mod runner;
 
 use tracing::{debug, Level};
 
@@ -24,6 +26,23 @@ fn main() {
     let factory = factory::Factory::new();
     debug!("Factory initialized with drivers: {:?}", factory.map.keys());
 
+    // Start MQTT broker
+    let _broker_handle = broker::start(&config);
+
+    // Initialize devices
+    if let Some(devices) = &config.devices {
+        for (name, config) in devices {
+            let instance = factory
+                .instanciate_driver(config.clone())
+                .unwrap_or_else(|err| {
+                    panic!("Failed to create driver for device '{}': {}", name, err)
+                });
+
+            // Runner::new(name.clone(), instance).start();
+        }
+    }
+
+    // Launch dioxus app
     dioxus::launch(App);
 }
 
