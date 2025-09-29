@@ -26,7 +26,7 @@ pub fn user_root_dir() -> Option<PathBuf> {
 ///
 /// `Some(PathBuf)` containing the path to the platform configuration file, or `None` if the home directory cannot be determined.
 pub fn global_config_file() -> Option<PathBuf> {
-    user_root_dir().map(|root| root.join("panduza-power-supply-server.json5"))
+    user_root_dir().map(|root| root.join("panduza-power-supply-client.json5"))
 }
 
 // Directory and file management functions
