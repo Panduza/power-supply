@@ -49,6 +49,7 @@ impl ClientBuilder {
     }
 }
 
+#[derive(Clone)]
 pub struct Client {
     mqtt_client: AsyncClient,
 }
@@ -132,6 +133,35 @@ impl Client {
 
         Self {
             mqtt_client: client,
+        }
+    }
+
+    pub async fn publish(&self, topic: &str, payload: &str) -> Result<(), rumqttc::ClientError> {
+        self.mqtt_client
+            .publish(topic, rumqttc::QoS::AtLeastOnce, false, payload)
+            .await
+    }
+}
+
+pub struct PowerSupplyClient {
+    psu_name: String,
+
+    client: Client,
+}
+
+impl PowerSupplyClient {
+    pub fn new(psu_name: String, client: Client) -> Self {
+        Self { psu_name, client }
+    }
+
+    pub async fn enable_output(&self) {
+        let topic = "panduza/psu/control/oe_cmd";
+        let payload = "1"; // "1" to enable output, "0" to disable
+
+        if let Err(e) = self.client.publish(topic, payload).await {
+            eprintln!("Failed to publish enable output command: {}", e);
+        } else {
+            println!("Published enable output command to topic {}", topic);
         }
     }
 }

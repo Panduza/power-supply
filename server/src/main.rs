@@ -9,7 +9,6 @@ use runner::Runner;
 use tracing::{debug, Level};
 
 use dioxus::prelude::*;
-use panduza_power_supply_client::ClientBuilder;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -27,10 +26,6 @@ fn main() {
     // Create factory
     let factory = factory::Factory::new();
     debug!("Factory initialized with drivers: {:?}", factory.map.keys());
-
-    // Create client using ClientBuilder
-    let client = ClientBuilder::from_broker_config(config.broker.clone()).build();
-    debug!("Client initialized");
 
     // Start MQTT broker
     let _broker_handle = broker::start(&config);
