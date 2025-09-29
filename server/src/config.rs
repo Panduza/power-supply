@@ -4,13 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use tracing::{error, info};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MqttBrokerConfig {
-    /// Bind address of the MQTT broker
-    pub host: String,
-    /// Port of the MQTT broker
-    pub port: u16,
-}
+use panduza_power_supply_client::config::MqttBrokerConfig;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GuiConfig {

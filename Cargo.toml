@@ -1,8 +1,5 @@
 [workspace]
-members = [
-    "server",
-    # "client",  # Uncomment when you create the client package
-]
+members = ["server", "client"]
 resolver = "2"
 
 [workspace.package]
