@@ -40,8 +40,8 @@ fn main() {
                     panic!("Failed to create driver for device '{}': {}", name, err)
                 });
 
-            let runner = Runner::new(name.clone(), instance);
-            runner.start();
+            let runner = Runner::start(name.clone(), instance);
+            // runner.start();
             instances.push(runner);
         }
     }

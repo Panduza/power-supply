@@ -34,7 +34,7 @@ rumqttd = { git = "https://github.com/Panduza/rumqtt", tag = "0.1.0" }
 # Config for rumqttd
 config = "0.15.17"
 # ---
-
+bytes = "1.10.1"
 
 [features]
 default = ["desktop"]

@@ -1,4 +1,7 @@
-use std::{collections::HashMap, hash::Hash};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 use thiserror::Error as ThisError;
 
 use crate::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
@@ -12,7 +15,8 @@ pub enum FactoryError {
 pub struct Factory {
     /// This map store Driver generators.
     /// Generator are function that return a PowerSupplyDriver
-    pub map: HashMap<String, fn(PowerSupplyConfig) -> Box<dyn PowerSupplyDriver>>,
+    pub map:
+        HashMap<String, fn(PowerSupplyConfig) -> Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>>,
 }
 
 impl Factory {
@@ -23,7 +27,9 @@ impl Factory {
         };
 
         factory.register_driver("emulator", |config| {
-            Box::new(crate::drivers::emulator::PowerSupplyEmulator::new(config))
+            Arc::new(Mutex::new(
+                crate::drivers::emulator::PowerSupplyEmulator::new(config),
+            ))
         });
 
         factory
@@ -33,7 +39,7 @@ impl Factory {
     pub fn register_driver<A: Into<String>>(
         &mut self,
         model: A,
-        generator: fn(PowerSupplyConfig) -> Box<dyn PowerSupplyDriver>,
+        generator: fn(PowerSupplyConfig) -> Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
     ) {
         self.map.insert(model.into(), generator);
     }
@@ -41,7 +47,7 @@ impl Factory {
     pub fn instanciate_driver(
         &self,
         config: PowerSupplyConfig,
-    ) -> Result<Box<dyn PowerSupplyDriver>, FactoryError> {
+    ) -> Result<Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>, FactoryError> {
         if let Some(generator) = self.map.get(&config.model) {
             Ok(generator(config))
         } else {
