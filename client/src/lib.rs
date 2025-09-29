@@ -2,6 +2,22 @@ mod config;
 mod path;
 
 
+pub struct ClientBuilder {
+
+
+}
+
+impl ClientBuilder {
+ 
+    pub fn from_user_config_file() -> Self {
+        Self {}
+    }
+    
+    pub fn build(self) -> Client {
+        Client::new()
+    }
+}
+
 
 pub struct Client {
     mqtt_client: AsyncClient,

@@ -13,28 +13,6 @@ pub struct MqttBrokerConfig {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GuiConfig {
-    /// Enable or disable the GUI
-    pub enable: bool,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct McpServerConfig {
-    /// Enable or disable the MCP server
-    pub enable: bool,
-    /// Bind address of the MCP server
-    pub host: String,
-    /// Port of the MCP server
-    pub port: u16,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PowerSupplyConfig {
-    /// Unique identifier for the power supply
-    pub model: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GlobalConfig {
     /// MQTT broker configuration
     pub broker: MqttBrokerConfig,
