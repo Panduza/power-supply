@@ -1,48 +1,33 @@
-[package]
-name = "panduza-power-supply"
+[workspace]
+members = [
+    "server",
+    # "client",  # Uncomment when you create the client package
+]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 authors = ["XdoctorwhoZ <xavier.rodriguezalvarez@gmail.com>"]
 edition = "2021"
+license = "MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[workspace.dependencies]
+# Common dependencies that can be shared between packages
 serde = { version = "1.0", features = ["derive"] }
-dioxus = { version = "0.6.3", features = [] }
-dirs = "6.0.0"
-serde_json5 = "0.2.1"
-tracing = "0.1.41"
-dioxus-logger = "0.6.2"
 serde_json = "1.0.145"
-async-trait = "0.1.89"
-thiserror = "2.0.16"
-
-
-# ---
-# Main async framework for the platform
 tokio = { version = "1.43.0", features = ["full", "tracing"] }
-# ---
-# Random string generator
-rand = "0.8.5"
-# ---
-# MQTT async client
-rumqttc = "0.25.0"
-# ---
-# MQTT Broker
-rumqttd = { git = "https://github.com/Panduza/rumqtt", tag = "0.1.0" }
-# ---
-# Config for rumqttd
-config = "0.15.17"
-# ---
-bytes = "1.10.1"
+tracing = "0.1.41"
+thiserror = "2.0.16"
+async-trait = "0.1.89"
 
-[features]
-default = ["desktop"]
-web = ["dioxus/web"]
-desktop = ["dioxus/desktop"]
-mobile = ["dioxus/mobile"]
+# Profiles for the workspace
+[profile.dev]
+opt-level = 0
+debug = true
 
-[profile]
+[profile.release]
+opt-level = 3
+lto = true
 
 [profile.wasm-dev]
 inherits = "dev"
