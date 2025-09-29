@@ -31,18 +31,3 @@ futures = "0.3"                                        # Futures utilities
 [dev-dependencies]
 tokio-test = "0.4"
 env_logger = "0.10"
-
-[features]
-default = []
-# Feature for TLS support
-tls = ["rumqttc/use-rustls"]
-# Feature for WebSocket transport
-websocket = ["rumqttc/websocket"]
-
-[[example]]
-name = "simple_client"
-path = "examples/simple_client.rs"
-
-[[example]]
-name = "power_supply_control"
-path = "examples/power_supply_control.rs"
