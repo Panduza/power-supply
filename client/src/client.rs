@@ -22,11 +22,11 @@ fn generate_random_string(length: usize) -> String {
         .collect()
 }
 
-        /// Generate MQTT topic for a given power supply and suffix
-    ///
-    fn psu_topic<A: Into<String>, B: Into<String>>(name: A, suffix: B) -> String {
-        format!("power-supply/{}/{}", name.into(), suffix.into())
-    }
+/// Generate MQTT topic for a given power supply and suffix
+///
+fn psu_topic<A: Into<String>, B: Into<String>>(name: A, suffix: B) -> String {
+    format!("power-supply/{}/{}", name.into(), suffix.into())
+}
 
 pub struct ClientBuilder {
     /// MQTT broker configuration
@@ -173,9 +173,6 @@ pub struct PowerSupplyClient {
 }
 
 impl PowerSupplyClient {
-
-
-
     pub fn new(psu_name: String, client: Client) -> Self {
         Self { psu_name, client }
     }
@@ -183,7 +180,7 @@ impl PowerSupplyClient {
     /// Enable the power supply output
     ///
     pub async fn enable_output(&self) -> Result<(), ClientError> {
-        let topic = psu_topic(&self.psu_name, "control/oe_cmd");
+        let topic = psu_topic(&self.psu_name, "control/oe/cmd");
         let payload = Bytes::from("ON");
         if let Err(e) = self.client.publish(topic, payload).await {
             return Err(ClientError::MqttError(e.to_string()));
@@ -194,8 +191,26 @@ impl PowerSupplyClient {
     /// Disable the power supply output
     ///
     pub async fn disable_output(&self) -> Result<(), ClientError> {
-        let topic = psu_topic(&self.psu_name, "control/oe_cmd");
+        let topic = psu_topic(&self.psu_name, "control/oe/cmd");
         let payload = Bytes::from("OFF");
+        if let Err(e) = self.client.publish(topic, payload).await {
+            return Err(ClientError::MqttError(e.to_string()));
+        }
+        Ok(())
+    }
+
+    pub async fn set_voltage(&self, voltage: String) -> Result<(), ClientError> {
+        let topic = psu_topic(&self.psu_name, "control/voltage/cmd");
+        let payload = Bytes::from(voltage);
+        if let Err(e) = self.client.publish(topic, payload).await {
+            return Err(ClientError::MqttError(e.to_string()));
+        }
+        Ok(())
+    }
+
+    pub async fn set_current(&self, current: String) -> Result<(), ClientError> {
+        let topic = psu_topic(&self.psu_name, "control/current/cmd");
+        let payload = Bytes::from(current);
         if let Err(e) = self.client.publish(topic, payload).await {
             return Err(ClientError::MqttError(e.to_string()));
         }

@@ -1,7 +1,9 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use rmcp::handler::server::router::prompt::PromptRouter;
 use rmcp::handler::server::router::tool::ToolRouter;
+use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::*;
 use rmcp::prompt_handler;
 use rmcp::prompt_router;
@@ -12,6 +14,8 @@ use rmcp::tool_router;
 use rmcp::ErrorData as McpError;
 use rmcp::RoleServer;
 use rmcp::ServerHandler;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use tracing::debug;
 use tracing::info;
 
@@ -19,6 +23,16 @@ use panduza_power_supply_client::ClientBuilder;
 use panduza_power_supply_client::PowerSupplyClient;
 
 use crate::config::GlobalConfig;
+
+#[derive(Serialize, Deserialize, JsonSchema)]
+struct VoltageParams {
+    voltage: String,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema)]
+struct CurrentParams {
+    current: String,
+}
 
 #[derive(Clone)]
 struct PowerSupplyState {
@@ -75,7 +89,7 @@ impl PowerSupplyService {
     #[tool(description = "Enable the power supply output (turn on power)")]
     async fn output_enable(&self) -> Result<CallToolResult, McpError> {
         let client = {
-            let psu_state = self.state.lock().unwrap();
+            let psu_state = self.state.lock().await;
             psu_state.client.clone()
         };
 
@@ -99,7 +113,7 @@ impl PowerSupplyService {
     #[tool(description = "Disable the power supply output (turn off power)")]
     async fn output_disable(&self) -> Result<CallToolResult, McpError> {
         let client = {
-            let psu_state = self.state.lock().unwrap();
+            let psu_state = self.state.lock().await;
             psu_state.client.clone()
         };
 
@@ -118,6 +132,64 @@ impl PowerSupplyService {
     }
 
     //--------------------------------------------------------------------------
+
+    /// Set the output voltage of the power supply
+    #[tool(
+        description = "Set the output voltage of the power supply. Takes voltage as a string, e.g., '5.0'"
+    )]
+    async fn set_voltage(
+        &self,
+        params: Parameters<VoltageParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let voltage = &params.0.voltage;
+        let client = {
+            let psu_state = self.state.lock().await;
+            psu_state.client.clone()
+        };
+
+        client.set_voltage(voltage.clone()).await.map_err(|_e| {
+            McpError::new(
+                ErrorCode::INTERNAL_ERROR,
+                "Failed to set power supply voltage",
+                None,
+            )
+        })?;
+
+        info!("Successfully set power supply voltage to {}", voltage);
+        Ok(CallToolResult::success(vec![Content::text(format!(
+            "Power supply voltage set to {}",
+            voltage
+        ))]))
+    }
+
+    /// Set the output current limit of the power supply
+    #[tool(
+        description = "Set the output current limit of the power supply. Takes current as a string, e.g., '1.0'"
+    )]
+    async fn set_current(
+        &self,
+        params: Parameters<CurrentParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let current = &params.0.current;
+        let client = {
+            let psu_state = self.state.lock().await;
+            psu_state.client.clone()
+        };
+
+        client.set_current(current.clone()).await.map_err(|_e| {
+            McpError::new(
+                ErrorCode::INTERNAL_ERROR,
+                "Failed to set power supply current limit",
+                None,
+            )
+        })?;
+
+        info!("Successfully set power supply current limit to {}", current);
+        Ok(CallToolResult::success(vec![Content::text(format!(
+            "Power supply current limit set to {}",
+            current
+        ))]))
+    }
 }
 
 #[prompt_router]

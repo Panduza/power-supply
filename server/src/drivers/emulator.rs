@@ -23,12 +23,10 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
     async fn output_enabled(&mut self) -> Result<bool, DriverError> {
         Ok(self.state_oe)
     }
-
     async fn enable_output(&mut self) -> Result<(), DriverError> {
         self.state_oe = true;
         Ok(())
     }
-
     async fn disable_output(&mut self) -> Result<(), DriverError> {
         self.state_oe = false;
         Ok(())
