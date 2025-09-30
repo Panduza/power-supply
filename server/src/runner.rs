@@ -1,13 +1,9 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
-
+use crate::{drivers::PowerSupplyDriver, runner};
 use bytes::Bytes;
 use rand::{distributions::Alphanumeric, Rng};
 use rumqttc::{AsyncClient, MqttOptions};
-
-use crate::{drivers::PowerSupplyDriver, runner};
+use std::{sync::Arc, time::Duration};
+use tokio::sync::Mutex;
 
 fn generate_random_string(length: usize) -> String {
     let rng = rand::thread_rng();
@@ -141,17 +137,7 @@ impl Runner {
 
                                     runner.handle_incoming_message(&topic, payload).await;
                                 }
-                                // rumqttc::Packet::PubAck(_) => todo!(),
-                                // rumqttc::Packet::PubRec(_) => todo!(),
-                                // rumqttc::Packet::PubRel(_) => todo!(),
-                                // rumqttc::Packet::PubComp(_) => todo!(),
-                                // rumqttc::Packet::Subscribe(_) => todo!(),
-                                // rumqttc::Packet::SubAck(_) => todo!(),
-                                // rumqttc::Packet::Unsubscribe(_) => todo!(),
-                                // rumqttc::Packet::UnsubAck(_) => todo!(),
-                                // rumqttc::Packet::PingReq => todo!(),
-                                // rumqttc::Packet::PingResp => todo!(),
-                                // rumqttc::Packet::Disconnect => todo!(),
+
                                 _ => {}
                             }
                         }
@@ -164,15 +150,6 @@ impl Runner {
                                 // rumqttc::Outgoing::Subscribe(p) => {
                                 //     // println!("Subscribe = {:?}", p);
                                 // }
-                                // rumqttc::Outgoing::Unsubscribe(_) => todo!(),
-                                // rumqttc::Outgoing::PubAck(_) => todo!(),
-                                // rumqttc::Outgoing::PubRec(_) => todo!(),
-                                // rumqttc::Outgoing::PubRel(_) => todo!(),
-                                // rumqttc::Outgoing::PubComp(_) => todo!(),
-                                // rumqttc::Outgoing::PingReq => todo!(),
-                                // rumqttc::Outgoing::PingResp => todo!(),
-                                // rumqttc::Outgoing::Disconnect => todo!(),
-                                // rumqttc::Outgoing::AwaitAck(_) => todo!(),
                                 _ => {}
                             }
                         } // }
@@ -190,7 +167,7 @@ impl Runner {
 
     /// Initialize the runner (if needed)
     async fn initialize(&self) {
-        let mut driver = self.driver.lock().unwrap();
+        let mut driver = self.driver.lock().await;
 
         let oe_value = driver.output_enabled().await.unwrap();
 
@@ -201,7 +178,8 @@ impl Runner {
                 false,
                 Bytes::from(if oe_value { "ON" } else { "OFF" }),
             )
-            .await;
+            .await
+            .unwrap();
     }
 
     ///
@@ -211,24 +189,30 @@ impl Runner {
         if topic.eq(&self.topic_control_oe_cmd) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
             if cmd == "ON" {
-                let mut driver = self.driver.lock().unwrap();
-                driver.enable_output();
+                let mut driver = self.driver.lock().await;
+                driver
+                    .enable_output()
+                    .await
+                    .expect("Failed to enable output");
             } else if cmd == "OFF" {
-                let mut driver = self.driver.lock().unwrap();
-                driver.disable_output();
+                let mut driver = self.driver.lock().await;
+                driver
+                    .disable_output()
+                    .await
+                    .expect("Failed to disable output");
             }
         // ----------------------------------------------------------
         // Set Voltage
         } else if topic.eq(&self.topic_control_voltage_cmd) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
             if let Ok(voltage) = cmd.parse::<f32>() {
-                let mut driver = self.driver.lock().unwrap();
+                let mut driver = self.driver.lock().await;
                 // driver.set_voltage(voltage).unwrap();
             }
         } else if topic.eq(&self.topic_control_current_cmd) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
             if let Ok(current) = cmd.parse::<f32>() {
-                let mut driver = self.driver.lock().unwrap();
+                let mut driver = self.driver.lock().await;
                 // driver.set_current(current).unwrap();
             }
         } else if topic.eq(&self.topic_measure_voltage_refresh_freq) {

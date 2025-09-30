@@ -1,8 +1,5 @@
 pub mod emulator;
 
-
-
-
 use async_trait::async_trait;
 use thiserror::Error as ThisError;
 
@@ -13,11 +10,9 @@ pub enum DriverError {
 }
 
 #[async_trait]
-pub trait PowerSupplyDriver {
-
+pub trait PowerSupplyDriver: Send + Sync {
     ///
     async fn output_enabled(&mut self) -> Result<bool, DriverError>;
     async fn enable_output(&mut self) -> Result<(), DriverError>;
     async fn disable_output(&mut self) -> Result<(), DriverError>;
 }
-

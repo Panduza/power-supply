@@ -1,8 +1,6 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 use thiserror::Error as ThisError;
+use tokio::sync::Mutex;
 
 use crate::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
 
