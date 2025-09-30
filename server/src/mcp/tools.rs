@@ -43,6 +43,7 @@ impl PowerSupplyService {
 
     fn new(config: GlobalConfig, psu_name: String) -> Self {
         let client = ClientBuilder::from_broker_config(config.broker.clone()).build();
+        let client = client.get_power_supply_client(psu_name);
         debug!("Client initialized");
 
         Self {
@@ -74,14 +75,12 @@ impl PowerSupplyService {
     /// Enable the power supply output
     #[tool(description = "Enable the power supply output (turn on power)")]
     async fn output_enable(&self) -> Result<CallToolResult, McpError> {
-        let mut psu_state = self.state.lock().unwrap();
+        let psu_state = self.state.lock().unwrap();
         psu_state.client.enable_output().await.map_err(|e| {
             McpError::new(
+                ErrorCode::INTERNAL_ERROR,
                 "Failed to enable power supply output",
-                Some(ErrorData {
-                    message: e.to_string(),
-                    ..Default::default()
-                }),
+                None,
             )
         })?;
         // psu_state.output_state = OutputState::Enabled;
