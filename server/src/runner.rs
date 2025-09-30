@@ -49,7 +49,7 @@ impl Runner {
     /// Generate MQTT topic for a given power supply and suffix
     ///
     fn psu_topic<A: Into<String>, B: Into<String>>(name: A, suffix: B) -> String {
-        format!("psu/{}/{}", name.into(), suffix.into())
+        format!("power-supply/{}/{}", name.into(), suffix.into())
     }
 
     /// Subscribe to all relevant MQTT topics
@@ -175,7 +175,7 @@ impl Runner {
             .publish(
                 self.topic_control_oe.clone(),
                 rumqttc::QoS::AtLeastOnce,
-                false,
+                true,
                 Bytes::from(if oe_value { "ON" } else { "OFF" }),
             )
             .await

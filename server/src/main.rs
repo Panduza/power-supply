@@ -8,6 +8,8 @@ mod runner;
 
 use runner::Runner;
 use tracing::{debug, Level};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use dioxus::prelude::*;
 
@@ -20,6 +22,29 @@ fn main() {
     // Init logger
     dioxus_logger::init(Level::DEBUG).expect("failed to init logger");
 
+    // Create a dedicated Tokio runtime for background tasks
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+    
+    // Store runtime and instances in Arc for sharing between threads
+    let runtime = Arc::new(rt);
+    let instances = Arc::new(Mutex::new(Vec::new()));
+    
+    // Clone for the background task
+    let runtime_clone = Arc::clone(&runtime);
+    let instances_clone = Arc::clone(&instances);
+    
+    // Spawn background initialization and management task
+    std::thread::spawn(move || {
+        runtime_clone.block_on(async {
+            initialize_background_services(instances_clone).await;
+        });
+    });
+
+    // Launch Dioxus app on the main thread
+    dioxus::launch(App);
+}
+
+async fn initialize_background_services(instances: Arc<Mutex<Vec<runner::RunnerHandler>>>) {
     // Get user configuration
     let config = config::GlobalConfig::from_user_file();
     debug!("Loaded configuration: {:?}", config);
@@ -32,32 +57,56 @@ fn main() {
     let _broker_handle = broker::start(&config);
 
     // Initialize devices
-    let mut instances = Vec::new();
+    let mut instance_handles = Vec::new();
     if let Some(devices) = &config.devices {
-        for (name, config) in devices {
+        for (name, device_config) in devices {
             let instance = factory
-                .instanciate_driver(config.clone())
+                .instanciate_driver(device_config.clone())
                 .unwrap_or_else(|err| {
                     panic!("Failed to create driver for device '{}': {}", name, err)
                 });
 
             let runner = Runner::start(name.clone(), instance);
-            // runner.start();
-            instances.push(runner);
+            instance_handles.push(runner);
         }
     }
-
-    // Launch dioxus app
-    dioxus::launch(App);
+    
+    // Store instances for later management
+    let mut locked_instances = instances.lock().await;
+    *locked_instances = instance_handles;
+    
+    debug!("Background services initialized successfully");
+    
+    // Keep the runtime alive for background tasks
+    loop {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
 }
 
 #[component]
 fn App() -> Element {
+    let mut runtime_status = use_signal(|| "Initializing...".to_string());
+    
+    // Use effect to monitor runtime status
+    use_effect(move || {
+        spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            runtime_status.set("Background services running".to_string());
+        });
+    });
+
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS } document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "stylesheet", href: MAIN_CSS } 
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        
+        div {
+            class: "runtime-status",
+            style: "position: fixed; top: 10px; right: 10px; background: #333; color: white; padding: 10px; border-radius: 5px; font-size: 12px;",
+            "Status: {runtime_status}"
+        }
+        
         Hero {}
-
     }
 }
 
