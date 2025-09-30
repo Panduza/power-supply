@@ -151,8 +151,15 @@ impl Client {
             .publish(topic.into(), rumqttc::QoS::AtLeastOnce, false, payload)
             .await
     }
+
+    /// Get a PowerSupplyClient for a specific power supply unit
+    ///
+    pub fn get_power_supply_client(&self, psu_name: String) -> PowerSupplyClient {
+        PowerSupplyClient::new(psu_name, self.clone())
+    }
 }
 
+#[derive(Clone)]
 pub struct PowerSupplyClient {
     psu_name: String,
 

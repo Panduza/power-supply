@@ -17,12 +17,13 @@ use tracing::info;
 
 use panduza_power_supply_client::Client;
 use panduza_power_supply_client::ClientBuilder;
+use panduza_power_supply_client::PowerSupplyClient;
 
 use crate::config::GlobalConfig;
 
 #[derive(Clone)]
 struct PowerSupplyState {
-    client: Client,
+    client: PowerSupplyClient,
 }
 
 /// Service structure that handles MCP protocol interactions and manages
@@ -73,8 +74,9 @@ impl PowerSupplyService {
     /// Enable the power supply output
     #[tool(description = "Enable the power supply output (turn on power)")]
     async fn output_enable(&self) -> Result<CallToolResult, McpError> {
-        let mut emulator_state = self.state.lock().unwrap();
-        // emulator_state.output_state = OutputState::Enabled;
+        let mut psu_state = self.state.lock().unwrap();
+        psu_state.client.
+        // psu_state.output_state = OutputState::Enabled;
         info!("Successfully enabled power supply output");
         Ok(CallToolResult::success(vec![Content::text(
             "Power supply output enabled".to_string(),
@@ -86,8 +88,8 @@ impl PowerSupplyService {
     /// Disable the power supply output
     #[tool(description = "Disable the power supply output (turn off power)")]
     async fn output_disable(&self) -> Result<CallToolResult, McpError> {
-        let mut emulator_state = self.state.lock().unwrap();
-        // emulator_state.output_state = OutputState::Disabled;
+        let mut psu_state = self.state.lock().unwrap();
+        // psu_state.output_state = OutputState::Disabled;
         info!("Successfully disabled power supply output");
         Ok(CallToolResult::success(vec![Content::text(
             "Power supply output disabled".to_string(),
