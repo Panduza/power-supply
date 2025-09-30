@@ -40,7 +40,7 @@ pub struct PowerSupplyService {
 impl PowerSupplyService {
     //--------------------------------------------------------------------------
 
-    fn new(config: GlobalConfig, psu_name: String) -> Self {
+    pub fn new(config: GlobalConfig, psu_name: String) -> Self {
         let client = ClientBuilder::from_broker_config(config.broker.clone()).build();
         let client = client.get_power_supply_client(psu_name);
         debug!("Client initialized");

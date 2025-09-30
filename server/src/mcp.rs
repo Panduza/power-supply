@@ -11,6 +11,10 @@ use tokio::signal;
 use tokio::sync::oneshot;
 use tower_http::cors::CorsLayer;
 
+use tools::PowerSupplyService;
+
+use crate::config::GlobalConfig;
+
 pub struct McpServer {}
 
 impl McpServer {
@@ -22,32 +26,35 @@ impl McpServer {
 
     /// Starts the server with the given service
     ///
-    pub async fn run<S>(service: S) -> Result<(), IoError>
-    where
-        S: Service<RoleServer> + Clone + Send + 'static,
-    {
-        // Define the MCP endpoint
-        let endpoint = "/power_supply";
-
-        // Create the streamable HTTP service for MCP protocol handling
-        let mcp_service = StreamableHttpService::new(
-            move || Ok(service.clone()),
-            LocalSessionManager::default().into(),
-            Default::default(),
-        );
-
-        // Build the router with routes and middleware
-        let app: Router = Router::new()
-            // MCP endpoint - using streamable_http_server for MCP protocol handling
-            .nest_service(endpoint, mcp_service)
-            // Add CORS middleware
-            .layer(CorsLayer::permissive());
-
+    pub async fn run(config: GlobalConfig, psu_names: Vec<String>) -> Result<(), IoError> {
         // Bind and serve the application
         let bind_address = "127.0.0.1:3000";
         let listener = TcpListener::bind(&bind_address).await?;
 
-        tracing::info!("MCP server listening on {}{}", bind_address, endpoint);
+        //
+        let mut app = Router::new().layer(CorsLayer::permissive());
+
+        //
+        for psu_name in psu_names {
+            let service_tools = PowerSupplyService::new(config.clone(), psu_name.clone());
+
+            // Create the streamable HTTP service for MCP protocol handling
+            let mcp_service = StreamableHttpService::new(
+                move || Ok(service_tools.clone()),
+                LocalSessionManager::default().into(),
+                Default::default(),
+            );
+
+            // MCP endpoint - using streamable_http_server for MCP protocol handling
+            app = app.nest_service(format!("/power-supply/{}", &psu_name).as_str(), mcp_service);
+
+            //
+            tracing::info!(
+                "MCP server listening on {}{}",
+                bind_address,
+                format!("/power-supply/{}", &psu_name)
+            );
+        }
 
         // Set up shutdown signal handling
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
@@ -63,17 +70,31 @@ impl McpServer {
         // Start the server with graceful shutdown
         let server = axum::serve(listener, app);
 
-        if let Some(shutdown_rx) = shutdown_signal.take() {
-            server
-                .with_graceful_shutdown(async move {
-                    let _ = shutdown_rx.await;
-                })
-                .await?;
-        } else {
-            server.await?;
-        }
+        // Démarrer le serveur dans une tâche séparée
+        let server_handle = tokio::spawn(async move { server.await });
 
-        tracing::info!("McpServer shutdown complete");
+        // Attendre soit l'arrêt du serveur soit le signal d'arrêt
+        // tokio::select! {
+        //     result = server_handle => {
+        //         match result {
+        //             Ok(server_result) => server_result?,
+        //             Err(e) => return Err(IoError::new(std::io::ErrorKind::Other, e)),
+        //         }
+        //     }
+        //     _ = shutdown_signal.take().unwrap() => {
+        //         tracing::info!("Graceful shutdown initiated");
+        //     }
+        // }
+
+        // if let Some(shutdown_rx) = shutdown_signal.take() {
+        //     server
+        //         .with_graceful_shutdown(async move {
+        //             let _ = shutdown_rx.await;
+        //         })
+        //         .await?;
+        // } else {
+        //     server.await?;
+        // }
 
         Ok(())
     }
