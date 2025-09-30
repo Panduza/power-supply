@@ -75,7 +75,15 @@ impl PowerSupplyService {
     #[tool(description = "Enable the power supply output (turn on power)")]
     async fn output_enable(&self) -> Result<CallToolResult, McpError> {
         let mut psu_state = self.state.lock().unwrap();
-        psu_state.client.
+        psu_state.client.enable_output().await.map_err(|e| {
+            McpError::new(
+                "Failed to enable power supply output",
+                Some(ErrorData {
+                    message: e.to_string(),
+                    ..Default::default()
+                }),
+            )
+        })?;
         // psu_state.output_state = OutputState::Enabled;
         info!("Successfully enabled power supply output");
         Ok(CallToolResult::success(vec![Content::text(
