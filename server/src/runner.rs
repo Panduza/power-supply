@@ -31,6 +31,8 @@ pub struct Runner {
     /// Driver instance
     driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
 
+    topic_control_oe: String,
+
     /// psu/{name}/control/oe/cmd"
     topic_control_oe_cmd: String,
 
@@ -96,6 +98,7 @@ impl Runner {
             client: client.clone(),
             name,
             driver,
+            topic_control_oe,
             topic_control_oe_cmd,
             topic_control_voltage_cmd,
             topic_control_current_cmd,
@@ -116,6 +119,8 @@ impl Runner {
                 ],
             )
             .await;
+
+            runner.initialize().await;
 
             loop {
                 while let Ok(event) = event_loop.poll().await {
@@ -181,6 +186,22 @@ impl Runner {
         println!("MESSAGE ENGINE STOP !! ");
 
         RunnerHandler { task_handler }
+    }
+
+    /// Initialize the runner (if needed)
+    async fn initialize(&self) {
+        let mut driver = self.driver.lock().unwrap();
+
+        let oe_value = driver.output_enabled().await.unwrap();
+
+        self.client
+            .publish(
+                self.topic_control_oe.clone(),
+                rumqttc::QoS::AtLeastOnce,
+                false,
+                Bytes::from(if oe_value { "ON" } else { "OFF" }),
+            )
+            .await;
     }
 
     ///

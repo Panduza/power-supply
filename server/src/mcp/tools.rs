@@ -15,7 +15,6 @@ use rmcp::ServerHandler;
 use tracing::debug;
 use tracing::info;
 
-use panduza_power_supply_client::Client;
 use panduza_power_supply_client::ClientBuilder;
 use panduza_power_supply_client::PowerSupplyClient;
 
@@ -75,15 +74,19 @@ impl PowerSupplyService {
     /// Enable the power supply output
     #[tool(description = "Enable the power supply output (turn on power)")]
     async fn output_enable(&self) -> Result<CallToolResult, McpError> {
-        let psu_state = self.state.lock().unwrap();
-        psu_state.client.enable_output().await.map_err(|e| {
+        let client = {
+            let psu_state = self.state.lock().unwrap();
+            psu_state.client.clone()
+        };
+
+        client.enable_output().await.map_err(|_e| {
             McpError::new(
                 ErrorCode::INTERNAL_ERROR,
                 "Failed to enable power supply output",
                 None,
             )
         })?;
-        // psu_state.output_state = OutputState::Enabled;
+
         info!("Successfully enabled power supply output");
         Ok(CallToolResult::success(vec![Content::text(
             "Power supply output enabled".to_string(),
@@ -95,8 +98,19 @@ impl PowerSupplyService {
     /// Disable the power supply output
     #[tool(description = "Disable the power supply output (turn off power)")]
     async fn output_disable(&self) -> Result<CallToolResult, McpError> {
-        let mut psu_state = self.state.lock().unwrap();
-        // psu_state.output_state = OutputState::Disabled;
+        let client = {
+            let psu_state = self.state.lock().unwrap();
+            psu_state.client.clone()
+        };
+
+        client.disable_output().await.map_err(|_e| {
+            McpError::new(
+                ErrorCode::INTERNAL_ERROR,
+                "Failed to disable power supply output",
+                None,
+            )
+        })?;
+
         info!("Successfully disabled power supply output");
         Ok(CallToolResult::success(vec![Content::text(
             "Power supply output disabled".to_string(),
