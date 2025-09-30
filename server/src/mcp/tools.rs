@@ -18,6 +18,8 @@ use tracing::info;
 use panduza_power_supply_client::Client;
 use panduza_power_supply_client::ClientBuilder;
 
+use crate::config::GlobalConfig;
+
 #[derive(Clone)]
 struct PowerSupplyState {
     client: Client,
@@ -53,11 +55,6 @@ impl PowerSupplyService {
 #[tool_router]
 impl PowerSupplyService {
     //--------------------------------------------------------------------------
-}
-
-#[tool_router]
-impl PowerSupplyService {
-    //--------------------------------------------------------------------------
 
     // /// Get the current output enable status of the power supply
     // #[tool(description = "Get the current output enable status of the power supply")]
@@ -77,7 +74,7 @@ impl PowerSupplyService {
     #[tool(description = "Enable the power supply output (turn on power)")]
     async fn output_enable(&self) -> Result<CallToolResult, McpError> {
         let mut emulator_state = self.state.lock().unwrap();
-        emulator_state.output_state = OutputState::Enabled;
+        // emulator_state.output_state = OutputState::Enabled;
         info!("Successfully enabled power supply output");
         Ok(CallToolResult::success(vec![Content::text(
             "Power supply output enabled".to_string(),
@@ -90,7 +87,7 @@ impl PowerSupplyService {
     #[tool(description = "Disable the power supply output (turn off power)")]
     async fn output_disable(&self) -> Result<CallToolResult, McpError> {
         let mut emulator_state = self.state.lock().unwrap();
-        emulator_state.output_state = OutputState::Disabled;
+        // emulator_state.output_state = OutputState::Disabled;
         info!("Successfully disabled power supply output");
         Ok(CallToolResult::success(vec![Content::text(
             "Power supply output disabled".to_string(),

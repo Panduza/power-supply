@@ -40,6 +40,22 @@ config = "0.15.17"
 # ---
 bytes = "1.10.1"
 
+
+rmcp = { version = "0.7.0", features = [
+    "server",
+    "macros",
+    "transport-sse-server",
+    "transport-io",
+    "transport-streamable-http-server",
+    "auth",
+    "elicitation",
+    "schemars",
+] }
+axum = { version = "0.8", features = ["macros"] }
+tower-http = { version = "0.6", features = ["cors"] }
+schemars = "1.0"
+
+
 [features]
 default = ["desktop"]
 web = ["dioxus/web"]

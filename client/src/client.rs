@@ -1,8 +1,12 @@
 use crate::config::GlobalConfig;
 use crate::config::MqttBrokerConfig;
+use bytes::Bytes;
 use rand::Rng;
 use rumqttc::{AsyncClient, MqttOptions};
 use std::time::Duration;
+
+mod error;
+pub use error::ClientError;
 
 fn generate_random_string(length: usize) -> String {
     let charset: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
@@ -136,9 +140,15 @@ impl Client {
         }
     }
 
-    pub async fn publish(&self, topic: &str, payload: &str) -> Result<(), rumqttc::ClientError> {
+    /// Publish a message to a topic
+    ///
+    pub async fn publish<A: Into<String>>(
+        &self,
+        topic: A,
+        payload: Bytes,
+    ) -> Result<(), rumqttc::ClientError> {
         self.mqtt_client
-            .publish(topic, rumqttc::QoS::AtLeastOnce, false, payload)
+            .publish(topic.into(), rumqttc::QoS::AtLeastOnce, false, payload)
             .await
     }
 }
@@ -154,14 +164,25 @@ impl PowerSupplyClient {
         Self { psu_name, client }
     }
 
-    pub async fn enable_output(&self) {
-        let topic = "panduza/psu/control/oe_cmd";
-        let payload = "1"; // "1" to enable output, "0" to disable
-
+    /// Enable the power supply output
+    ///
+    pub async fn enable_output(&self) -> Result<(), ClientError> {
+        let topic = format!("psu/{}/control/oe_cmd", self.psu_name);
+        let payload = Bytes::from("ON");
         if let Err(e) = self.client.publish(topic, payload).await {
-            eprintln!("Failed to publish enable output command: {}", e);
-        } else {
-            println!("Published enable output command to topic {}", topic);
+            return Err(ClientError::MqttError(e.to_string()));
         }
+        Ok(())
+    }
+
+    /// Disable the power supply output
+    ///
+    pub async fn disable_output(&self) -> Result<(), ClientError> {
+        let topic = format!("psu/{}/control/oe_cmd", self.psu_name);
+        let payload = Bytes::from("OFF");
+        if let Err(e) = self.client.publish(topic, payload).await {
+            return Err(ClientError::MqttError(e.to_string()));
+        }
+        Ok(())
     }
 }

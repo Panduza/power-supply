@@ -2,6 +2,7 @@ mod broker;
 mod config;
 mod drivers;
 mod factory;
+mod mcp;
 mod path;
 mod runner;
 
