@@ -32,6 +32,8 @@ pub struct Runner {
     /// psu/{name}/control/oe/cmd"
     topic_control_oe_cmd: String,
 
+    topic_control_oe_error: String,
+
     /// psu/{name}/control/voltage/cmd
     topic_control_voltage_cmd: String,
 
@@ -96,6 +98,7 @@ impl Runner {
             driver,
             topic_control_oe,
             topic_control_oe_cmd,
+            topic_control_oe_error,
             topic_control_voltage_cmd,
             topic_control_current_cmd,
             topic_measure_voltage_refresh_freq,
@@ -182,34 +185,63 @@ impl Runner {
             .unwrap();
     }
 
+    /// Handle incoming MQTT messages
+    ///
+    /// TODO => handle error return here
     ///
     async fn handle_incoming_message(&self, topic: &String, payload: Bytes) {
         // ----------------------------------------------------------
         // ON/OFF Output Enable
         if topic.eq(&self.topic_control_oe_cmd) {
+            // Handle ON/OFF payload
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
+            let mut driver = self.driver.lock().await;
             if cmd == "ON" {
-                let mut driver = self.driver.lock().await;
                 driver
                     .enable_output()
                     .await
                     .expect("Failed to enable output");
             } else if cmd == "OFF" {
-                let mut driver = self.driver.lock().await;
                 driver
                     .disable_output()
                     .await
                     .expect("Failed to disable output");
+            } else {
+                // Invalid command
+                self.client
+                    .publish(
+                        self.topic_control_oe.clone(),
+                        rumqttc::QoS::AtLeastOnce,
+                        true,
+                        Bytes::from("ERROR"),
+                    )
+                    .await
+                    .unwrap();
+                return;
             }
+            // Confirm the new state by publishing it
+            self.client
+                .publish(
+                    self.topic_control_oe.clone(),
+                    rumqttc::QoS::AtLeastOnce,
+                    true,
+                    payload,
+                )
+                .await
+                .unwrap();
+        }
         // ----------------------------------------------------------
         // Set Voltage
-        } else if topic.eq(&self.topic_control_voltage_cmd) {
+        else if topic.eq(&self.topic_control_voltage_cmd) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
             if let Ok(voltage) = cmd.parse::<f32>() {
                 let mut driver = self.driver.lock().await;
                 // driver.set_voltage(voltage).unwrap();
             }
-        } else if topic.eq(&self.topic_control_current_cmd) {
+        }
+        // ----------------------------------------------------------
+        // Set Current
+        else if topic.eq(&self.topic_control_current_cmd) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
             if let Ok(current) = cmd.parse::<f32>() {
                 let mut driver = self.driver.lock().await;
