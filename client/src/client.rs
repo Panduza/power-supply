@@ -100,17 +100,7 @@ impl Client {
 
                                     // runner.handle_incoming_message(&topic, payload).await;
                                 }
-                                // rumqttc::Packet::PubAck(_) => todo!(),
-                                // rumqttc::Packet::PubRec(_) => todo!(),
-                                // rumqttc::Packet::PubRel(_) => todo!(),
-                                // rumqttc::Packet::PubComp(_) => todo!(),
-                                // rumqttc::Packet::Subscribe(_) => todo!(),
-                                // rumqttc::Packet::SubAck(_) => todo!(),
-                                // rumqttc::Packet::Unsubscribe(_) => todo!(),
-                                // rumqttc::Packet::UnsubAck(_) => todo!(),
-                                // rumqttc::Packet::PingReq => todo!(),
-                                // rumqttc::Packet::PingResp => todo!(),
-                                // rumqttc::Packet::Disconnect => todo!(),
+
                                 _ => {}
                             }
                         }
@@ -120,18 +110,6 @@ impl Client {
                                 // rumqttc::Outgoing::Publish(packet) => {
                                 //     // println!("Publish = {:?}", packet);
                                 // }
-                                // rumqttc::Outgoing::Subscribe(p) => {
-                                //     // println!("Subscribe = {:?}", p);
-                                // }
-                                // rumqttc::Outgoing::Unsubscribe(_) => todo!(),
-                                // rumqttc::Outgoing::PubAck(_) => todo!(),
-                                // rumqttc::Outgoing::PubRec(_) => todo!(),
-                                // rumqttc::Outgoing::PubRel(_) => todo!(),
-                                // rumqttc::Outgoing::PubComp(_) => todo!(),
-                                // rumqttc::Outgoing::PingReq => todo!(),
-                                // rumqttc::Outgoing::PingResp => todo!(),
-                                // rumqttc::Outgoing::Disconnect => todo!(),
-                                // rumqttc::Outgoing::AwaitAck(_) => todo!(),
                                 _ => {}
                             }
                         } // }
