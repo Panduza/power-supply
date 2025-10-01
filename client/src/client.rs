@@ -61,6 +61,7 @@ impl ClientBuilder {
 
 #[derive(Clone)]
 pub struct Client {
+    /// MQTT client
     mqtt_client: AsyncClient,
 }
 
@@ -170,19 +171,63 @@ pub struct PowerSupplyClient {
     psu_name: String,
 
     client: Client,
+
+    /// psu/{name}/control/oe
+    topic_control_oe: String,
+
+    /// psu/{name}/control/oe/cmd
+    topic_control_oe_cmd: String,
+
+    topic_control_oe_error: String,
+
+    /// psu/{name}/control/voltage/cmd
+    topic_control_voltage_cmd: String,
+
+    /// psu/{name}/control/current/cmd
+    topic_control_current_cmd: String,
+
+    /// psu/{name}/measure/voltage/refresh_freq
+    topic_measure_voltage_refresh_freq: String,
+
+    /// psu/{name}/measure/current/refresh_freq
+    topic_measure_current_refresh_freq: String,
 }
 
 impl PowerSupplyClient {
     pub fn new(psu_name: String, client: Client) -> Self {
-        Self { psu_name, client }
+        // Prepare MQTT topics
+        let topic_control_oe = psu_topic(psu_name.clone(), "control/oe");
+        let topic_control_oe_cmd = psu_topic(psu_name.clone(), "control/oe/cmd");
+        let topic_control_oe_error = psu_topic(psu_name.clone(), "control/oe/error");
+        let topic_control_voltage_cmd = psu_topic(psu_name.clone(), "control/voltage/cmd");
+        let topic_control_current_cmd = psu_topic(psu_name.clone(), "control/current/cmd");
+        let topic_measure_voltage_refresh_freq =
+            psu_topic(psu_name.clone(), "measure/voltage/refresh_freq");
+        let topic_measure_current_refresh_freq =
+            psu_topic(psu_name.clone(), "measure/current/refresh_freq");
+
+        Self {
+            psu_name,
+            client,
+            topic_control_oe,
+            topic_control_oe_cmd,
+            topic_control_oe_error,
+            topic_control_voltage_cmd,
+            topic_control_current_cmd,
+            topic_measure_voltage_refresh_freq,
+            topic_measure_current_refresh_freq,
+        }
     }
 
     /// Enable the power supply output
     ///
     pub async fn enable_output(&self) -> Result<(), ClientError> {
-        let topic = psu_topic(&self.psu_name, "control/oe/cmd");
         let payload = Bytes::from("ON");
-        if let Err(e) = self.client.publish(topic, payload).await {
+        if let Err(e) = self
+            .client
+            .publish(self.topic_control_oe_cmd.clone(), payload)
+            .await
+        {
             return Err(ClientError::MqttError(e.to_string()));
         }
         Ok(())
@@ -191,27 +236,36 @@ impl PowerSupplyClient {
     /// Disable the power supply output
     ///
     pub async fn disable_output(&self) -> Result<(), ClientError> {
-        let topic = psu_topic(&self.psu_name, "control/oe/cmd");
         let payload = Bytes::from("OFF");
-        if let Err(e) = self.client.publish(topic, payload).await {
+        if let Err(e) = self
+            .client
+            .publish(self.topic_control_oe_cmd.clone(), payload)
+            .await
+        {
             return Err(ClientError::MqttError(e.to_string()));
         }
         Ok(())
     }
 
     pub async fn set_voltage(&self, voltage: String) -> Result<(), ClientError> {
-        let topic = psu_topic(&self.psu_name, "control/voltage/cmd");
         let payload = Bytes::from(voltage);
-        if let Err(e) = self.client.publish(topic, payload).await {
+        if let Err(e) = self
+            .client
+            .publish(self.topic_control_voltage_cmd.clone(), payload)
+            .await
+        {
             return Err(ClientError::MqttError(e.to_string()));
         }
         Ok(())
     }
 
     pub async fn set_current(&self, current: String) -> Result<(), ClientError> {
-        let topic = psu_topic(&self.psu_name, "control/current/cmd");
         let payload = Bytes::from(current);
-        if let Err(e) = self.client.publish(topic, payload).await {
+        if let Err(e) = self
+            .client
+            .publish(self.topic_control_current_cmd.clone(), payload)
+            .await
+        {
             return Err(ClientError::MqttError(e.to_string()));
         }
         Ok(())
