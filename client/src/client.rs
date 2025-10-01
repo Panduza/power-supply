@@ -77,6 +77,10 @@ pub struct PowerSupplyClient {
 
     mqtt_client: AsyncClient,
 
+    value_oe: bool,
+    value_voltage: String,
+    value_current: String,
+
     /// psu/{name}/control/oe
     topic_control_oe: String,
 
@@ -174,6 +178,10 @@ impl PowerSupplyClient {
             psu_name,
             mqtt_client: client,
 
+            value_oe: false,
+            value_voltage: "0.0".to_string(),
+            value_current: "0.0".to_string(),
+
             topic_control_oe,
             topic_control_oe_cmd,
             topic_control_oe_error,
@@ -182,6 +190,18 @@ impl PowerSupplyClient {
             topic_measure_voltage_refresh_freq,
             topic_measure_current_refresh_freq,
         }
+    }
+
+    pub fn get_oe(&self) -> bool {
+        self.value_oe
+    }
+
+    pub fn get_voltage(&self) -> &String {
+        &self.value_voltage
+    }
+
+    pub fn get_current(&self) -> &String {
+        &self.value_current
     }
 
     /// Publish a message to a topic
