@@ -19,8 +19,8 @@ use serde::{Deserialize, Serialize};
 use tracing::debug;
 use tracing::info;
 
-use panduza_power_supply_client::ClientBuilder;
 use panduza_power_supply_client::PowerSupplyClient;
+use panduza_power_supply_client::PowerSupplyClientBuilder;
 
 use crate::config::GlobalConfig;
 
@@ -55,8 +55,9 @@ impl PowerSupplyService {
     //--------------------------------------------------------------------------
 
     pub fn new(config: GlobalConfig, psu_name: String) -> Self {
-        let client = ClientBuilder::from_broker_config(config.broker.clone()).build();
-        let client = client.get_power_supply_client(psu_name);
+        let client = PowerSupplyClientBuilder::from_broker_config(config.broker.clone())
+            .with_power_supply_name(psu_name)
+            .build();
         debug!("Client initialized");
 
         Self {
