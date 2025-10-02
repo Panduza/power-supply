@@ -11,7 +11,7 @@ use dioxus::prelude::*;
 use runner::Runner;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, Level};
+use tracing::{debug, error, Level};
 
 // Global state for sharing data between background services and GUI
 #[derive(Clone, Debug)]
@@ -88,6 +88,13 @@ async fn initialize_background_services(
     // Create factory
     let factory = factory::Factory::new();
     debug!("Factory initialized with drivers: {:?}", factory.map.keys());
+
+    // Write factory manifest to file
+    if let Err(err) = factory.write_manifest_to_file() {
+        error!("Failed to write factory manifest: {}", err);
+    } else {
+        debug!("Factory manifest written successfully");
+    }
 
     // Start MQTT broker
     let _broker_handle = broker::start(&config);

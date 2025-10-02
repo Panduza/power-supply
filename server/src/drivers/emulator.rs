@@ -16,6 +16,13 @@ impl PowerSupplyEmulator {
             current: "0".into(),
         }
     }
+
+    pub fn manifest() -> serde_json::Value {
+        serde_json::json!({
+            "model": "emulator",
+            "description": "A simple power supply emulator for testing and development purposes.",
+        })
+    }
 }
 
 #[async_trait]

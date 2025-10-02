@@ -26,6 +26,8 @@ pub struct McpServerConfig {
 pub struct PowerSupplyConfig {
     /// Unique identifier for the power supply
     pub model: String,
+
+    pub description: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -29,6 +29,10 @@ pub fn global_config_file() -> Option<PathBuf> {
     user_root_dir().map(|root| root.join("panduza-power-supply-server.json5"))
 }
 
+pub fn factory_manifest_file() -> Option<PathBuf> {
+    user_root_dir().map(|root| root.join("panduza-power-supply-factory.json5"))
+}
+
 // Directory and file management functions
 
 /// Ensure that the user root directory exists
