@@ -25,14 +25,50 @@ pub fn Gui() -> Element {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         div {
-            class: "runtime-status",
-            style: "position: fixed; top: 10px; right: 10px; background: #333; color: white; padding: 10px; border-radius: 5px; font-size: 12px;",
-            "Status: {runtime_status}"
-        }
+            class: "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100",
 
-        div {
-            class: "container mx-auto p-4",
-            PowerSupplyControl {}
+            // Modern header with status
+            header {
+                class: "bg-white/80 backdrop-blur-sm border-b border-slate-200/50 sticky top-0 z-10",
+                div {
+                    class: "container mx-auto px-6 py-4 flex justify-between items-center",
+                    div {
+                        class: "flex items-center space-x-3",
+                        div {
+                            class: "w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center",
+                            span {
+                                class: "text-white text-xl font-bold",
+                                "⚡"
+                            }
+                        }
+                        div {
+                            h1 {
+                                class: "text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent",
+                                "Panduza Power Supply"
+                            }
+                            p {
+                                class: "text-sm text-slate-500",
+                                "Control Center"
+                            }
+                        }
+                    }
+                    div {
+                        class: "flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50 rounded-full",
+                        div {
+                            class: "w-2 h-2 bg-green-400 rounded-full animate-pulse"
+                        }
+                        span {
+                            class: "text-sm font-medium text-green-700",
+                            "{runtime_status}"
+                        }
+                    }
+                }
+            }
+
+            main {
+                class: "container mx-auto px-6 py-8",
+                PowerSupplyControl {}
+            }
         }
     }
 }
@@ -172,32 +208,71 @@ pub fn PowerSupplyControl() -> Element {
 
     rsx! {
         div {
-            class: "bg-white shadow-lg rounded-lg p-6 mt-8 max-w-2xl mx-auto",
-            h2 {
-                class: "text-2xl font-bold text-gray-800 mb-6",
-                "Power Supply Control"
+            class: "max-w-4xl mx-auto space-y-6",
+
+            // Status Card
+            div {
+                class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
+                div {
+                    class: "flex items-center justify-between",
+                    h2 {
+                        class: "text-xl font-semibold text-slate-700",
+                        "System Status"
+                    }
+                    div {
+                        class: {
+                            if status_message().contains("Error") {
+                                "px-4 py-2 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200/50 rounded-full"
+                            } else if status_message().contains("Connected") || status_message().contains("successfully") {
+                                "px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50 rounded-full"
+                            } else {
+                                "px-4 py-2 bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/50 rounded-full"
+                            }
+                        },
+                        span {
+                            class: {
+                                if status_message().contains("Error") {
+                                    "text-sm font-medium text-red-700"
+                                } else if status_message().contains("Connected") || status_message().contains("successfully") {
+                                    "text-sm font-medium text-green-700"
+                                } else {
+                                    "text-sm font-medium text-blue-700"
+                                }
+                            },
+                            "{status_message}"
+                        }
+                    }
+                }
             }
 
-            // Status message
+            // PSU Selection Card
             div {
-                class: "mb-4 p-3 bg-blue-50 border border-blue-200 rounded",
-                "Status: {status_message}"
-            }
-
-            // PSU Selection
-            div {
-                class: "mb-6",
+                class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
+                div {
+                    class: "flex items-center space-x-3 mb-4",
+                    div {
+                        class: "w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center",
+                        span {
+                            class: "text-white text-sm font-bold",
+                            "🔌"
+                        }
+                    }
+                    h3 {
+                        class: "text-lg font-semibold text-slate-700",
+                        "Device Selection"
+                    }
+                }
                 label {
-                    class: "block text-sm font-medium text-gray-700 mb-2",
-                    "Select Power Supply:"
+                    class: "block text-sm font-medium text-slate-600 mb-3",
+                    "Choose Power Supply Device:"
                 }
                 select {
-                    class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                    class: "w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-slate-700",
                     value: selected_psu(),
                     onchange: move |evt| {
                         selected_psu.set(evt.value());
                     },
-                    option { value: "", "Select a PSU..." }
+                    option { value: "", "Select a device..." }
                     for name in psu_names() {
                         option { value: name.clone(), "{name}" }
                     }
@@ -207,118 +282,218 @@ pub fn PowerSupplyControl() -> Element {
             if psu_names().is_empty() {
                 // No PSUs available message
                 div {
-                    class: "text-center py-12",
+                    class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-12 shadow-xl shadow-slate-200/50 text-center",
                     div {
-                        class: "text-6xl mb-4",
-                        "⚡"
+                        class: "w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-slate-100 to-slate-200 rounded-full flex items-center justify-center",
+                        span {
+                            class: "text-4xl text-slate-400",
+                            "⚡"
+                        }
                     }
                     h3 {
-                        class: "text-xl font-semibold text-gray-600 mb-2",
-                        "No Power Supplies Available"
+                        class: "text-2xl font-bold text-slate-700 mb-3",
+                        "No Devices Found"
                     }
                     p {
-                        class: "text-gray-500",
-                        "No power supply devices are configured or detected. Please check your configuration file."
+                        class: "text-slate-500 text-lg mb-6",
+                        "No power supply devices are configured or detected."
+                    }
+                    div {
+                        class: "inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-full",
+                        span {
+                            class: "text-amber-600 text-sm",
+                            "💡"
+                        }
+                        span {
+                            class: "text-sm text-amber-700 font-medium",
+                            "Check your configuration file"
+                        }
                     }
                 }
             } else if !selected_psu().is_empty() {
                 // Control Panel
                 div {
-                    class: "grid grid-cols-1 md:grid-cols-2 gap-6",
+                    class: "grid grid-cols-1 lg:grid-cols-2 gap-6",
 
-                    // Output Control
+                    // Output Control Card
                     div {
-                        class: "space-y-4",
-                        h3 {
-                            class: "text-lg font-semibold text-gray-700",
-                            "Output Control"
-                        }
-
-                        button {
-                            class: if output_enabled() {
-                                "w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                            } else {
-                                "w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                            },
-                            onclick: move |_| toggle_output(),
-                            if output_enabled() {
-                                "Turn OFF"
-                            } else {
-                                "Turn ON"
-                            }
-                        }
-
+                        class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
                         div {
-                            class: "text-center",
-                            span {
-                                class: if output_enabled() {
-                                    "inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-                                } else {
-                                    "inline-block px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm"
-                                },
-                                if output_enabled() { "ON" } else { "OFF" }
+                            class: "flex items-center space-x-3 mb-6",
+                            div {
+                                class: "w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center",
+                                span {
+                                    class: "text-white text-sm font-bold",
+                                    "🔋"
+                                }
+                            }
+                            h3 {
+                                class: "text-lg font-semibold text-slate-700",
+                                "Power Output"
                             }
                         }
 
-                        button {
-                            class: "w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors mt-2",
-                            onclick: move |_| refresh_state(),
-                            "Refresh State"
+                        // Status indicator
+                        div {
+                            class: {
+                                let base = "mb-6 p-4 rounded-xl text-center ";
+                                let color_classes = if output_enabled() {
+                                    "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50"
+                                } else {
+                                    "bg-gradient-to-r from-red-50 to-rose-50 border border-red-200/50"
+                                };
+                                format!("{}{}", base, color_classes)
+                            },
+                            div {
+                                class: "flex items-center justify-center space-x-2 mb-2",
+                                div {
+                                    class: {
+                                        if output_enabled() {
+                                            "w-3 h-3 bg-green-400 rounded-full animate-pulse"
+                                        } else {
+                                            "w-3 h-3 bg-red-400 rounded-full"
+                                        }
+                                    }
+                                }
+                                span {
+                                    class: {
+                                        if output_enabled() {
+                                            "text-2xl font-bold text-green-700"
+                                        } else {
+                                            "text-2xl font-bold text-red-700"
+                                        }
+                                    },
+                                    if output_enabled() { "ON" } else { "OFF" }
+                                }
+                            }
+                            p {
+                                class: {
+                                    if output_enabled() {
+                                        "text-sm text-green-600"
+                                    } else {
+                                        "text-sm text-red-600"
+                                    }
+                                },
+                                if output_enabled() { "Output is active" } else { "Output is disabled" }
+                            }
+                        }
+
+                        // Control buttons
+                        div {
+                            class: "space-y-3",
+                            button {
+                                class: {
+                                    if output_enabled() {
+                                        "w-full px-6 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                                    } else {
+                                        "w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                                    }
+                                },
+                                onclick: move |_| toggle_output(),
+                                div {
+                                    class: "flex items-center justify-center space-x-2",
+                                    span {
+                                        class: "text-lg",
+                                        if output_enabled() { "🔌" } else { "⚡" }
+                                    }
+                                    span {
+                                        if output_enabled() { "Turn OFF" } else { "Turn ON" }
+                                    }
+                                }
+                            }
+
+                            button {
+                                class: "w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-sky-500 text-white font-medium rounded-xl hover:from-blue-600 hover:to-sky-600 transition-all duration-200 shadow-md hover:shadow-lg",
+                                onclick: move |_| refresh_state(),
+                                div {
+                                    class: "flex items-center justify-center space-x-2",
+                                    span { "🔄" }
+                                    span { "Refresh State" }
+                                }
+                            }
                         }
                     }
 
-                    // Voltage and Current Control
+                    // Voltage and Current Control Card
                     div {
-                        class: "space-y-4",
-                        h3 {
-                            class: "text-lg font-semibold text-gray-700",
-                            "Settings"
-                        }
-
-                        // Voltage Control
+                        class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
                         div {
-                            label {
-                                class: "block text-sm font-medium text-gray-600 mb-1",
-                                "Voltage (V):"
-                            }
+                            class: "flex items-center space-x-3 mb-6",
                             div {
-                                class: "flex gap-2",
-                                input {
-                                    class: "flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                    r#type: "number",
-                                    step: "0.1",
-                                    min: "0",
-                                    value: voltage(),
-                                    oninput: move |evt| voltage.set(evt.value())
+                                class: "w-8 h-8 bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg flex items-center justify-center",
+                                span {
+                                    class: "text-white text-sm font-bold",
+                                    "⚙️"
                                 }
-                                button {
-                                    class: "px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors",
-                                    onclick: move |_| set_voltage_fn(),
-                                    "Set"
-                                }
+                            }
+                            h3 {
+                                class: "text-lg font-semibold text-slate-700",
+                                "Power Settings"
                             }
                         }
 
-                        // Current Control
                         div {
-                            label {
-                                class: "block text-sm font-medium text-gray-600 mb-1",
-                                "Current Limit (A):"
-                            }
+                            class: "space-y-6",
+
+                            // Voltage Control
                             div {
-                                class: "flex gap-2",
-                                input {
-                                    class: "flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                    r#type: "number",
-                                    step: "0.01",
-                                    min: "0",
-                                    value: current(),
-                                    oninput: move |evt| current.set(evt.value())
+                                class: "bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/50 rounded-xl p-4",
+                                label {
+                                    class: "flex items-center space-x-2 text-sm font-semibold text-orange-700 mb-3",
+                                    span { "⚡" }
+                                    span { "Voltage Control" }
                                 }
-                                button {
-                                    class: "px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors",
-                                    onclick: move |_| set_current_fn(),
-                                    "Set"
+                                div {
+                                    class: "flex items-center space-x-3",
+                                    input {
+                                        class: "flex-1 px-4 py-3 bg-white/70 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 text-slate-700 font-medium",
+                                        r#type: "number",
+                                        step: "0.1",
+                                        min: "0",
+                                        placeholder: "0.0",
+                                        value: voltage(),
+                                        oninput: move |evt| voltage.set(evt.value())
+                                    }
+                                    span {
+                                        class: "text-orange-600 font-semibold text-sm",
+                                        "V"
+                                    }
+                                    button {
+                                        class: "px-5 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105",
+                                        onclick: move |_| set_voltage_fn(),
+                                        "Set"
+                                    }
+                                }
+                            }
+
+                            // Current Control
+                            div {
+                                class: "bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200/50 rounded-xl p-4",
+                                label {
+                                    class: "flex items-center space-x-2 text-sm font-semibold text-purple-700 mb-3",
+                                    span { "🔋" }
+                                    span { "Current Limit" }
+                                }
+                                div {
+                                    class: "flex items-center space-x-3",
+                                    input {
+                                        class: "flex-1 px-4 py-3 bg-white/70 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 text-slate-700 font-medium",
+                                        r#type: "number",
+                                        step: "0.01",
+                                        min: "0",
+                                        placeholder: "0.00",
+                                        value: current(),
+                                        oninput: move |evt| current.set(evt.value())
+                                    }
+                                    span {
+                                        class: "text-purple-600 font-semibold text-sm",
+                                        "A"
+                                    }
+                                    button {
+                                        class: "px-5 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105",
+                                        onclick: move |_| set_current_fn(),
+                                        "Set"
+                                    }
                                 }
                             }
                         }
