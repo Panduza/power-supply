@@ -5,7 +5,6 @@ use tokio::sync::Mutex;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
-const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[component]
@@ -33,26 +32,7 @@ pub fn Gui() -> Element {
 
         div {
             class: "container mx-auto p-4",
-            Hero {}
             PowerSupplyControl {}
-        }
-    }
-}
-
-#[component]
-pub fn Hero() -> Element {
-    rsx! {
-        div {
-            id: "hero",
-            img { src: HEADER_SVG, id: "header" }
-            div { id: "links",
-                a { href: "https://dioxuslabs.com/learn/0.6/", "📚 Learn Dioxus" }
-                a { href: "https://dioxuslabs.com/awesome", "🚀 Awesome Dioxus" }
-                a { href: "https://github.com/dioxus-community/", "📡 Community Libraries" }
-                a { href: "https://github.com/DioxusLabs/sdk", "⚙️ Dioxus Development Kit" }
-                a { href: "https://marketplace.visualstudio.com/items?itemName=DioxusLabs.dioxus", "💫 VSCode Extension" }
-                a { href: "https://discord.gg/XgGxMSkvUM", "👋 Community Discord" }
-            }
         }
     }
 }
@@ -224,7 +204,24 @@ pub fn PowerSupplyControl() -> Element {
                 }
             }
 
-            if !selected_psu().is_empty() {
+            if psu_names().is_empty() {
+                // No PSUs available message
+                div {
+                    class: "text-center py-12",
+                    div {
+                        class: "text-6xl mb-4",
+                        "⚡"
+                    }
+                    h3 {
+                        class: "text-xl font-semibold text-gray-600 mb-2",
+                        "No Power Supplies Available"
+                    }
+                    p {
+                        class: "text-gray-500",
+                        "No power supply devices are configured or detected. Please check your configuration file."
+                    }
+                }
+            } else if !selected_psu().is_empty() {
                 // Control Panel
                 div {
                     class: "grid grid-cols-1 md:grid-cols-2 gap-6",
