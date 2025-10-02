@@ -3,7 +3,12 @@ use crate::config::MqttBrokerConfig;
 use bytes::Bytes;
 use rand::Rng;
 use rumqttc::{AsyncClient, MqttOptions};
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
+
+mod data;
+pub use data::MutableData;
 
 mod error;
 pub use error::ClientError;
@@ -77,9 +82,7 @@ pub struct PowerSupplyClient {
 
     mqtt_client: AsyncClient,
 
-    value_oe: bool,
-    value_voltage: String,
-    value_current: String,
+    mutable_data: Arc<Mutex<MutableData>>,
 
     /// psu/{name}/control/oe
     topic_control_oe: String,
@@ -89,8 +92,14 @@ pub struct PowerSupplyClient {
 
     topic_control_oe_error: String,
 
+    /// psu/{name}/control/voltage
+    topic_control_voltage: String,
+
     /// psu/{name}/control/voltage/cmd
     topic_control_voltage_cmd: String,
+
+    /// psu/{name}/control/current
+    topic_control_current: String,
 
     /// psu/{name}/control/current/cmd
     topic_control_current_cmd: String,
@@ -103,105 +112,128 @@ pub struct PowerSupplyClient {
 }
 
 impl PowerSupplyClient {
+    /// Task loop to handle MQTT events
+    async fn task_loop(client: PowerSupplyClient, mut event_loop: rumqttc::EventLoop) {
+        // // Subscribe to all relevant topics
+        // Self::subscribe_to_all(
+        //     client.clone(),
+        //     vec![
+        //         &runner.topic_control_oe_cmd,
+        //         &runner.topic_control_voltage_cmd,
+        //         &runner.topic_control_current_cmd,
+        //         &runner.topic_measure_voltage_refresh_freq,
+        //         &runner.topic_measure_current_refresh_freq,
+        //     ],
+        // )
+        // .await;
+
+        loop {
+            while let Ok(event) = event_loop.poll().await {
+                // println!("Notification = {:?}", event);
+                // match notification {
+                //     Ok(event) => {
+                match event {
+                    rumqttc::Event::Incoming(incoming) => {
+                        // println!("Incoming = {:?}", incoming);
+
+                        match incoming {
+                            // rumqttc::Packet::Connect(_) => todo!(),
+                            // rumqttc::Packet::ConnAck(_) => todo!(),
+                            rumqttc::Packet::Publish(packet) => {
+                                // println!("Publish = {:?}", packet);
+                                let topic = packet.topic;
+                                let payload = packet.payload;
+
+                                client.handle_incoming_message(&topic, payload).await;
+                            }
+
+                            _ => {}
+                        }
+                    }
+                    rumqttc::Event::Outgoing(outgoing) => {
+                        // println!("Outgoing = {:?}", outgoing);
+                        match outgoing {
+                            // rumqttc::Outgoing::Publish(packet) => {
+                            //     // println!("Publish = {:?}", packet);
+                            // }
+                            _ => {}
+                        }
+                    } // }
+                      // }
+                      // Err(_) => todo!(),
+                }
+            }
+        }
+    }
+
+    async fn handle_incoming_message(&self, topic: &String, payload: Bytes) {
+        if topic == &self.topic_control_oe {
+            let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
+            let enabled = msg.trim().eq_ignore_ascii_case("ON");
+            let mut data = self.mutable_data.lock().await;
+            data.enabled = enabled;
+        } else if topic == &self.topic_control_voltage {
+            let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
+            let mut data = self.mutable_data.lock().await;
+            data.voltage = msg.trim().to_string();
+        } else if topic == &self.topic_control_current {
+            let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
+            let mut data = self.mutable_data.lock().await;
+            data.current = msg.trim().to_string();
+        }
+    }
+
     ///
     ///
     pub fn new_with_client(
         psu_name: String,
         client: AsyncClient,
-        mut event_loop: rumqttc::EventLoop,
+        event_loop: rumqttc::EventLoop,
     ) -> Self {
-        let _task_handler = tokio::spawn(async move {
-            // // Subscribe to all relevant topics
-            // Self::subscribe_to_all(
-            //     client.clone(),
-            //     vec![
-            //         &runner.topic_control_oe_cmd,
-            //         &runner.topic_control_voltage_cmd,
-            //         &runner.topic_control_current_cmd,
-            //         &runner.topic_measure_voltage_refresh_freq,
-            //         &runner.topic_measure_current_refresh_freq,
-            //     ],
-            // )
-            // .await;
-
-            loop {
-                while let Ok(event) = event_loop.poll().await {
-                    // println!("Notification = {:?}", event);
-                    // match notification {
-                    //     Ok(event) => {
-                    match event {
-                        rumqttc::Event::Incoming(incoming) => {
-                            // println!("Incoming = {:?}", incoming);
-
-                            match incoming {
-                                // rumqttc::Packet::Connect(_) => todo!(),
-                                // rumqttc::Packet::ConnAck(_) => todo!(),
-                                rumqttc::Packet::Publish(packet) => {
-                                    // println!("Publish = {:?}", packet);
-                                    let topic = packet.topic;
-                                    let payload = packet.payload;
-
-                                    // runner.handle_incoming_message(&topic, payload).await;
-                                }
-
-                                _ => {}
-                            }
-                        }
-                        rumqttc::Event::Outgoing(outgoing) => {
-                            // println!("Outgoing = {:?}", outgoing);
-                            match outgoing {
-                                // rumqttc::Outgoing::Publish(packet) => {
-                                //     // println!("Publish = {:?}", packet);
-                                // }
-                                _ => {}
-                            }
-                        } // }
-                          // }
-                          // Err(_) => todo!(),
-                    }
-                }
-            }
-        });
-
         // Prepare MQTT topics
         let topic_control_oe = psu_topic(psu_name.clone(), "control/oe");
         let topic_control_oe_cmd = psu_topic(psu_name.clone(), "control/oe/cmd");
         let topic_control_oe_error = psu_topic(psu_name.clone(), "control/oe/error");
+        let topic_control_voltage = psu_topic(psu_name.clone(), "control/voltage");
         let topic_control_voltage_cmd = psu_topic(psu_name.clone(), "control/voltage/cmd");
+        let topic_control_current = psu_topic(psu_name.clone(), "control/current");
         let topic_control_current_cmd = psu_topic(psu_name.clone(), "control/current/cmd");
         let topic_measure_voltage_refresh_freq =
             psu_topic(psu_name.clone(), "measure/voltage/refresh_freq");
         let topic_measure_current_refresh_freq =
             psu_topic(psu_name.clone(), "measure/current/refresh_freq");
 
-        Self {
+        let obj = Self {
             psu_name,
             mqtt_client: client,
 
-            value_oe: false,
-            value_voltage: "0.0".to_string(),
-            value_current: "0.0".to_string(),
+            mutable_data: Arc::new(Mutex::new(MutableData::default())),
 
             topic_control_oe,
             topic_control_oe_cmd,
             topic_control_oe_error,
+            topic_control_voltage,
             topic_control_voltage_cmd,
+            topic_control_current,
             topic_control_current_cmd,
             topic_measure_voltage_refresh_freq,
             topic_measure_current_refresh_freq,
-        }
+        };
+
+        let _task_handler = tokio::spawn(Self::task_loop(obj.clone(), event_loop));
+        obj
     }
 
-    pub fn get_oe(&self) -> bool {
-        self.value_oe
+    pub async fn get_oe(&self) -> bool {
+        self.mutable_data.lock().await.enabled
     }
 
-    pub fn get_voltage(&self) -> &String {
-        &self.value_voltage
+    pub async fn get_voltage(&self) -> String {
+        self.mutable_data.lock().await.voltage.clone()
     }
 
-    pub fn get_current(&self) -> &String {
-        &self.value_current
+    pub async fn get_current(&self) -> String {
+        self.mutable_data.lock().await.current.clone()
     }
 
     /// Publish a message to a topic
