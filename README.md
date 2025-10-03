@@ -51,12 +51,32 @@ cargo build --package panduza-power-supply-server
 
 ## Acceptation Tests
 
-- MQTT
-    - Start a server with an "emulator" instance
-    - With a client tool
-        - send "ON" in "power-supply/emulator/control/oe/cmd"
-        - send "OFF" in "power-supply/emulator/control/oe/cmd"
-        - send "0.5" in "power-supply/emulator/control/voltage/cmd"
-        - send "5.23" in "power-supply/emulator/control/voltage/cmd"
-        - send "5.23" in "power-supply/emulator/control/current/cmd"
-        - send "5.23" in "power-supply/emulator/control/current/cmd"
+- Start a server with an "emulator" instance
+
+- MQTT: With a client tool
+    - send "ON" in "power-supply/emulator/control/oe/cmd"
+    - send "OFF" in "power-supply/emulator/control/oe/cmd"
+    - send "0.5" in "power-supply/emulator/control/voltage/cmd"
+    - send "5.23" in "power-supply/emulator/control/voltage/cmd"
+    - send "5.23" in "power-supply/emulator/control/current/cmd"
+    - send "5.23" in "power-supply/emulator/control/current/cmd"
+
+
+- MCP: With copilot ()
+    - prompt "turn on the power supply"
+    - prompt "turn off the power supply"
+    - prompt "configure power supply to 2.8V"
+    - prompt "configure power supply to 3A"
+
+```json
+{
+	"servers": {		
+		"power_supply": {
+			"url": "http://127.0.0.1:3000/power-supply/emulator",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}
+```
+
