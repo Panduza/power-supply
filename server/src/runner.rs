@@ -34,8 +34,14 @@ pub struct Runner {
 
     topic_control_oe_error: String,
 
+    /// psu/{name}/control/voltage
+    topic_control_voltage: String,
+
     /// psu/{name}/control/voltage/cmd
     topic_control_voltage_cmd: String,
+
+    /// psu/{name}/control/voltage
+    topic_control_current: String,
 
     /// psu/{name}/control/current/cmd
     topic_control_current_cmd: String,
@@ -74,7 +80,9 @@ impl Runner {
         let topic_control_oe = Self::psu_topic(&name, "control/oe");
         let topic_control_oe_cmd = Self::psu_topic(&name, "control/oe/cmd");
         let topic_control_oe_error = Self::psu_topic(&name, "control/oe/error");
+        let topic_control_voltage = Self::psu_topic(&name, "control/voltage");
         let topic_control_voltage_cmd = Self::psu_topic(&name, "control/voltage/cmd");
+        let topic_control_current = Self::psu_topic(&name, "control/current");
         let topic_control_current_cmd = Self::psu_topic(&name, "control/current/cmd");
         let topic_measure_voltage_refresh_freq =
             Self::psu_topic(&name, "measure/voltage/refresh_freq");
@@ -99,7 +107,9 @@ impl Runner {
             topic_control_oe,
             topic_control_oe_cmd,
             topic_control_oe_error,
+            topic_control_voltage,
             topic_control_voltage_cmd,
+            topic_control_current,
             topic_control_current_cmd,
             topic_measure_voltage_refresh_freq,
             topic_measure_current_refresh_freq,
@@ -234,20 +244,47 @@ impl Runner {
         // Set Voltage
         else if topic.eq(&self.topic_control_voltage_cmd) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(voltage) = cmd.parse::<f32>() {
-                let mut driver = self.driver.lock().await;
-                // driver.set_voltage(voltage).unwrap();
-            }
+            let mut driver = self.driver.lock().await;
+            driver
+                .set_voltage(cmd)
+                .await
+                .expect("Failed to set voltage");
+
+            // Confirm the new state by publishing it
+            self.client
+                .publish(
+                    self.topic_control_voltage.clone(),
+                    rumqttc::QoS::AtLeastOnce,
+                    true,
+                    payload,
+                )
+                .await
+                .unwrap();
         }
         // ----------------------------------------------------------
         // Set Current
         else if topic.eq(&self.topic_control_current_cmd) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(current) = cmd.parse::<f32>() {
-                let mut driver = self.driver.lock().await;
-                // driver.set_current(current).unwrap();
-            }
-        } else if topic.eq(&self.topic_measure_voltage_refresh_freq) {
+            let mut driver = self.driver.lock().await;
+            driver
+                .set_current(cmd)
+                .await
+                .expect("Failed to set current");
+
+            // Confirm the new state by publishing it
+            self.client
+                .publish(
+                    self.topic_control_current.clone(),
+                    rumqttc::QoS::AtLeastOnce,
+                    true,
+                    payload,
+                )
+                .await
+                .unwrap();
+        }
+        // ----------------------------------------------------------
+        // Set Measurement Refresh Frequencies
+        else if topic.eq(&self.topic_measure_voltage_refresh_freq) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
             if let Ok(freq) = cmd.parse::<u64>() {
                 // Set voltage measurement refresh frequency

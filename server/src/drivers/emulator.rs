@@ -1,5 +1,7 @@
 use async_trait::async_trait;
 
+use tracing::info;
+
 use crate::config::PowerSupplyConfig;
 use crate::drivers::DriverError;
 use crate::drivers::PowerSupplyDriver;
@@ -38,7 +40,7 @@ impl PowerSupplyEmulator {
 impl PowerSupplyDriver for PowerSupplyEmulator {
     /// Get the output enabled state
     async fn output_enabled(&mut self) -> Result<bool, DriverError> {
-        println!("Emulator Driver: output_enabled = {}", self.state_oe);
+        info!("Emulator Driver: output_enabled = {}", self.state_oe);
         Ok(self.state_oe)
     }
 
@@ -46,7 +48,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Enable the output
     async fn enable_output(&mut self) -> Result<(), DriverError> {
-        println!("Emulator Driver: enable_output");
+        info!("Emulator Driver: enable_output");
         self.state_oe = true;
         Ok(())
     }
@@ -55,7 +57,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Disable the output
     async fn disable_output(&mut self) -> Result<(), DriverError> {
-        println!("Emulator Driver: disable_output");
+        info!("Emulator Driver: disable_output");
         self.state_oe = false;
         Ok(())
     }
@@ -64,7 +66,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Get the voltage
     async fn get_voltage(&mut self) -> Result<String, DriverError> {
-        println!("Emulator Driver: get_voltage = {}", self.voltage);
+        info!("Emulator Driver: get_voltage = {}", self.voltage);
         Ok(self.voltage.clone())
     }
 
@@ -72,7 +74,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Set the voltage
     async fn set_voltage(&mut self, voltage: String) -> Result<(), DriverError> {
-        println!("Emulator Driver: set_voltage = {}", voltage);
+        info!("Emulator Driver: set_voltage = {}", voltage);
         self.voltage = voltage;
         Ok(())
     }
@@ -81,7 +83,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Get the current
     async fn get_current(&mut self) -> Result<String, DriverError> {
-        println!("Emulator Driver: get_current = {}", self.current);
+        info!("Emulator Driver: get_current = {}", self.current);
         Ok(self.current.clone())
     }
 
@@ -89,7 +91,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Set the current
     async fn set_current(&mut self, current: String) -> Result<(), DriverError> {
-        println!("Emulator Driver: set_current = {}", current);
+        info!("Emulator Driver: set_current = {}", current);
         self.current = current;
         Ok(())
     }
@@ -98,7 +100,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Measure the voltage
     async fn measure_voltage(&mut self) -> Result<String, DriverError> {
-        println!("Emulator Driver: measure_voltage");
+        info!("Emulator Driver: measure_voltage");
         Ok("0".into())
     }
 
@@ -106,7 +108,7 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
 
     /// Measure the current
     async fn measure_current(&mut self) -> Result<String, DriverError> {
-        println!("Emulator Driver: measure_current");
+        info!("Emulator Driver: measure_current");
         Ok("0".into())
     }
 }

@@ -46,3 +46,17 @@ cargo build --package panduza-power-supply-server
 # Build uniquement le client (quand il existera)
 # cargo build --package panduza-power-supply-client
 ```
+
+
+
+## Acceptation Tests
+
+- MQTT
+    - Start a server with an "emulator" instance
+    - With a client tool
+        - send "ON" in "power-supply/emulator/control/oe/cmd"
+        - send "OFF" in "power-supply/emulator/control/oe/cmd"
+        - send "0.5" in "power-supply/emulator/control/voltage/cmd"
+        - send "5.23" in "power-supply/emulator/control/voltage/cmd"
+        - send "5.23" in "power-supply/emulator/control/current/cmd"
+        - send "5.23" in "power-supply/emulator/control/current/cmd"
