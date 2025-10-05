@@ -41,15 +41,9 @@ impl Kd3005pDriver {
 impl PowerSupplyDriver for Kd3005pDriver {
     /// Get the output enabled state
     async fn output_enabled(&mut self) -> Result<bool, DriverError> {
-        info!("Kd3005p Driver: output_enabled = {}", self.state_oe);
-
-        self.driver
-            .lock()
-            .await
-            .execute(Command::QueryOutput)
-            .unwrap();
-
-        Ok(self.state_oe)
+        let state_oe = self.driver.lock().await.read_output_enable().unwrap();
+        info!("Kd3005p Driver: output_enabled = {}", state_oe);
+        Ok(state_oe)
     }
 
     //--------------------------------------------------------------------------
@@ -82,16 +76,21 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Get the voltage
     async fn get_voltage(&mut self) -> Result<String, DriverError> {
-        info!("Emulator Driver: get_voltage = {}", self.voltage);
-        Ok(self.voltage.clone())
+        let voltage = self.driver.lock().await.read_set_voltage().unwrap();
+        info!("Kd3005p Driver: get_voltage = {}", voltage);
+        Ok(voltage.to_string())
     }
 
     //--------------------------------------------------------------------------
 
     /// Set the voltage
     async fn set_voltage(&mut self, voltage: String) -> Result<(), DriverError> {
-        info!("Emulator Driver: set_voltage = {}", voltage);
-        self.voltage = voltage;
+        info!("Kd3005p Driver: set_voltage = {}", voltage);
+        self.driver
+            .lock()
+            .await
+            .execute(Command::Voltage(voltage.parse().unwrap()))
+            .unwrap();
         Ok(())
     }
 
@@ -99,16 +98,21 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Get the current
     async fn get_current(&mut self) -> Result<String, DriverError> {
-        info!("Emulator Driver: get_current = {}", self.current);
-        Ok(self.current.clone())
+        let current = self.driver.lock().await.read_set_current().unwrap();
+        info!("Kd3005p Driver: get_current = {}", current);
+        Ok(current.to_string())
     }
 
     //--------------------------------------------------------------------------
 
     /// Set the current
     async fn set_current(&mut self, current: String) -> Result<(), DriverError> {
-        info!("Emulator Driver: set_current = {}", current);
-        self.current = current;
+        info!("Kd3005p Driver: set_current = {}", current);
+        self.driver
+            .lock()
+            .await
+            .execute(Command::Current(current.parse().unwrap()))
+            .unwrap();
         Ok(())
     }
 
@@ -116,7 +120,7 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Measure the voltage
     async fn measure_voltage(&mut self) -> Result<String, DriverError> {
-        info!("Emulator Driver: measure_voltage");
+        info!("Kd3005p Driver: measure_voltage");
         Ok("0".into())
     }
 
@@ -124,7 +128,7 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Measure the current
     async fn measure_current(&mut self) -> Result<String, DriverError> {
-        info!("Emulator Driver: measure_current");
+        info!("Kd3005p Driver: measure_current");
         Ok("0".into())
     }
 }
