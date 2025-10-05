@@ -1,4 +1,4 @@
-# Generic coding rules for the all project
+# Generic coding rules for the project
 
 ## Comments
 

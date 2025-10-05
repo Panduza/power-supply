@@ -39,7 +39,10 @@ rumqttd = { git = "https://github.com/Panduza/rumqtt", tag = "0.1.0" }
 config = "0.15.17"
 # ---
 bytes = "1.10.1"
-
+# ---
+# KD3005P Driver
+ka3005p = { version = "0.5.0" }
+# ---
 
 rmcp = { version = "0.7.0", features = [
     "server",

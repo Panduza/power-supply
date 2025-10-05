@@ -17,6 +17,7 @@ tracing = "0.1.41"
 thiserror = "2.0.16"
 async-trait = "0.1.89"
 
+
 # Profiles for the workspace
 [profile.dev]
 opt-level = 0

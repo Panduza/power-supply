@@ -29,17 +29,30 @@ impl Factory {
             manifest: HashMap::new(),
         };
 
+        // ----------------------------------------------------------
         factory.register_driver("emulator", |config| {
             Arc::new(Mutex::new(
                 crate::drivers::emulator::PowerSupplyEmulator::new(config),
             ))
         });
-
         factory.manifest.insert(
             "emulator".to_string(),
             crate::drivers::emulator::PowerSupplyEmulator::manifest(),
         );
 
+        // ----------------------------------------------------------
+
+        factory.register_driver("kd3005p", |config| {
+            Arc::new(Mutex::new(crate::drivers::kd3005p::Kd3005pDriver::new(
+                config,
+            )))
+        });
+        factory.manifest.insert(
+            "kd3005p".to_string(),
+            crate::drivers::kd3005p::Kd3005pDriver::manifest(),
+        );
+
+        // ----------------------------------------------------------
         factory
     }
 
