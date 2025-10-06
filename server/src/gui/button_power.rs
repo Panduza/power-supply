@@ -54,86 +54,11 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
     rsx! {
         div {
-            class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
-            div {
-                class: "flex items-center space-x-3 mb-6",
-                div {
-                    class: "w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center",
-                    span {
-                        class: "text-white text-sm font-bold",
-                        "🔋"
-                    }
-                }
-                h3 {
-                    class: "text-lg font-semibold text-slate-700",
-                    "Power Output"
-                }
-            }
-
-            // Status indicator
-            div {
-                class: {
-                    let base = "mb-6 p-4 rounded-xl text-center ";
-                    let color_classes = if props.output_enabled {
-                        "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50"
-                    } else {
-                        "bg-gradient-to-r from-red-50 to-rose-50 border border-red-200/50"
-                    };
-                    format!("{}{}", base, color_classes)
-                },
-                div {
-                    class: "flex items-center justify-center space-x-2 mb-2",
-                    div {
-                        class: {
-                            if props.output_enabled {
-                                "w-3 h-3 bg-green-400 rounded-full animate-pulse"
-                            } else {
-                                "w-3 h-3 bg-red-400 rounded-full"
-                            }
-                        }
-                    }
-                    span {
-                        class: {
-                            if props.output_enabled {
-                                "text-2xl font-bold text-green-700"
-                            } else {
-                                "text-2xl font-bold text-red-700"
-                            }
-                        },
-                        if props.output_enabled { "ON" } else { "OFF" }
-                    }
-                }
-                p {
-                    class: {
-                        if props.output_enabled {
-                            "text-sm text-green-600"
-                        } else {
-                            "text-sm text-red-600"
-                        }
-                    },
-                    if props.output_enabled { "Output is active" } else { "Output is disabled" }
-                }
-            }
-
             // Control button
             button {
-                class: {
-                    if props.output_enabled {
-                        "w-full px-6 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-                    } else {
-                        "w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-                    }
-                },
                 onclick: move |_| toggle_output(),
                 div {
-                    class: "flex items-center justify-center space-x-2",
-                    span {
-                        class: "text-lg",
-                        if props.output_enabled { "🔌" } else { "⚡" }
-                    }
-                    span {
-                        if props.output_enabled { "Turn OFF" } else { "Turn ON" }
-                    }
+                    if props.output_enabled { "Turn OFF" } else { "Turn ON" }
                 }
             }
         }
