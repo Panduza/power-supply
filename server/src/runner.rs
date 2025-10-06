@@ -293,13 +293,13 @@ impl Runner {
         // Set Measurement Refresh Frequencies
         else if topic.eq(&self.topic_measure_voltage_refresh_freq) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(freq) = cmd.parse::<u64>() {
+            if let Ok(_freq) = cmd.parse::<u64>() {
                 // Set voltage measurement refresh frequency
                 // (Implementation depends on the driver capabilities)
             }
         } else if topic.eq(&self.topic_measure_current_refresh_freq) {
             let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(freq) = cmd.parse::<u64>() {
+            if let Ok(_freq) = cmd.parse::<u64>() {
                 // Set current measurement refresh frequency
                 // (Implementation depends on the driver capabilities)
             }

@@ -4,7 +4,6 @@ use axum::Router;
 use rmcp::transport::{
     streamable_http_server::session::local::LocalSessionManager, StreamableHttpService,
 };
-use rmcp::{RoleServer, Service};
 use std::io::Error as IoError;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -57,8 +56,7 @@ impl McpServer {
         }
 
         // Set up shutdown signal handling
-        let (shutdown_tx, shutdown_rx) = oneshot::channel();
-        let mut shutdown_signal = Some(shutdown_rx);
+        let (shutdown_tx, _shutdown_rx) = oneshot::channel();
 
         // Spawn a task to listen for shutdown signals
         tokio::spawn(async move {
@@ -71,7 +69,7 @@ impl McpServer {
         let server = axum::serve(listener, app);
 
         // Démarrer le serveur dans une tâche séparée
-        let server_handle = tokio::spawn(async move { server.await });
+        let _server_handle = tokio::spawn(async move { server.await });
 
         // Attendre soit l'arrêt du serveur soit le signal d'arrêt
         // tokio::select! {

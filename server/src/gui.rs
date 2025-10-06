@@ -3,8 +3,10 @@ use panduza_power_supply_client::{PowerSupplyClient, PowerSupplyClientBuilder};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+mod button_power;
+use button_power::PowerButton;
+
 const FAVICON: Asset = asset!("/assets/favicon.ico");
-const MAIN_CSS: Asset = asset!("/assets/main.css");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[component]
@@ -21,7 +23,6 @@ pub fn Gui() -> Element {
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         div {
@@ -145,29 +146,13 @@ pub fn PowerSupplyControl() -> Element {
         }
     };
 
-    // Toggle output enable/disable
-    let toggle_output = move || {
-        if let Some(client_arc) = psu_client() {
-            let enabled = output_enabled();
-            spawn(async move {
-                let client = client_arc.lock().await;
-                let result = if enabled {
-                    client.disable_output().await
-                } else {
-                    client.enable_output().await
-                };
+    // Callbacks for PowerButton component
+    let on_output_changed = move |enabled: bool| {
+        output_enabled.set(enabled);
+    };
 
-                match result {
-                    Ok(()) => {
-                        output_enabled.set(!enabled);
-                        status_message.set("Output toggled successfully".to_string());
-                    }
-                    Err(e) => {
-                        status_message.set(format!("Error toggling output: {}", e));
-                    }
-                }
-            });
-        }
+    let on_status_message = move |message: String| {
+        status_message.set(message);
     };
 
     // Set voltage
@@ -315,93 +300,19 @@ pub fn PowerSupplyControl() -> Element {
                 div {
                     class: "grid grid-cols-1 lg:grid-cols-2 gap-6",
 
-                    // Output Control Card
+                    // Output Control Card - Using PowerButton component
                     div {
-                        class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
-                        div {
-                            class: "flex items-center space-x-3 mb-6",
-                            div {
-                                class: "w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center",
-                                span {
-                                    class: "text-white text-sm font-bold",
-                                    "🔋"
-                                }
-                            }
-                            h3 {
-                                class: "text-lg font-semibold text-slate-700",
-                                "Power Output"
-                            }
+                        class: "space-y-3",
+                        PowerButton {
+                            output_enabled: output_enabled(),
+                            psu_client: psu_client(),
+                            on_output_changed: on_output_changed,
+                            on_status_message: on_status_message,
                         }
 
-                        // Status indicator
+                        // Refresh button
                         div {
-                            class: {
-                                let base = "mb-6 p-4 rounded-xl text-center ";
-                                let color_classes = if output_enabled() {
-                                    "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50"
-                                } else {
-                                    "bg-gradient-to-r from-red-50 to-rose-50 border border-red-200/50"
-                                };
-                                format!("{}{}", base, color_classes)
-                            },
-                            div {
-                                class: "flex items-center justify-center space-x-2 mb-2",
-                                div {
-                                    class: {
-                                        if output_enabled() {
-                                            "w-3 h-3 bg-green-400 rounded-full animate-pulse"
-                                        } else {
-                                            "w-3 h-3 bg-red-400 rounded-full"
-                                        }
-                                    }
-                                }
-                                span {
-                                    class: {
-                                        if output_enabled() {
-                                            "text-2xl font-bold text-green-700"
-                                        } else {
-                                            "text-2xl font-bold text-red-700"
-                                        }
-                                    },
-                                    if output_enabled() { "ON" } else { "OFF" }
-                                }
-                            }
-                            p {
-                                class: {
-                                    if output_enabled() {
-                                        "text-sm text-green-600"
-                                    } else {
-                                        "text-sm text-red-600"
-                                    }
-                                },
-                                if output_enabled() { "Output is active" } else { "Output is disabled" }
-                            }
-                        }
-
-                        // Control buttons
-                        div {
-                            class: "space-y-3",
-                            button {
-                                class: {
-                                    if output_enabled() {
-                                        "w-full px-6 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-                                    } else {
-                                        "w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-                                    }
-                                },
-                                onclick: move |_| toggle_output(),
-                                div {
-                                    class: "flex items-center justify-center space-x-2",
-                                    span {
-                                        class: "text-lg",
-                                        if output_enabled() { "🔌" } else { "⚡" }
-                                    }
-                                    span {
-                                        if output_enabled() { "Turn OFF" } else { "Turn ON" }
-                                    }
-                                }
-                            }
-
+                            class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-4 shadow-xl shadow-slate-200/50",
                             button {
                                 class: "w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-sky-500 text-white font-medium rounded-xl hover:from-blue-600 hover:to-sky-600 transition-all duration-200 shadow-md hover:shadow-lg",
                                 onclick: move |_| refresh_state(),
