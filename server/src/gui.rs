@@ -4,11 +4,18 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 mod button_power;
+mod current_setter;
+mod voltage_setter;
+
 use button_power::PowerButton;
+use current_setter::CurrentSetter;
+use voltage_setter::VoltageSetter;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 const BUTTON_POWER_CSS: Asset = asset!("/assets/button_power.css");
+const VOLTAGE_SETTER_CSS: Asset = asset!("/assets/voltage_setter.css");
+const CURRENT_SETTER_CSS: Asset = asset!("/assets/current_setter.css");
 
 #[component]
 pub fn Gui() -> Element {
@@ -26,6 +33,8 @@ pub fn Gui() -> Element {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Link { rel: "stylesheet", href: BUTTON_POWER_CSS }
+        document::Link { rel: "stylesheet", href: VOLTAGE_SETTER_CSS }
+        document::Link { rel: "stylesheet", href: CURRENT_SETTER_CSS }
 
         div {
             class: "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100",
@@ -157,40 +166,14 @@ pub fn PowerSupplyControl() -> Element {
         status_message.set(message);
     };
 
-    // Set voltage
-    let set_voltage_fn = move || {
-        if let Some(client_arc) = psu_client() {
-            let volt = voltage();
-            spawn(async move {
-                let client = client_arc.lock().await;
-                match client.set_voltage(volt.clone()).await {
-                    Ok(()) => {
-                        status_message.set(format!("Voltage set to {}", volt));
-                    }
-                    Err(e) => {
-                        status_message.set(format!("Error setting voltage: {}", e));
-                    }
-                }
-            });
-        }
+    // Callbacks for VoltageSetter component
+    let on_voltage_changed = move |new_voltage: String| {
+        voltage.set(new_voltage);
     };
 
-    // Set current
-    let set_current_fn = move || {
-        if let Some(client_arc) = psu_client() {
-            let curr = current();
-            spawn(async move {
-                let client = client_arc.lock().await;
-                match client.set_current(curr.clone()).await {
-                    Ok(()) => {
-                        status_message.set(format!("Current limit set to {}", curr));
-                    }
-                    Err(e) => {
-                        status_message.set(format!("Error setting current: {}", e));
-                    }
-                }
-            });
-        }
+    // Callbacks for CurrentSetter component
+    let on_current_changed = move |new_current: String| {
+        current.set(new_current);
     };
 
     rsx! {
@@ -312,102 +295,30 @@ pub fn PowerSupplyControl() -> Element {
                             on_status_message: on_status_message,
                         }
 
-                        // Refresh button
-                        div {
-                            class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-4 shadow-xl shadow-slate-200/50",
-                            button {
-                                class: "w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-sky-500 text-white font-medium rounded-xl hover:from-blue-600 hover:to-sky-600 transition-all duration-200 shadow-md hover:shadow-lg",
-                                onclick: move |_| refresh_state(),
-                                div {
-                                    class: "flex items-center justify-center space-x-2",
-                                    span { "🔄" }
-                                    span { "Refresh State" }
-                                }
-                            }
-                        }
                     }
 
                     // Voltage and Current Control Card
                     div {
                         class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
-                        div {
-                            class: "flex items-center space-x-3 mb-6",
-                            div {
-                                class: "w-8 h-8 bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg flex items-center justify-center",
-                                span {
-                                    class: "text-white text-sm font-bold",
-                                    "⚙️"
-                                }
-                            }
-                            h3 {
-                                class: "text-lg font-semibold text-slate-700",
-                                "Power Settings"
-                            }
-                        }
+
 
                         div {
                             class: "space-y-6",
 
-                            // Voltage Control
-                            div {
-                                class: "bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/50 rounded-xl p-4",
-                                label {
-                                    class: "flex items-center space-x-2 text-sm font-semibold text-orange-700 mb-3",
-                                    span { "⚡" }
-                                    span { "Voltage Control" }
-                                }
-                                div {
-                                    class: "flex items-center space-x-3",
-                                    input {
-                                        class: "flex-1 px-4 py-3 bg-white/70 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 text-slate-700 font-medium",
-                                        r#type: "number",
-                                        step: "0.1",
-                                        min: "0",
-                                        placeholder: "0.0",
-                                        value: voltage(),
-                                        oninput: move |evt| voltage.set(evt.value())
-                                    }
-                                    span {
-                                        class: "text-orange-600 font-semibold text-sm",
-                                        "V"
-                                    }
-                                    button {
-                                        class: "px-5 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105",
-                                        onclick: move |_| set_voltage_fn(),
-                                        "Set"
-                                    }
-                                }
+                            // Voltage Control Component
+                            VoltageSetter {
+                                voltage: voltage(),
+                                psu_client: psu_client(),
+                                on_voltage_changed: on_voltage_changed,
+                                on_status_message: on_status_message,
                             }
 
-                            // Current Control
-                            div {
-                                class: "bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200/50 rounded-xl p-4",
-                                label {
-                                    class: "flex items-center space-x-2 text-sm font-semibold text-purple-700 mb-3",
-                                    span { "🔋" }
-                                    span { "Current Limit" }
-                                }
-                                div {
-                                    class: "flex items-center space-x-3",
-                                    input {
-                                        class: "flex-1 px-4 py-3 bg-white/70 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 text-slate-700 font-medium",
-                                        r#type: "number",
-                                        step: "0.01",
-                                        min: "0",
-                                        placeholder: "0.00",
-                                        value: current(),
-                                        oninput: move |evt| current.set(evt.value())
-                                    }
-                                    span {
-                                        class: "text-purple-600 font-semibold text-sm",
-                                        "A"
-                                    }
-                                    button {
-                                        class: "px-5 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105",
-                                        onclick: move |_| set_current_fn(),
-                                        "Set"
-                                    }
-                                }
+                            // Current Control Component
+                            CurrentSetter {
+                                current: current(),
+                                psu_client: psu_client(),
+                                on_current_changed: on_current_changed,
+                                on_status_message: on_status_message,
                             }
                         }
                     }
