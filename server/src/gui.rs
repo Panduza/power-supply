@@ -8,6 +8,7 @@ use button_power::PowerButton;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
+const BUTTON_POWER_CSS: Asset = asset!("/assets/button_power.css");
 
 #[component]
 pub fn Gui() -> Element {
@@ -24,6 +25,7 @@ pub fn Gui() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "stylesheet", href: BUTTON_POWER_CSS }
 
         div {
             class: "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100",

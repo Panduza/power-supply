@@ -56,9 +56,15 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
         div {
             // Control button
             button {
+                class: "power-button",
                 onclick: move |_| toggle_output(),
                 div {
-                    if props.output_enabled { "Turn OFF" } else { "Turn ON" }
+                    class: if props.output_enabled {
+                        "power-button-content power-button-on"
+                    } else {
+                        "power-button-content power-button-off"
+                    },
+                    if props.output_enabled { "ON" } else { "OFF" }
                 }
             }
         }
