@@ -20,27 +20,27 @@ impl PartialEq for DeviceSelectorProps {
 pub fn DeviceSelector(props: DeviceSelectorProps) -> Element {
     rsx! {
         div {
-            class: "device-selector-container",
+            class: "device-selector-container glass-card",
+
             div {
-                class: "device-selector-header",
+                class: "component-header",
                 div {
-                    class: "device-selector-icon",
-                    span {
-                        class: "device-selector-icon-text",
-                        "🔌"
-                    }
+                    class: "device-selector-icon component-icon",
+                    "🔌"
                 }
                 h3 {
-                    class: "device-selector-title",
+                    class: "device-selector-title component-title",
                     "Device Selection"
                 }
             }
+
             label {
-                class: "device-selector-label",
+                class: "block text-sm font-medium mb-2",
                 "Choose Power Supply Device:"
             }
+
             select {
-                class: "device-selector-select",
+                class: "form-select",
                 value: props.selected_device.clone(),
                 onchange: move |evt| {
                     props.on_device_changed.call(evt.value());

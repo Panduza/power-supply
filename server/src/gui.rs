@@ -15,10 +15,7 @@ use voltage_setter::VoltageSetter;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
-const BUTTON_POWER_CSS: Asset = asset!("/assets/button_power.css");
-const VOLTAGE_SETTER_CSS: Asset = asset!("/assets/voltage_setter.css");
-const CURRENT_SETTER_CSS: Asset = asset!("/assets/current_setter.css");
-const DEVICE_SELECTOR_CSS: Asset = asset!("/assets/device_selector.css");
+const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 #[component]
 pub fn Gui() -> Element {
@@ -35,13 +32,9 @@ pub fn Gui() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
-        document::Link { rel: "stylesheet", href: BUTTON_POWER_CSS }
-        document::Link { rel: "stylesheet", href: VOLTAGE_SETTER_CSS }
-        document::Link { rel: "stylesheet", href: CURRENT_SETTER_CSS }
-        document::Link { rel: "stylesheet", href: DEVICE_SELECTOR_CSS }
+        document::Link { rel: "stylesheet", href: MAIN_CSS }
 
         div {
-            // Modern header with status
             header {
                 h1 {
                     "Panduza Power Supply"
@@ -157,30 +150,18 @@ pub fn PowerSupplyControl() -> Element {
 
             // Status Card
             div {
+                class: "text-center mb-6",
                 div {
-                    div {
-                        class: {
-                            if status_message().contains("Error") {
-                                "px-4 py-2 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200/50 rounded-full"
-                            } else if status_message().contains("Connected") || status_message().contains("successfully") {
-                                "px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50 rounded-full"
-                            } else {
-                                "px-4 py-2 bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/50 rounded-full"
-                            }
-                        },
-                        span {
-                            class: {
-                                if status_message().contains("Error") {
-                                    "text-sm font-medium text-red-700"
-                                } else if status_message().contains("Connected") || status_message().contains("successfully") {
-                                    "text-sm font-medium text-green-700"
-                                } else {
-                                    "text-sm font-medium text-blue-700"
-                                }
-                            },
-                            "{status_message}"
+                    class: {
+                        if status_message().contains("Error") {
+                            "status-message error"
+                        } else if status_message().contains("Connected") || status_message().contains("successfully") {
+                            "status-message success"
+                        } else {
+                            "status-message info"
                         }
-                    }
+                    },
+                    "{status_message}"
                 }
             }
 
@@ -194,10 +175,10 @@ pub fn PowerSupplyControl() -> Element {
             if psu_names().is_empty() {
                 // No PSUs available message
                 div {
-                    class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-12 shadow-xl shadow-slate-200/50 text-center",
+                    class: "glass-card text-center",
 
                     h3 {
-                        class: "text-2xl font-bold text-slate-700 mb-3",
+                        class: "component-title text-2xl mb-3",
                         "No Devices Found"
                     }
                     p {
@@ -205,38 +186,28 @@ pub fn PowerSupplyControl() -> Element {
                         "No power supply devices are configured or detected."
                     }
                     div {
-                        class: "inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-full",
-                        span {
-                            class: "text-amber-600 text-sm",
-                            "💡"
-                        }
-                        span {
-                            class: "text-sm text-amber-700 font-medium",
-                            "Check your configuration file"
-                        }
+                        class: "status-message info",
+                        span { "💡 Check your configuration file" }
                     }
                 }
             } else if !selected_psu().is_empty() {
                 // Control Panel
                 div {
-                    class: "grid grid-cols-1 lg:grid-cols-2 gap-6",
+                    class: "control-grid",
 
                     // Output Control Card - Using PowerButton component
                     div {
-                        class: "space-y-3",
                         PowerButton {
                             output_enabled: output_enabled(),
                             psu_client: psu_client(),
                             on_output_changed: on_output_changed,
                             on_status_message: on_status_message,
                         }
-
                     }
 
                     // Voltage and Current Control Card
                     div {
-                        class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
-
+                        class: "glass-card",
 
                         div {
                             class: "space-y-6",

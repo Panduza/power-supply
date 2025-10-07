@@ -54,18 +54,32 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
     rsx! {
         div {
-            // Control button
-            button {
-                class: "power-button",
-                onclick: move |_| toggle_output(),
+            class: "power-button-container glass-card",
+
+            div {
+                class: "component-header",
                 div {
                     class: if props.output_enabled {
-                        "power-button-content power-button-on"
+                        "component-icon btn-success"
                     } else {
-                        "power-button-content power-button-off"
+                        "component-icon btn-error"
                     },
-                    if props.output_enabled { "ON" } else { "OFF" }
+                    if props.output_enabled { "⚡" } else { "⏸" }
                 }
+                h3 {
+                    class: "component-title",
+                    "Power Output"
+                }
+            }
+
+            button {
+                class: if props.output_enabled {
+                    "btn btn-error power-button"
+                } else {
+                    "btn btn-success power-button"
+                },
+                onclick: move |_| toggle_output(),
+                if props.output_enabled { "Turn OFF" } else { "Turn ON" }
             }
         }
     }

@@ -53,15 +53,23 @@ pub fn CurrentSetter(props: CurrentSetterProps) -> Element {
     rsx! {
         div {
             class: "current-setter-container",
-            label {
-                class: "current-setter-label",
-                span { class: "current-setter-icon", "🔋" }
-                span { "Current Limit" }
-            }
+            
             div {
-                class: "current-setter-controls",
+                class: "component-header",
+                span { 
+                    class: "current-setter-icon",
+                    "🔋"
+                }
+                span { 
+                    class: "current-setter-label",
+                    "Current Limit"
+                }
+            }
+            
+            div {
+                class: "input-group",
                 input {
-                    class: "current-setter-input",
+                    class: "form-input",
                     r#type: "number",
                     step: "0.01",
                     min: "0",
@@ -73,11 +81,11 @@ pub fn CurrentSetter(props: CurrentSetterProps) -> Element {
                     }
                 }
                 span {
-                    class: "current-setter-unit",
+                    class: "px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-md text-sm font-medium text-gray-700",
                     "A"
                 }
                 button {
-                    class: "current-setter-button",
+                    class: "btn btn-primary",
                     onclick: move |_| set_current(),
                     "Set"
                 }

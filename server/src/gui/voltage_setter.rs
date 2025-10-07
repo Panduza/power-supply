@@ -53,15 +53,23 @@ pub fn VoltageSetter(props: VoltageSetterProps) -> Element {
     rsx! {
         div {
             class: "voltage-setter-container",
-            label {
-                class: "voltage-setter-label",
-                span { class: "voltage-setter-icon", "⚡" }
-                span { "Voltage Control" }
-            }
+            
             div {
-                class: "voltage-setter-controls",
+                class: "component-header",
+                span { 
+                    class: "voltage-setter-icon",
+                    "⚡"
+                }
+                span { 
+                    class: "voltage-setter-label",
+                    "Voltage Control"
+                }
+            }
+            
+            div {
+                class: "input-group",
                 input {
-                    class: "voltage-setter-input",
+                    class: "form-input",
                     r#type: "number",
                     step: "0.1",
                     min: "0",
@@ -73,11 +81,11 @@ pub fn VoltageSetter(props: VoltageSetterProps) -> Element {
                     }
                 }
                 span {
-                    class: "voltage-setter-unit",
+                    class: "px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-md text-sm font-medium text-gray-700",
                     "V"
                 }
                 button {
-                    class: "voltage-setter-button",
+                    class: "btn btn-primary",
                     onclick: move |_| set_voltage(),
                     "Set"
                 }
