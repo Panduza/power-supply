@@ -80,3 +80,13 @@ cargo build --package panduza-power-supply-server
 }
 ```
 
+- GUI:
+    - Tun a gui without device configured = must show an error message
+    - Select emulator (must be selected by default)
+        - test on/off
+        - test to set voltage
+        - test to set current
+    - Change ON/OFF from MQTT and check that gui show the change
+    - Change voltage from MQTT and check that gui show the change
+    - Change current from MQTT and check that gui show the change
+
