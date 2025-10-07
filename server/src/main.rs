@@ -43,7 +43,19 @@ fn app_component() -> Element {
 pub fn init_logger(level: Level) -> Result<(), SetGlobalDefaultError> {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let sub = tracing_subscriber::FmtSubscriber::builder().with_max_level(level);
+        // Create a filter that keeps the default level but excludes rumqttd logs
+        let level_str = match level {
+            Level::ERROR => "error",
+            Level::WARN => "warn",
+            Level::INFO => "info",
+            Level::DEBUG => "debug",
+            Level::TRACE => "trace",
+        };
+
+        let filter_str = format!("{},rumqttd=off", level_str);
+        let filter = EnvFilter::builder().parse_lossy(&filter_str);
+
+        let sub = tracing_subscriber::FmtSubscriber::builder().with_env_filter(filter);
 
         // if !dioxus_cli_config::is_cli_enabled() {
         //     return set_global_default(sub.finish());
