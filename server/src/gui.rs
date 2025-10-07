@@ -5,10 +5,12 @@ use tokio::sync::Mutex;
 
 mod button_power;
 mod current_setter;
+mod device_selector;
 mod voltage_setter;
 
 use button_power::PowerButton;
 use current_setter::CurrentSetter;
+use device_selector::DeviceSelector;
 use voltage_setter::VoltageSetter;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -16,6 +18,7 @@ const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 const BUTTON_POWER_CSS: Asset = asset!("/assets/button_power.css");
 const VOLTAGE_SETTER_CSS: Asset = asset!("/assets/voltage_setter.css");
 const CURRENT_SETTER_CSS: Asset = asset!("/assets/current_setter.css");
+const DEVICE_SELECTOR_CSS: Asset = asset!("/assets/device_selector.css");
 
 #[component]
 pub fn Gui() -> Element {
@@ -35,50 +38,17 @@ pub fn Gui() -> Element {
         document::Link { rel: "stylesheet", href: BUTTON_POWER_CSS }
         document::Link { rel: "stylesheet", href: VOLTAGE_SETTER_CSS }
         document::Link { rel: "stylesheet", href: CURRENT_SETTER_CSS }
+        document::Link { rel: "stylesheet", href: DEVICE_SELECTOR_CSS }
 
         div {
-            class: "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100",
-
             // Modern header with status
             header {
-                class: "bg-white/80 backdrop-blur-sm border-b border-slate-200/50 sticky top-0 z-10",
-                div {
-                    class: "container mx-auto px-6 py-4 flex justify-between items-center",
-                    div {
-                        class: "flex items-center space-x-3",
-                        div {
-                            class: "w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center",
-                            span {
-                                class: "text-white text-xl font-bold",
-                                "⚡"
-                            }
-                        }
-                        div {
-                            h1 {
-                                class: "text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent",
-                                "Panduza Power Supply"
-                            }
-                            p {
-                                class: "text-sm text-slate-500",
-                                "Control Center"
-                            }
-                        }
-                    }
-                    div {
-                        class: "flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50 rounded-full",
-                        div {
-                            class: "w-2 h-2 bg-green-400 rounded-full animate-pulse"
-                        }
-                        span {
-                            class: "text-sm font-medium text-green-700",
-                            "{runtime_status}"
-                        }
-                    }
+                h1 {
+                    "Panduza Power Supply"
                 }
             }
 
             main {
-                class: "container mx-auto px-6 py-8",
                 PowerSupplyControl {}
             }
         }
@@ -142,7 +112,7 @@ pub fn PowerSupplyControl() -> Element {
     }
 
     // Refresh current state from PSU
-    let refresh_state = move || {
+    let _refresh_state = move || {
         if let Some(client_arc) = psu_client() {
             spawn(async move {
                 let client = client_arc.lock().await;
@@ -176,19 +146,18 @@ pub fn PowerSupplyControl() -> Element {
         current.set(new_current);
     };
 
+    // Callbacks for DeviceSelector component
+    let on_device_changed = move |new_device: String| {
+        selected_psu.set(new_device);
+    };
+
     rsx! {
         div {
             class: "max-w-4xl mx-auto space-y-6",
 
             // Status Card
             div {
-                class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
                 div {
-                    class: "flex items-center justify-between",
-                    h2 {
-                        class: "text-xl font-semibold text-slate-700",
-                        "System Status"
-                    }
                     div {
                         class: {
                             if status_message().contains("Error") {
@@ -215,51 +184,18 @@ pub fn PowerSupplyControl() -> Element {
                 }
             }
 
-            // PSU Selection Card
-            div {
-                class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl shadow-slate-200/50",
-                div {
-                    class: "flex items-center space-x-3 mb-4",
-                    div {
-                        class: "w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center",
-                        span {
-                            class: "text-white text-sm font-bold",
-                            "🔌"
-                        }
-                    }
-                    h3 {
-                        class: "text-lg font-semibold text-slate-700",
-                        "Device Selection"
-                    }
-                }
-                label {
-                    class: "block text-sm font-medium text-slate-600 mb-3",
-                    "Choose Power Supply Device:"
-                }
-                select {
-                    class: "w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-slate-700",
-                    value: selected_psu(),
-                    onchange: move |evt| {
-                        selected_psu.set(evt.value());
-                    },
-                    option { value: "", "Select a device..." }
-                    for name in psu_names() {
-                        option { value: name.clone(), "{name}" }
-                    }
-                }
+            // PSU Selection Card - Using DeviceSelector component
+            DeviceSelector {
+                selected_device: selected_psu(),
+                device_names: psu_names(),
+                on_device_changed: on_device_changed,
             }
 
             if psu_names().is_empty() {
                 // No PSUs available message
                 div {
                     class: "bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl p-12 shadow-xl shadow-slate-200/50 text-center",
-                    div {
-                        class: "w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-slate-100 to-slate-200 rounded-full flex items-center justify-center",
-                        span {
-                            class: "text-4xl text-slate-400",
-                            "⚡"
-                        }
-                    }
+
                     h3 {
                         class: "text-2xl font-bold text-slate-700 mb-3",
                         "No Devices Found"
