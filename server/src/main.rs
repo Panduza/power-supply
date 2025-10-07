@@ -13,6 +13,11 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, error, Level};
 
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::EnvFilter;
+
+use tracing::subscriber::{set_global_default, SetGlobalDefaultError};
+
 // Global state for sharing data between background services and GUI
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -35,9 +40,24 @@ fn app_component() -> Element {
     }
 }
 
+pub fn init_logger(level: Level) -> Result<(), SetGlobalDefaultError> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let sub = tracing_subscriber::FmtSubscriber::builder().with_max_level(level);
+
+        // if !dioxus_cli_config::is_cli_enabled() {
+        //     return set_global_default(sub.finish());
+        // }
+
+        // todo(jon): this is a small hack to clean up logging when running under the CLI
+        // eventually we want to emit everything as json and let the CLI manage the parsing + display
+        set_global_default(sub.without_time().with_target(false).finish())
+    }
+}
+
 fn main() {
     // Init logger
-    dioxus_logger::init(Level::DEBUG).expect("failed to init logger");
+    init_logger(Level::DEBUG).expect("failed to init logger");
 
     // Create global app state
     let app_state = AppState {
