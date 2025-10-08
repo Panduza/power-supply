@@ -98,27 +98,18 @@ pub struct PowerSupplyClient {
 
     /// psu/{name}/control/oe
     topic_control_oe: String,
-
     /// psu/{name}/control/oe/cmd
     topic_control_oe_cmd: String,
 
-    // topic_control_oe_error: String,
     /// psu/{name}/control/voltage
     topic_control_voltage: String,
-
     /// psu/{name}/control/voltage/cmd
     topic_control_voltage_cmd: String,
 
     /// psu/{name}/control/current
     topic_control_current: String,
-
     /// psu/{name}/control/current/cmd
     topic_control_current_cmd: String,
-    // psu/{name}/measure/voltage/refresh_freq
-    // topic_measure_voltage_refresh_freq: String,
-
-    // psu/{name}/measure/current/refresh_freq
-    // topic_measure_current_refresh_freq: String,
 }
 
 impl PowerSupplyClient {
