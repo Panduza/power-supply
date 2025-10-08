@@ -3,6 +3,8 @@ use crate::config::MqttBrokerConfig;
 use bytes::Bytes;
 use rand::Rng;
 use rumqttc::{AsyncClient, MqttOptions};
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -12,6 +14,69 @@ pub use data::MutableData;
 
 mod error;
 pub use error::ClientError;
+
+use std::collections::HashMap;
+
+/// Type alias for async callbacks
+pub type AsyncCallback<T> =
+    Box<dyn Fn(T) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+
+/// Callback ID type for identifying callbacks
+pub type CallbackId = u64;
+
+/// Dynamic callbacks structure to hold multiple callbacks per event type
+#[derive(Default)]
+pub struct DynamicCallbacks {
+    pub oe_callbacks: HashMap<CallbackId, AsyncCallback<bool>>,
+    pub voltage_callbacks: HashMap<CallbackId, AsyncCallback<String>>,
+    pub current_callbacks: HashMap<CallbackId, AsyncCallback<String>>,
+    next_id: CallbackId,
+}
+
+impl DynamicCallbacks {
+    /// Generate a new unique callback ID
+    pub fn next_id(&mut self) -> CallbackId {
+        let id = self.next_id;
+        self.next_id += 1;
+        id
+    }
+
+    /// Add a callback for OE state changes
+    pub fn add_oe_callback(&mut self, callback: AsyncCallback<bool>) -> CallbackId {
+        let id = self.next_id();
+        self.oe_callbacks.insert(id, callback);
+        id
+    }
+
+    /// Add a callback for voltage changes
+    pub fn add_voltage_callback(&mut self, callback: AsyncCallback<String>) -> CallbackId {
+        let id = self.next_id();
+        self.voltage_callbacks.insert(id, callback);
+        id
+    }
+
+    /// Add a callback for current changes
+    pub fn add_current_callback(&mut self, callback: AsyncCallback<String>) -> CallbackId {
+        let id = self.next_id();
+        self.current_callbacks.insert(id, callback);
+        id
+    }
+
+    /// Remove an OE callback
+    pub fn remove_oe_callback(&mut self, id: CallbackId) -> bool {
+        self.oe_callbacks.remove(&id).is_some()
+    }
+
+    /// Remove a voltage callback
+    pub fn remove_voltage_callback(&mut self, id: CallbackId) -> bool {
+        self.voltage_callbacks.remove(&id).is_some()
+    }
+
+    /// Remove a current callback
+    pub fn remove_current_callback(&mut self, id: CallbackId) -> bool {
+        self.current_callbacks.remove(&id).is_some()
+    }
+}
 
 /// Generate a random string of specified length using alphanumeric characters
 fn generate_random_string(length: usize) -> String {
@@ -88,13 +153,14 @@ impl PowerSupplyClientBuilder {
 }
 
 /// Client for interacting with a power supply via MQTT
-#[derive(Clone)]
 pub struct PowerSupplyClient {
     pub psu_name: String,
 
     mqtt_client: AsyncClient,
 
     mutable_data: Arc<Mutex<MutableData>>,
+
+    callbacks: Arc<Mutex<DynamicCallbacks>>,
 
     /// psu/{name}/control/oe
     topic_control_oe: String,
@@ -110,6 +176,23 @@ pub struct PowerSupplyClient {
     topic_control_current: String,
     /// psu/{name}/control/current/cmd
     topic_control_current_cmd: String,
+}
+
+impl Clone for PowerSupplyClient {
+    fn clone(&self) -> Self {
+        Self {
+            psu_name: self.psu_name.clone(),
+            mqtt_client: self.mqtt_client.clone(),
+            mutable_data: Arc::clone(&self.mutable_data),
+            callbacks: Arc::clone(&self.callbacks),
+            topic_control_oe: self.topic_control_oe.clone(),
+            topic_control_oe_cmd: self.topic_control_oe_cmd.clone(),
+            topic_control_voltage: self.topic_control_voltage.clone(),
+            topic_control_voltage_cmd: self.topic_control_voltage_cmd.clone(),
+            topic_control_current: self.topic_control_current.clone(),
+            topic_control_current_cmd: self.topic_control_current_cmd.clone(),
+        }
+    }
 }
 
 impl PowerSupplyClient {
@@ -177,16 +260,48 @@ impl PowerSupplyClient {
         if topic == &self.topic_control_oe {
             let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
             let enabled = msg.trim().eq_ignore_ascii_case("ON");
-            let mut data = self.mutable_data.lock().await;
-            data.enabled = enabled;
+
+            // Update internal state
+            {
+                let mut data = self.mutable_data.lock().await;
+                data.enabled = enabled;
+            }
+
+            // Trigger all OE callbacks
+            let callbacks = self.callbacks.lock().await;
+            for callback in callbacks.oe_callbacks.values() {
+                callback(enabled).await;
+            }
         } else if topic == &self.topic_control_voltage {
             let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
-            let mut data = self.mutable_data.lock().await;
-            data.voltage = msg.trim().to_string();
+            let voltage_str = msg.trim().to_string();
+
+            // Update internal state
+            {
+                let mut data = self.mutable_data.lock().await;
+                data.voltage = voltage_str.clone();
+            }
+
+            // Trigger all voltage callbacks
+            let callbacks = self.callbacks.lock().await;
+            for callback in callbacks.voltage_callbacks.values() {
+                callback(voltage_str.clone()).await;
+            }
         } else if topic == &self.topic_control_current {
             let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
-            let mut data = self.mutable_data.lock().await;
-            data.current = msg.trim().to_string();
+            let current_str = msg.trim().to_string();
+
+            // Update internal state
+            {
+                let mut data = self.mutable_data.lock().await;
+                data.current = current_str.clone();
+            }
+
+            // Trigger all current callbacks
+            let callbacks = self.callbacks.lock().await;
+            for callback in callbacks.current_callbacks.values() {
+                callback(current_str.clone()).await;
+            }
         }
     }
 
@@ -216,6 +331,7 @@ impl PowerSupplyClient {
             mqtt_client: client,
 
             mutable_data: Arc::new(Mutex::new(MutableData::default())),
+            callbacks: Arc::new(Mutex::new(DynamicCallbacks::default())),
 
             topic_control_oe,
             topic_control_oe_cmd,
@@ -328,5 +444,146 @@ impl PowerSupplyClient {
             return Err(ClientError::MqttError(e.to_string()));
         }
         Ok(())
+    }
+
+    // ------------------------------------------------------------------------
+    // Dynamic Callback Management
+    // ------------------------------------------------------------------------
+
+    /// Add a callback for OE (Output Enable) state changes
+    /// Returns the callback ID that can be used to remove it later
+    pub async fn add_oe_callback<F>(&self, callback: F) -> CallbackId
+    where
+        F: Fn(bool) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync + 'static,
+    {
+        let mut callbacks = self.callbacks.lock().await;
+        callbacks.add_oe_callback(Box::new(callback))
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Add a callback for voltage changes
+    /// Returns the callback ID that can be used to remove it later
+    pub async fn add_voltage_callback<F>(&self, callback: F) -> CallbackId
+    where
+        F: Fn(String) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync + 'static,
+    {
+        let mut callbacks = self.callbacks.lock().await;
+        callbacks.add_voltage_callback(Box::new(callback))
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Add a callback for current changes
+    /// Returns the callback ID that can be used to remove it later
+    pub async fn add_current_callback<F>(&self, callback: F) -> CallbackId
+    where
+        F: Fn(String) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync + 'static,
+    {
+        let mut callbacks = self.callbacks.lock().await;
+        callbacks.add_current_callback(Box::new(callback))
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Remove an OE callback by its ID
+    /// Returns true if the callback was found and removed
+    pub async fn remove_oe_callback(&self, id: CallbackId) -> bool {
+        let mut callbacks = self.callbacks.lock().await;
+        callbacks.remove_oe_callback(id)
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Remove a voltage callback by its ID
+    /// Returns true if the callback was found and removed
+    pub async fn remove_voltage_callback(&self, id: CallbackId) -> bool {
+        let mut callbacks = self.callbacks.lock().await;
+        callbacks.remove_voltage_callback(id)
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Remove a current callback by its ID
+    /// Returns true if the callback was found and removed
+    pub async fn remove_current_callback(&self, id: CallbackId) -> bool {
+        let mut callbacks = self.callbacks.lock().await;
+        callbacks.remove_current_callback(id)
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Helper method to add a simple logging callback for OE changes
+    /// Returns the callback ID
+    pub async fn add_oe_logging(&self) -> CallbackId {
+        self.add_oe_callback(|enabled| {
+            Box::pin(async move {
+                println!(
+                    "[PSU] Output Enable: {}",
+                    if enabled { "ON" } else { "OFF" }
+                );
+            })
+        })
+        .await
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Helper method to add a simple logging callback for voltage changes
+    /// Returns the callback ID
+    pub async fn add_voltage_logging(&self) -> CallbackId {
+        self.add_voltage_callback(|voltage| {
+            Box::pin(async move {
+                println!("[PSU] Voltage: {}", voltage);
+            })
+        })
+        .await
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Helper method to add a simple logging callback for current changes
+    /// Returns the callback ID
+    pub async fn add_current_logging(&self) -> CallbackId {
+        self.add_current_callback(|current| {
+            Box::pin(async move {
+                println!("[PSU] Current: {}", current);
+            })
+        })
+        .await
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Helper method to add logging callbacks for all state changes
+    /// Returns a vector of callback IDs
+    pub async fn add_all_logging(&self) -> Vec<CallbackId> {
+        vec![
+            self.add_oe_logging().await,
+            self.add_voltage_logging().await,
+            self.add_current_logging().await,
+        ]
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Remove all callbacks of all types
+    pub async fn clear_all_callbacks(&self) {
+        let mut callbacks = self.callbacks.lock().await;
+        callbacks.oe_callbacks.clear();
+        callbacks.voltage_callbacks.clear();
+        callbacks.current_callbacks.clear();
+    }
+
+    // ------------------------------------------------------------------------
+
+    /// Get the count of active callbacks for each type
+    pub async fn get_callback_counts(&self) -> (usize, usize, usize) {
+        let callbacks = self.callbacks.lock().await;
+        (
+            callbacks.oe_callbacks.len(),
+            callbacks.voltage_callbacks.len(),
+            callbacks.current_callbacks.len(),
+        )
     }
 }
