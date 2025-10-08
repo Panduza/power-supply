@@ -2,8 +2,8 @@
 ///
 /// Requirements
 /// - The power button must be able to toggle the output state
-/// - If the power is enabled display ON and color must be Green
-/// - If the power is disabled display OFF and color must be Red
+/// - If the power is enabled display "ON" and color must be Green
+/// - If the power is disabled display "OFF" and color must be Red
 ///
 use dioxus::prelude::*;
 use panduza_power_supply_client::client::CallbackId;
@@ -162,12 +162,12 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
             button {
                 class: if *output_state.read() {
-                    "btn btn-error power-button"
+                    "btn btn-success power-button"  // Green when ON
                 } else {
-                    "btn btn-success power-button"
+                    "btn btn-error power-button"    // Red when OFF
                 },
                 onclick: move |_| toggle_output(),
-                if *output_state.read() { "Turn OFF" } else { "Turn ON" }
+                if *output_state.read() { "ON" } else { "OFF" }
             }
         }
     }
