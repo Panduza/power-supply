@@ -4,11 +4,11 @@ mod drivers;
 mod factory;
 mod gui;
 mod mcp;
+mod mqtt_runner;
 mod path;
-mod runner;
 
 use dioxus::prelude::*;
-use runner::Runner;
+use mqtt_runner::Runner;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, error, Level};
@@ -104,7 +104,7 @@ fn main() {
 }
 
 async fn initialize_background_services(
-    instances: Arc<Mutex<Vec<runner::RunnerHandler>>>,
+    instances: Arc<Mutex<Vec<mqtt_runner::RunnerHandler>>>,
     app_state: AppState,
 ) {
     // Get user configuration
