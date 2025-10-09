@@ -7,15 +7,16 @@ use tokio::sync::Mutex;
 pub mod helper;
 use helper::{generate_random_string, psu_topic};
 
+/// Handler for the MQTT Runner task
 pub struct RunnerHandler {
-    task_handler: tokio::task::JoinHandle<()>,
+    /// Task handler
+    pub task_handler: tokio::task::JoinHandle<()>,
 }
 
 /// MQTT Runner for handling power supply commands and measurements
 pub struct Runner {
     /// MQTT client
     client: AsyncClient,
-
     /// Instance name
     name: String,
 
