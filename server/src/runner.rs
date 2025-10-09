@@ -17,6 +17,7 @@ pub struct RunnerHandler {
     task_handler: tokio::task::JoinHandle<()>,
 }
 
+/// MQTT Runner for handling power supply commands and measurements
 pub struct Runner {
     /// MQTT client
     client: AsyncClient,
@@ -172,14 +173,38 @@ impl Runner {
     async fn initialize(&self) {
         let mut driver = self.driver.lock().await;
 
+        // Publish initial output enable state
         let oe_value = driver.output_enabled().await.unwrap();
-
         self.client
             .publish(
                 self.topic_control_oe.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
                 Bytes::from(if oe_value { "ON" } else { "OFF" }),
+            )
+            .await
+            .unwrap();
+
+        // Publish initial voltage setting
+        let voltage = driver.get_voltage().await.unwrap();
+        self.client
+            .publish(
+                self.topic_control_voltage.clone(),
+                rumqttc::QoS::AtLeastOnce,
+                true,
+                Bytes::from(voltage),
+            )
+            .await
+            .unwrap();
+
+        // Publish initial current setting
+        let current = driver.get_current().await.unwrap();
+        self.client
+            .publish(
+                self.topic_control_current.clone(),
+                rumqttc::QoS::AtLeastOnce,
+                true,
+                Bytes::from(current),
             )
             .await
             .unwrap();
