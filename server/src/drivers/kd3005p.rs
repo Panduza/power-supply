@@ -99,11 +99,37 @@ impl PowerSupplyDriver for Kd3005pDriver {
     /// Set the voltage
     async fn set_voltage(&mut self, voltage: String) -> Result<(), DriverError> {
         info!("Kd3005p Driver: set_voltage = {}", voltage);
+
+        // Parse voltage value
+        let voltage_value: f32 = voltage
+            .parse()
+            .map_err(|_| DriverError::Generic(format!("Invalid voltage format: {}", voltage)))?;
+
+        // Check security minimum voltage
+        if let Some(min_voltage) = self.security_min_voltage {
+            if voltage_value < min_voltage {
+                return Err(DriverError::VoltageSecurityLimitExceeded(format!(
+                    "Voltage {} is below minimum security limit of {}",
+                    voltage_value, min_voltage
+                )));
+            }
+        }
+
+        // Check security maximum voltage
+        if let Some(max_voltage) = self.security_max_voltage {
+            if voltage_value > max_voltage {
+                return Err(DriverError::VoltageSecurityLimitExceeded(format!(
+                    "Voltage {} exceeds maximum security limit of {}",
+                    voltage_value, max_voltage
+                )));
+            }
+        }
+
         self.driver
             .lock()
             .await
-            .execute(Command::Voltage(voltage.parse().unwrap()))
-            .unwrap();
+            .execute(Command::Voltage(voltage_value))
+            .map_err(|e| DriverError::Generic(format!("Failed to set voltage: {:?}", e)))?;
         Ok(())
     }
 
@@ -131,11 +157,37 @@ impl PowerSupplyDriver for Kd3005pDriver {
     /// Set the current
     async fn set_current(&mut self, current: String) -> Result<(), DriverError> {
         info!("Kd3005p Driver: set_current = {}", current);
+
+        // Parse current value
+        let current_value: f32 = current
+            .parse()
+            .map_err(|_| DriverError::Generic(format!("Invalid current format: {}", current)))?;
+
+        // Check security minimum current
+        if let Some(min_current) = self.security_min_current {
+            if current_value < min_current {
+                return Err(DriverError::CurrentSecurityLimitExceeded(format!(
+                    "Current {} is below minimum security limit of {}",
+                    current_value, min_current
+                )));
+            }
+        }
+
+        // Check security maximum current
+        if let Some(max_current) = self.security_max_current {
+            if current_value > max_current {
+                return Err(DriverError::CurrentSecurityLimitExceeded(format!(
+                    "Current {} exceeds maximum security limit of {}",
+                    current_value, max_current
+                )));
+            }
+        }
+
         self.driver
             .lock()
             .await
-            .execute(Command::Current(current.parse().unwrap()))
-            .unwrap();
+            .execute(Command::Current(current_value))
+            .map_err(|e| DriverError::Generic(format!("Failed to set current: {:?}", e)))?;
         Ok(())
     }
 

@@ -13,15 +13,24 @@ pub struct PowerSupplyEmulator {
     voltage: String,
     #[allow(dead_code)]
     current: String,
+
+    security_min_voltage: Option<f32>,
+    security_max_voltage: Option<f32>,
+    security_min_current: Option<f32>,
+    security_max_current: Option<f32>,
 }
 
 impl PowerSupplyEmulator {
     /// Create a new power supply emulator instance
-    pub fn new(_config: PowerSupplyConfig) -> Self {
+    pub fn new(config: PowerSupplyConfig) -> Self {
         Self {
             state_oe: false,
             voltage: "0".into(),
             current: "0".into(),
+            security_min_voltage: config.security_min_voltage,
+            security_max_voltage: config.security_max_voltage,
+            security_min_current: config.security_min_current,
+            security_max_current: config.security_max_current,
         }
     }
 
@@ -75,16 +84,42 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
     /// Set the voltage
     async fn set_voltage(&mut self, voltage: String) -> Result<(), DriverError> {
         info!("Emulator Driver: set_voltage = {}", voltage);
+
+        // Parse voltage value
+        let voltage_value: f32 = voltage
+            .parse()
+            .map_err(|_| DriverError::Generic(format!("Invalid voltage format: {}", voltage)))?;
+
+        // Check security minimum voltage
+        if let Some(min_voltage) = self.security_min_voltage {
+            if voltage_value < min_voltage {
+                return Err(DriverError::VoltageSecurityLimitExceeded(format!(
+                    "Voltage {} is below minimum security limit of {}",
+                    voltage_value, min_voltage
+                )));
+            }
+        }
+
+        // Check security maximum voltage
+        if let Some(max_voltage) = self.security_max_voltage {
+            if voltage_value > max_voltage {
+                return Err(DriverError::VoltageSecurityLimitExceeded(format!(
+                    "Voltage {} exceeds maximum security limit of {}",
+                    voltage_value, max_voltage
+                )));
+            }
+        }
+
         self.voltage = voltage;
         Ok(())
     }
 
     /// Get the security minimum voltage
     fn security_min_voltage(&self) -> Option<f32> {
-        None
+        self.security_min_voltage
     }
     fn security_max_voltage(&self) -> Option<f32> {
-        None
+        self.security_max_voltage
     }
 
     //--------------------------------------------------------------------------
@@ -100,16 +135,42 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
     /// Set the current
     async fn set_current(&mut self, current: String) -> Result<(), DriverError> {
         info!("Emulator Driver: set_current = {}", current);
+
+        // Parse current value
+        let current_value: f32 = current
+            .parse()
+            .map_err(|_| DriverError::Generic(format!("Invalid current format: {}", current)))?;
+
+        // Check security minimum current
+        if let Some(min_current) = self.security_min_current {
+            if current_value < min_current {
+                return Err(DriverError::CurrentSecurityLimitExceeded(format!(
+                    "Current {} is below minimum security limit of {}",
+                    current_value, min_current
+                )));
+            }
+        }
+
+        // Check security maximum current
+        if let Some(max_current) = self.security_max_current {
+            if current_value > max_current {
+                return Err(DriverError::CurrentSecurityLimitExceeded(format!(
+                    "Current {} exceeds maximum security limit of {}",
+                    current_value, max_current
+                )));
+            }
+        }
+
         self.current = current;
         Ok(())
     }
 
     /// Get the security minimum current
     fn security_min_current(&self) -> Option<f32> {
-        None
+        self.security_min_current
     }
     fn security_max_current(&self) -> Option<f32> {
-        None
+        self.security_max_current
     }
 
     //--------------------------------------------------------------------------
