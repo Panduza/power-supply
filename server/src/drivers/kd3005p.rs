@@ -15,14 +15,23 @@ use ka3005p::Ka3005p;
 /// A power supply emulator for testing and development purposes
 pub struct Kd3005pDriver {
     driver: Arc<Mutex<Ka3005p>>,
+
+    security_min_voltage: Option<f32>,
+    security_max_voltage: Option<f32>,
+    security_min_current: Option<f32>,
+    security_max_current: Option<f32>,
 }
 
 impl Kd3005pDriver {
     /// Create a new power supply emulator instance
-    pub fn new(_config: PowerSupplyConfig) -> Self {
+    pub fn new(config: PowerSupplyConfig) -> Self {
         let dev = ka3005p::find_serial_port().unwrap();
         Self {
             driver: Arc::new(Mutex::new(dev)),
+            security_min_voltage: config.security_min_voltage,
+            security_max_voltage: config.security_max_voltage,
+            security_min_current: config.security_min_current,
+            security_max_current: config.security_max_current,
         }
     }
 
@@ -33,6 +42,10 @@ impl Kd3005pDriver {
         serde_json::json!({
             "model": "kd3005p",
             "description": "A simple power supply from Korad",
+            "security_min_voltage": Some(0.0_f32),
+            "security_max_voltage": Some(30.0_f32),
+            "security_min_current": Some(0.0_f32),
+            "security_max_current": Some(3.0_f32),
         })
     }
 }
@@ -94,6 +107,16 @@ impl PowerSupplyDriver for Kd3005pDriver {
         Ok(())
     }
 
+    /// Get the security minimum voltage
+    fn security_min_voltage(&self) -> Option<f32> {
+        self.security_min_voltage
+    }
+
+    /// Get the security maximum voltage
+    fn security_max_voltage(&self) -> Option<f32> {
+        self.security_max_voltage
+    }
+
     //--------------------------------------------------------------------------
 
     /// Get the current
@@ -114,6 +137,15 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .execute(Command::Current(current.parse().unwrap()))
             .unwrap();
         Ok(())
+    }
+
+    /// Get the security minimum current
+    fn security_min_current(&self) -> Option<f32> {
+        self.security_min_current
+    }
+    /// Get the security maximum current
+    fn security_max_current(&self) -> Option<f32> {
+        self.security_max_current
     }
 
     //--------------------------------------------------------------------------

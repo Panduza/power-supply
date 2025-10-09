@@ -21,9 +21,17 @@ pub trait PowerSupplyDriver: Send + Sync {
     async fn get_voltage(&mut self) -> Result<String, DriverError>;
     async fn set_voltage(&mut self, voltage: String) -> Result<(), DriverError>;
 
+    // Security limits
+    fn security_min_voltage(&self) -> Option<f32>;
+    fn security_max_voltage(&self) -> Option<f32>;
+
     //
     async fn get_current(&mut self) -> Result<String, DriverError>;
     async fn set_current(&mut self, current: String) -> Result<(), DriverError>;
+
+    // Security limits
+    fn security_min_current(&self) -> Option<f32>;
+    fn security_max_current(&self) -> Option<f32>;
 
     //
     async fn measure_voltage(&mut self) -> Result<String, DriverError>;

@@ -79,6 +79,14 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
         Ok(())
     }
 
+    /// Get the security minimum voltage
+    fn security_min_voltage(&self) -> Option<f32> {
+        None
+    }
+    fn security_max_voltage(&self) -> Option<f32> {
+        None
+    }
+
     //--------------------------------------------------------------------------
 
     /// Get the current
@@ -94,6 +102,14 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
         info!("Emulator Driver: set_current = {}", current);
         self.current = current;
         Ok(())
+    }
+
+    /// Get the security minimum current
+    fn security_min_current(&self) -> Option<f32> {
+        None
+    }
+    fn security_max_current(&self) -> Option<f32> {
+        None
     }
 
     //--------------------------------------------------------------------------
