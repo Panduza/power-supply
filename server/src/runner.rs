@@ -241,6 +241,7 @@ impl Runner {
             return;
         }
 
+        // Wait a bit for the device to process the command
         tokio::time::sleep(Duration::from_millis(200)).await;
 
         // Read back the actual output enable state to confirm
@@ -270,6 +271,7 @@ impl Runner {
             .await
             .expect("Failed to set voltage");
 
+        // Wait a bit for the device to process the command
         tokio::time::sleep(Duration::from_millis(200)).await;
 
         // Read back the actual set voltage to confirm
