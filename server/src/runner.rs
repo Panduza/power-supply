@@ -185,8 +185,32 @@ impl Runner {
             .await
             .unwrap();
 
-        // Publish initial voltage setting
-        let voltage = driver.get_voltage().await.unwrap();
+        // Get and check initial voltage setting
+        let mut voltage = driver.get_voltage().await.unwrap();
+        if let Ok(voltage_value) = voltage.parse::<f32>() {
+            let mut adjusted_voltage = voltage_value;
+
+            // Check against minimum voltage limit
+            if let Some(min_voltage) = driver.security_min_voltage() {
+                if voltage_value < min_voltage {
+                    adjusted_voltage = min_voltage;
+                }
+            }
+
+            // Check against maximum voltage limit
+            if let Some(max_voltage) = driver.security_max_voltage() {
+                if voltage_value > max_voltage {
+                    adjusted_voltage = max_voltage;
+                }
+            }
+
+            // If voltage was adjusted, set it in the driver
+            if adjusted_voltage != voltage_value {
+                voltage = adjusted_voltage.to_string();
+                let _ = driver.set_voltage(voltage.clone()).await;
+            }
+        }
+
         self.client
             .publish(
                 self.topic_control_voltage.clone(),
@@ -197,8 +221,32 @@ impl Runner {
             .await
             .unwrap();
 
-        // Publish initial current setting
-        let current = driver.get_current().await.unwrap();
+        // Get and check initial current setting
+        let mut current = driver.get_current().await.unwrap();
+        if let Ok(current_value) = current.parse::<f32>() {
+            let mut adjusted_current = current_value;
+
+            // Check against minimum current limit
+            if let Some(min_current) = driver.security_min_current() {
+                if current_value < min_current {
+                    adjusted_current = min_current;
+                }
+            }
+
+            // Check against maximum current limit
+            if let Some(max_current) = driver.security_max_current() {
+                if current_value > max_current {
+                    adjusted_current = max_current;
+                }
+            }
+
+            // If current was adjusted, set it in the driver
+            if adjusted_current != current_value {
+                current = adjusted_current.to_string();
+                let _ = driver.set_current(current.clone()).await;
+            }
+        }
+
         self.client
             .publish(
                 self.topic_control_current.clone(),
