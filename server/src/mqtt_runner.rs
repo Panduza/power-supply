@@ -64,7 +64,7 @@ impl Runner {
             1883,
         );
         mqttoptions.set_keep_alive(Duration::from_secs(3));
-        let (client, mut event_loop) = AsyncClient::new(mqttoptions, 100);
+        let (client, event_loop) = AsyncClient::new(mqttoptions, 100);
 
         // Create runner object
         let runner = Runner {
@@ -84,8 +84,6 @@ impl Runner {
         };
 
         let task_handler = tokio::spawn(Self::task_loop(client.clone(), event_loop, runner));
-
-        println!("MESSAGE ENGINE STOP !! ");
 
         RunnerHandler { task_handler }
     }

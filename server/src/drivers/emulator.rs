@@ -47,6 +47,17 @@ impl PowerSupplyEmulator {
 
 #[async_trait]
 impl PowerSupplyDriver for PowerSupplyEmulator {
+    /// Initialize the driver
+    async fn initialize(&mut self) -> Result<(), DriverError> {
+        info!("Emulator Driver: initialize");
+        Ok(())
+    }
+    /// Shutdown the driver
+    async fn shutdown(&mut self) -> Result<(), DriverError> {
+        info!("Emulator Driver: shutdown");
+        Ok(())
+    }
+
     /// Get the output enabled state
     async fn output_enabled(&mut self) -> Result<bool, DriverError> {
         info!("Emulator Driver: output_enabled = {}", self.state_oe);

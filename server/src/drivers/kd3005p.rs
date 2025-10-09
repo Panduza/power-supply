@@ -57,6 +57,17 @@ impl Kd3005pDriver {
 
 #[async_trait]
 impl PowerSupplyDriver for Kd3005pDriver {
+    /// Initialize the driver
+    async fn initialize(&mut self) -> Result<(), DriverError> {
+        info!("Emulator Driver: initialize");
+        Ok(())
+    }
+    /// Shutdown the driver
+    async fn shutdown(&mut self) -> Result<(), DriverError> {
+        info!("Emulator Driver: shutdown");
+        Ok(())
+    }
+
     /// Get the output enabled state
     async fn output_enabled(&mut self) -> Result<bool, DriverError> {
         let state_oe = self.driver.lock().await.read_output_enable().unwrap();
