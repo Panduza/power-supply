@@ -70,8 +70,12 @@
 body {
     font-family: var(--font-family);
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
     padding: var(--spacing-xl);
+    margin: 0;
+    box-sizing: border-box;
 }
 
 /* Header Styles */
@@ -490,5 +494,59 @@ header h1 {
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+/* ===== LAYOUT CONSTRAINTS ===== */
+/* Prevent vertical scrolling and fit content to viewport */
+
+/* Main container layout */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* Header fixed height */
+.main-container header {
+    flex-shrink: 0;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Main content area - takes remaining space */
+.main-container main {
+    flex: 1;
+    overflow: auto;
+    padding-bottom: var(--spacing-lg);
+}
+
+/* Content wrapper - constraint max width and center */
+.content-wrapper {
+    max-width: 1024px;
+    /* max-w-4xl equivalent */
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    /* space-y-6 equivalent */
+}
+
+/* Make cards more compact when space is limited */
+@media (max-height: 800px) {
+    .glass-card {
+        padding: var(--spacing-lg);
+    }
+
+    .content-wrapper {
+        gap: var(--spacing-md);
+    }
+
+    header {
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-md);
     }
 }

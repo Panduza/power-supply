@@ -37,6 +37,8 @@ pub fn Gui() -> Element {
         document::Link { rel: "stylesheet", href: MAIN_CSS }
 
         div {
+            class: "main-container",
+
             header {
                 h1 {
                     "Panduza Power Supply"
@@ -148,7 +150,7 @@ pub fn PowerSupplyControl() -> Element {
 
     rsx! {
         div {
-            class: "max-w-4xl mx-auto space-y-6",
+            class: "content-wrapper",
 
             // Status Card
             div {
