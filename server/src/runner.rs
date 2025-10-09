@@ -215,13 +215,20 @@ impl Runner {
                 .unwrap();
             return;
         }
+
+        tokio::time::sleep(Duration::from_millis(200)).await;
+
+        // Read back the actual output enable state to confirm
+        let oe_value = driver.output_enabled().await.expect("Failed to get state");
+        let payload_back = Bytes::from(if oe_value { "ON" } else { "OFF" });
+
         // Confirm the new state by publishing it
         self.client
             .publish(
                 self.topic_control_oe.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
-                payload,
+                payload_back,
             )
             .await
             .unwrap();
@@ -238,13 +245,19 @@ impl Runner {
             .await
             .expect("Failed to set voltage");
 
+        tokio::time::sleep(Duration::from_millis(200)).await;
+
+        // Read back the actual set voltage to confirm
+        let voltage = driver.get_voltage().await.expect("Failed to get voltage");
+        let payload_back = Bytes::from(voltage);
+
         // Confirm the new state by publishing it
         self.client
             .publish(
                 self.topic_control_voltage.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
-                payload,
+                payload_back,
             )
             .await
             .unwrap();

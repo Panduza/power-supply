@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use dioxus::html::tr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -25,7 +26,11 @@ pub struct Kd3005pDriver {
 impl Kd3005pDriver {
     /// Create a new power supply emulator instance
     pub fn new(config: PowerSupplyConfig) -> Self {
-        let dev = ka3005p::find_serial_port().unwrap();
+        let mut dev = ka3005p::find_serial_port().unwrap();
+
+        dev.execute(Command::Ovp(Switch::On)).unwrap();
+        dev.execute(Command::Ocp(Switch::On)).unwrap();
+
         Self {
             driver: Arc::new(Mutex::new(dev)),
             security_min_voltage: config.security_min_voltage,
@@ -69,6 +74,7 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .await
             .execute(Command::Power(Switch::On))
             .unwrap();
+
         Ok(())
     }
 
@@ -82,6 +88,15 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .await
             .execute(Command::Power(Switch::Off))
             .unwrap();
+
+        // Save the settings to the device's memory
+        // Important to avoid bad config after power cycle
+        self.driver
+            .lock()
+            .await
+            .execute(Command::Save(1))
+            .map_err(|e| DriverError::Generic(format!("Failed to save: {:?}", e)))?;
+
         Ok(())
     }
 
@@ -130,6 +145,15 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .await
             .execute(Command::Voltage(voltage_value))
             .map_err(|e| DriverError::Generic(format!("Failed to set voltage: {:?}", e)))?;
+
+        // Save the settings to the device's memory
+        // Important to avoid bad config after power cycle
+        self.driver
+            .lock()
+            .await
+            .execute(Command::Save(1))
+            .map_err(|e| DriverError::Generic(format!("Failed to save: {:?}", e)))?;
+
         Ok(())
     }
 
@@ -188,6 +212,15 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .await
             .execute(Command::Current(current_value))
             .map_err(|e| DriverError::Generic(format!("Failed to set current: {:?}", e)))?;
+
+        // Save the settings to the device's memory
+        // Important to avoid bad config after power cycle
+        self.driver
+            .lock()
+            .await
+            .execute(Command::Save(1))
+            .map_err(|e| DriverError::Generic(format!("Failed to save: {:?}", e)))?;
+
         Ok(())
     }
 
