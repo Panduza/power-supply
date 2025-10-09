@@ -43,6 +43,9 @@ struct PowerSupplyState {
 /// connections to the Panduza platform.
 #[derive(Clone)]
 pub struct PowerSupplyService {
+    /// Power Supply Name provided by the user
+    psu_name: String,
+
     /// Tool router for MCP tools
     tool_router: ToolRouter<PowerSupplyService>,
     /// Prompt router for MCP prompts
@@ -56,11 +59,12 @@ impl PowerSupplyService {
 
     pub fn new(config: GlobalConfig, psu_name: String) -> Self {
         let client = PowerSupplyClientBuilder::from_broker_config(config.broker.clone())
-            .with_power_supply_name(psu_name)
+            .with_power_supply_name(psu_name.clone())
             .build();
         debug!("Client initialized");
 
         Self {
+            psu_name,
             tool_router: Self::tool_router(),
             prompt_router: Self::prompt_router(),
             state: Arc::new(Mutex::new(PowerSupplyState { client })),
@@ -215,10 +219,12 @@ impl ServerHandler for PowerSupplyService {
                 .enable_prompts()
                 .build(),
             server_info: Implementation::from_build_env(),
-            instructions: Some(
-                // Include Panduza topics spec in the server instructions for discoverability
-                "This server provides access to a power supply.".to_string(),
-            ),
+            instructions: Some(format!(
+                r#"""This server provides access to a power supply.
+The name of this power supply is "{}" and can be used by the user to request actions.
+            """#,
+                self.psu_name
+            )),
         }
     }
 }
