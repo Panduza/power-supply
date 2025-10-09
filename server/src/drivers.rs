@@ -8,6 +8,10 @@ use thiserror::Error as ThisError;
 pub enum DriverError {
     #[error("An error occurred: {0}")]
     Generic(String),
+    #[error("Security limit exceeded: {0}")]
+    VoltageSecurityLimitExceeded(String),
+    #[error("Security limit exceeded: {0}")]
+    CurrentSecurityLimitExceeded(String),
 }
 
 #[async_trait]
