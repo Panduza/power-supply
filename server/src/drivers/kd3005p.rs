@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use dioxus::html::tr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -15,28 +14,19 @@ use ka3005p::Ka3005p;
 
 /// A power supply emulator for testing and development purposes
 pub struct Kd3005pDriver {
-    driver: Arc<Mutex<Ka3005p>>,
+    /// Configuration for the power supply
+    config: PowerSupplyConfig,
 
-    security_min_voltage: Option<f32>,
-    security_max_voltage: Option<f32>,
-    security_min_current: Option<f32>,
-    security_max_current: Option<f32>,
+    /// The underlying driver instance
+    driver: Option<Arc<Mutex<Ka3005p>>>,
 }
 
 impl Kd3005pDriver {
     /// Create a new power supply emulator instance
     pub fn new(config: PowerSupplyConfig) -> Self {
-        let mut dev = ka3005p::find_serial_port().unwrap();
-
-        dev.execute(Command::Ovp(Switch::On)).unwrap();
-        dev.execute(Command::Ocp(Switch::On)).unwrap();
-
         Self {
-            driver: Arc::new(Mutex::new(dev)),
-            security_min_voltage: config.security_min_voltage,
-            security_max_voltage: config.security_max_voltage,
-            security_min_current: config.security_min_current,
-            security_max_current: config.security_max_current,
+            config,
+            driver: None,
         }
     }
 
@@ -59,7 +49,14 @@ impl Kd3005pDriver {
 impl PowerSupplyDriver for Kd3005pDriver {
     /// Initialize the driver
     async fn initialize(&mut self) -> Result<(), DriverError> {
-        info!("Emulator Driver: initialize");
+        info!("Kd3005p Driver: initialize");
+        let mut dev = ka3005p::find_serial_port().unwrap();
+
+        dev.execute(Command::Ovp(Switch::On)).unwrap();
+        dev.execute(Command::Ocp(Switch::On)).unwrap();
+
+        self.driver = Some(Arc::new(Mutex::new(dev)));
+
         Ok(())
     }
     /// Shutdown the driver
@@ -70,7 +67,14 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Get the output enabled state
     async fn output_enabled(&mut self) -> Result<bool, DriverError> {
-        let state_oe = self.driver.lock().await.read_output_enable().unwrap();
+        let state_oe = self
+            .driver
+            .as_ref()
+            .expect("Driver not initialized")
+            .lock()
+            .await
+            .read_output_enable()
+            .unwrap();
         info!("Kd3005p Driver: output_enabled = {}", state_oe);
         Ok(state_oe)
     }
@@ -81,6 +85,8 @@ impl PowerSupplyDriver for Kd3005pDriver {
     async fn enable_output(&mut self) -> Result<(), DriverError> {
         info!("Kd3005p Driver: enable_output");
         self.driver
+            .as_ref()
+            .expect("Driver not initialized")
             .lock()
             .await
             .execute(Command::Power(Switch::On))
@@ -95,6 +101,8 @@ impl PowerSupplyDriver for Kd3005pDriver {
     async fn disable_output(&mut self) -> Result<(), DriverError> {
         info!("Kd3005p Driver: disable_output");
         self.driver
+            .as_ref()
+            .expect("Driver not initialized")
             .lock()
             .await
             .execute(Command::Power(Switch::Off))
@@ -103,6 +111,8 @@ impl PowerSupplyDriver for Kd3005pDriver {
         // Save the settings to the device's memory
         // Important to avoid bad config after power cycle
         self.driver
+            .as_ref()
+            .expect("Driver not initialized")
             .lock()
             .await
             .execute(Command::Save(1))
@@ -115,7 +125,14 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Get the voltage
     async fn get_voltage(&mut self) -> Result<String, DriverError> {
-        let voltage = self.driver.lock().await.read_set_voltage().unwrap();
+        let voltage = self
+            .driver
+            .as_ref()
+            .expect("Driver not initialized")
+            .lock()
+            .await
+            .read_set_voltage()
+            .unwrap();
         info!("Kd3005p Driver: get_voltage = {}", voltage);
         Ok(voltage.to_string())
     }
@@ -132,7 +149,7 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .map_err(|_| DriverError::Generic(format!("Invalid voltage format: {}", voltage)))?;
 
         // Check security minimum voltage
-        if let Some(min_voltage) = self.security_min_voltage {
+        if let Some(min_voltage) = self.config.security_min_voltage {
             if voltage_value < min_voltage {
                 return Err(DriverError::VoltageSecurityLimitExceeded(format!(
                     "Voltage {} is below minimum security limit of {}",
@@ -142,7 +159,7 @@ impl PowerSupplyDriver for Kd3005pDriver {
         }
 
         // Check security maximum voltage
-        if let Some(max_voltage) = self.security_max_voltage {
+        if let Some(max_voltage) = self.config.security_max_voltage {
             if voltage_value > max_voltage {
                 return Err(DriverError::VoltageSecurityLimitExceeded(format!(
                     "Voltage {} exceeds maximum security limit of {}",
@@ -152,6 +169,8 @@ impl PowerSupplyDriver for Kd3005pDriver {
         }
 
         self.driver
+            .as_ref()
+            .expect("Driver not initialized")
             .lock()
             .await
             .execute(Command::Voltage(voltage_value))
@@ -160,6 +179,8 @@ impl PowerSupplyDriver for Kd3005pDriver {
         // Save the settings to the device's memory
         // Important to avoid bad config after power cycle
         self.driver
+            .as_ref()
+            .expect("Driver not initialized")
             .lock()
             .await
             .execute(Command::Save(1))
@@ -170,19 +191,26 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Get the security minimum voltage
     fn security_min_voltage(&self) -> Option<f32> {
-        self.security_min_voltage
+        self.config.security_min_voltage
     }
 
     /// Get the security maximum voltage
     fn security_max_voltage(&self) -> Option<f32> {
-        self.security_max_voltage
+        self.config.security_max_voltage
     }
 
     //--------------------------------------------------------------------------
 
     /// Get the current
     async fn get_current(&mut self) -> Result<String, DriverError> {
-        let current = self.driver.lock().await.read_set_current().unwrap();
+        let current = self
+            .driver
+            .as_ref()
+            .expect("Driver not initialized")
+            .lock()
+            .await
+            .read_set_current()
+            .unwrap();
         info!("Kd3005p Driver: get_current = {}", current);
         Ok(current.to_string())
     }
@@ -199,7 +227,7 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .map_err(|_| DriverError::Generic(format!("Invalid current format: {}", current)))?;
 
         // Check security minimum current
-        if let Some(min_current) = self.security_min_current {
+        if let Some(min_current) = self.config.security_min_current {
             if current_value < min_current {
                 return Err(DriverError::CurrentSecurityLimitExceeded(format!(
                     "Current {} is below minimum security limit of {}",
@@ -209,7 +237,7 @@ impl PowerSupplyDriver for Kd3005pDriver {
         }
 
         // Check security maximum current
-        if let Some(max_current) = self.security_max_current {
+        if let Some(max_current) = self.config.security_max_current {
             if current_value > max_current {
                 return Err(DriverError::CurrentSecurityLimitExceeded(format!(
                     "Current {} exceeds maximum security limit of {}",
@@ -219,6 +247,8 @@ impl PowerSupplyDriver for Kd3005pDriver {
         }
 
         self.driver
+            .as_ref()
+            .expect("Driver not initialized")
             .lock()
             .await
             .execute(Command::Current(current_value))
@@ -227,6 +257,8 @@ impl PowerSupplyDriver for Kd3005pDriver {
         // Save the settings to the device's memory
         // Important to avoid bad config after power cycle
         self.driver
+            .as_ref()
+            .expect("Driver not initialized")
             .lock()
             .await
             .execute(Command::Save(1))
@@ -237,11 +269,11 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     /// Get the security minimum current
     fn security_min_current(&self) -> Option<f32> {
-        self.security_min_current
+        self.config.security_min_current
     }
     /// Get the security maximum current
     fn security_max_current(&self) -> Option<f32> {
-        self.security_max_current
+        self.config.security_max_current
     }
 
     //--------------------------------------------------------------------------
