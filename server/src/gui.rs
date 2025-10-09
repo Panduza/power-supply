@@ -4,11 +4,13 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 mod button_power;
+mod config_button;
 mod current_setter;
 mod device_selector;
 mod voltage_setter;
 
 use button_power::PowerButton;
+use config_button::ConfigButton;
 use current_setter::CurrentSetter;
 use device_selector::DeviceSelector;
 use voltage_setter::VoltageSetter;
@@ -171,6 +173,9 @@ pub fn PowerSupplyControl() -> Element {
                 device_names: psu_names(),
                 on_device_changed: on_device_changed,
             }
+
+            // Configuration Button
+            ConfigButton {}
 
             if psu_names().is_empty() {
                 // No PSUs available message
