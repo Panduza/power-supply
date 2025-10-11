@@ -8,7 +8,7 @@ Panduza Power Supply provides multiple interfaces so you can control and monitor
 
 ## Gettings Started
 
-
+For detailed setup instructions, see the [Getting Started Configuration Guide](https://xdoctorwhoz.github.io/panduza-power-supply/#/getting-started/configuration).
 
 ## Server
 
