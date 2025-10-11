@@ -142,6 +142,8 @@ impl Runner {
     async fn initialize(&self) {
         let mut driver = self.driver.lock().await;
 
+        driver.initialize().await.expect("Driver init failed");
+
         // Publish initial output enable state
         let oe_value = driver.output_enabled().await.unwrap();
         self.client

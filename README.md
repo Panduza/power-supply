@@ -1,55 +1,23 @@
-# Panduza Power Supply Workspace
+# Panduza Power Supply
 
-Ce workspace contient les différents packages du projet Panduza Power Supply :
+Panduza Power Supply provides multiple interfaces so you can control and monitor power supplies from different tools and environments:
 
-## Packages
+- MQTT: send and receive commands and status updates via MQTT topics.
+- MCP: control programmatically via the Model Context Protocol (MCP) for integrations and automation.
+- Graphical interface: a desktop GUI for interactive use and visual feedback.
 
-### Server (`server/`)
-Le serveur MQTT et le gestionnaire de périphériques pour l'alimentation électrique Panduza.
+## Server
 
-**Fonctionnalités principales :**
-- Broker MQTT intégré
-- Gestion des pilotes d'émulation
-- Interface web avec Dioxus
-- API MCP (Model Context Protocol)
+`Build the server`
 
-**Pour lancer le server :**
 ```bash
-cargo run --package panduza-power-supply-server
-# ou
-cd server && cargo run
+cd server
+dx serve
 ```
-
-### Client (`client/`) - *À venir*
-Interface client pour interagir avec le serveur Panduza Power Supply.
-
-## Développement
-
-### Build du workspace complet
-```bash
-cargo build
-```
-
-### Test du workspace complet
-```bash
-cargo test
-```
-
-### Commandes utiles
-```bash
-# Lister tous les packages du workspace
-cargo workspace
-
-# Build uniquement le server
-cargo build --package panduza-power-supply-server
-
-# Build uniquement le client (quand il existera)
-# cargo build --package panduza-power-supply-client
-```
-
-
 
 ## Acceptation Tests
+
+For now acceptation tests are manual
 
 - Start a server with an "emulator" instance
 
