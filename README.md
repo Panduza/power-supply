@@ -6,6 +6,10 @@ Panduza Power Supply provides multiple interfaces so you can control and monitor
 - MCP: control programmatically via the Model Context Protocol (MCP) for integrations and automation.
 - Graphical interface: a desktop GUI for interactive use and visual feedback.
 
+## Gettings Started
+
+For detailed setup instructions, see the [Getting Started Configuration Guide](https://xdoctorwhoz.github.io/panduza-power-supply/#/getting-started/configuration).
+
 ## Server
 
 `Build the server`
