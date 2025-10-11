@@ -1,0 +1,39 @@
+[package]
+name = "panduza-power-supply-client"
+version = "0.1.0"
+authors = ["XdoctorwhoZ <xavier.rodriguezalvarez@gmail.com>"]
+edition = "2021"
+description = "Panduza Power Supply Client - Library for interacting with Panduza Power Supply server"
+license = "MIT"
+repository = "https://github.com/XdoctorwhoZ/panduza-power-supply"
+keywords = ["panduza", "power-supply", "mqtt", "client", "embedded"]
+categories = ["api-bindings", "network-programming"]
+
+[lib]
+name = "panduza_power_supply_client"
+crate-type = ["lib"]
+
+[dependencies]
+# Workspace dependencies
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+
+# Client-specific dependencies
+rumqttc = "0.25.0"                                     # MQTT client
+url = "2.4"                                            # URL parsing
+uuid = { version = "1.6", features = ["v4", "serde"] }
+futures = "0.3"                                        # Futures utilities
+dirs = "6.0.0"                                         # Directory utilities
+serde_json5 = "0.2.1"                                  # JSON5 configuration format
+rand = "0.8.5"                                         # Random string generation
+# ---
+bytes = "1.10.1"
+
+
+[dev-dependencies]
+tokio-test = "0.4"
+env_logger = "0.10"
