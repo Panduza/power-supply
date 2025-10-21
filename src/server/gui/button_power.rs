@@ -45,16 +45,16 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                     let initial_oe = client_arc.lock().await.get_oe().await;
                     output_state.set(Some(initial_oe));
 
-                    // Create a channel for communication between MQTT callback and UI
+                    // Create a channel for thread-safe communication between MQTT callback and UI
                     let (tx, mut rx) = mpsc::unbounded_channel::<bool>();
 
                     // Create the callback function
                     let mqtt_callback = {
-                        let tx = tx.clone();
                         move |enabled: bool| -> BoxFuture<'static, ()> {
                             let tx = tx.clone();
                             Box::pin(async move {
                                 info!("MQTT callback triggered with value: {}", enabled);
+                                // Send to UI thread via channel (thread-safe)
                                 let _ = tx.send(enabled);
                             })
                         }
@@ -72,10 +72,9 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                     // Store the callback ID for later cleanup
                     callback_id.set(Some(new_callback_id));
 
-                    // Spawn a task to listen for messages from the MQTT callback
+                    // Listen for messages from MQTT callback and update UI state
                     spawn(async move {
                         while let Some(enabled) = rx.recv().await {
-                            // Update local state
                             output_state.set(Some(enabled));
                         }
                     });
