@@ -1,7 +1,7 @@
+use crate::client::{PowerSupplyClient, PowerSupplyClientBuilder};
 use base64::{engine::general_purpose, Engine as _};
 use dioxus::prelude::*;
 use include_dir::{include_dir, Dir};
-use panduza_power_supply_client::{PowerSupplyClient, PowerSupplyClientBuilder};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 

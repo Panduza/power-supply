@@ -1,5 +1,5 @@
+use crate::client::PowerSupplyClient;
 use dioxus::prelude::*;
-use panduza_power_supply_client::PowerSupplyClient;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -53,19 +53,19 @@ pub fn CurrentSetter(props: CurrentSetterProps) -> Element {
     rsx! {
         div {
             class: "current-setter-container",
-            
+
             div {
                 class: "component-header",
-                span { 
+                span {
                     class: "current-setter-icon",
                     "🔋"
                 }
-                span { 
+                span {
                     class: "current-setter-label",
                     "Current Limit"
                 }
             }
-            
+
             div {
                 class: "input-group",
                 input {

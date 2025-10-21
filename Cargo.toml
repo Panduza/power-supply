@@ -1,38 +1,72 @@
-[workspace]
-members = ["server", "client"]
-resolver = "2"
-
-[workspace.package]
+[package]
+name = "pza-power-supply"
 version = "0.1.0"
 authors = ["XdoctorwhoZ <xavier.rodriguezalvarez@gmail.com>"]
 edition = "2021"
-license = "MIT"
+description = "Panduza Power Supply - MQTT broker and device management"
 
-[workspace.dependencies]
-# Common dependencies that can be shared between packages
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+async-trait = { version = "0.1.89" }
+thiserror = "2.0.17"
+tokio = { version = "1.48.0", features = ["full"] }
+
+tracing = "0.1.37"
+serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.145"
-tokio = { version = "1.43.0", features = ["full", "tracing"] }
-tracing = "0.1.41"
-thiserror = "2.0.16"
-async-trait = "0.1.89"
+
+# Server-specific dependencies
+dioxus = { version = "0.6.3", features = [] }
+dirs = "6.0.0"
+serde_json5 = "0.2.1"
+dioxus-logger = "0.6.2"
+include_dir = "0.7"
+base64 = "0.22"
+
+# ---
+# Random string generator
+rand = "0.8.5"
+# ---
+# MQTT async client
+rumqttc = "0.25.0"
+# ---
+# MQTT Broker
+rumqttd = { git = "https://github.com/Panduza/rumqtt", tag = "0.1.0" }
+# ---
+# Config for rumqttd
+config = "0.15.17"
+# ---
+bytes = "1.10.1"
+# ---
+# KD3005P Driver
+# ka3005p = { version = "0.5.0" }
+ka3005p = { git = "https://github.com/XdoctorwhoZ/ka3005p", branch = "unitary_get_values" }
+# ---
+
+rmcp = { version = "0.7.0", features = [
+    "server",
+    "macros",
+    "transport-sse-server",
+    "transport-io",
+    "transport-streamable-http-server",
+    "auth",
+    "elicitation",
+    "schemars",
+] }
+axum = { version = "0.8", features = ["macros"] }
+tower-http = { version = "0.6", features = ["cors"] }
+schemars = "1.0"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 
-# Profiles for the workspace
-[profile.dev]
-opt-level = 0
-debug = true
+# Client-specific dependencies
+url = "2.4"                                            # URL parsing
+uuid = { version = "1.6", features = ["v4", "serde"] }
+futures = "0.3"                                        # Futures utilities
 
-[profile.release]
-opt-level = 3
-lto = true
 
-[profile.wasm-dev]
-inherits = "dev"
-opt-level = 1
-
-[profile.server-dev]
-inherits = "dev"
-
-[profile.android-dev]
-inherits = "dev"
+[features]
+default = ["desktop"]
+desktop = ["dioxus/desktop"]

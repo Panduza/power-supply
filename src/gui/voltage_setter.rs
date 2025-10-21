@@ -1,5 +1,5 @@
+use crate::client::PowerSupplyClient;
 use dioxus::prelude::*;
-use panduza_power_supply_client::PowerSupplyClient;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -53,19 +53,19 @@ pub fn VoltageSetter(props: VoltageSetterProps) -> Element {
     rsx! {
         div {
             class: "voltage-setter-container",
-            
+
             div {
                 class: "component-header",
-                span { 
+                span {
                     class: "voltage-setter-icon",
                     "⚡"
                 }
-                span { 
+                span {
                     class: "voltage-setter-label",
                     "Voltage Control"
                 }
             }
-            
+
             div {
                 class: "input-group",
                 input {

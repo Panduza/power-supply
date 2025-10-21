@@ -7,6 +7,8 @@ mod mcp;
 mod mqtt_runner;
 mod path;
 
+mod client;
+
 use dioxus::prelude::*;
 use mqtt_runner::Runner;
 use std::sync::Arc;
@@ -22,7 +24,7 @@ use tracing::subscriber::{set_global_default, SetGlobalDefaultError};
 #[derive(Clone, Debug)]
 pub struct AppState {
     pub psu_names: Arc<Mutex<Vec<String>>>,
-    pub broker_config: Arc<Mutex<Option<panduza_power_supply_client::config::MqttBrokerConfig>>>,
+    pub broker_config: Arc<Mutex<Option<client::config::MqttBrokerConfig>>>,
 }
 
 // Static storage for app state
