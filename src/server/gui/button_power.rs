@@ -41,6 +41,10 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
         move || {
             if let Some(client_arc) = psu_client.clone() {
                 spawn(async move {
+                    // Get initial output enable state
+                    let initial_oe = client_arc.lock().await.get_oe().await;
+                    output_state.set(Some(initial_oe));
+
                     // Create a channel for communication between MQTT callback and UI
                     let (tx, mut rx) = mpsc::unbounded_channel::<bool>();
 
