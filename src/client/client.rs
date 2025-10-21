@@ -1,12 +1,14 @@
 use super::config::GlobalConfig;
 use super::config::MqttBrokerConfig;
 use bytes::Bytes;
+use pza_toolkit::async_callback_manager::AsyncCallbackManager;
 use rand::Rng;
 use rumqttc::{AsyncClient, MqttOptions};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::broadcast;
 use tokio::sync::Mutex;
 
 mod data;
@@ -15,6 +17,7 @@ pub use data::MutableData;
 mod error;
 pub use error::ClientError;
 
+use pza_toolkit::rumqtt_client::RumqttCustomAsyncClient;
 use std::collections::HashMap;
 
 /// Type alias for async callbacks
@@ -27,7 +30,6 @@ pub type CallbackId = u64;
 /// Dynamic callbacks structure to hold multiple callbacks per event type
 #[derive(Default)]
 pub struct DynamicCallbacks {
-    pub oe_callbacks: HashMap<CallbackId, AsyncCallback<bool>>,
     pub voltage_callbacks: HashMap<CallbackId, AsyncCallback<String>>,
     pub current_callbacks: HashMap<CallbackId, AsyncCallback<String>>,
     next_id: CallbackId,
@@ -38,13 +40,6 @@ impl DynamicCallbacks {
     pub fn next_id(&mut self) -> CallbackId {
         let id = self.next_id;
         self.next_id += 1;
-        id
-    }
-
-    /// Add a callback for OE state changes
-    pub fn add_oe_callback(&mut self, callback: AsyncCallback<bool>) -> CallbackId {
-        let id = self.next_id();
-        self.oe_callbacks.insert(id, callback);
         id
     }
 
@@ -60,11 +55,6 @@ impl DynamicCallbacks {
         let id = self.next_id();
         self.current_callbacks.insert(id, callback);
         id
-    }
-
-    /// Remove an OE callback
-    pub fn remove_oe_callback(&mut self, id: CallbackId) -> bool {
-        self.oe_callbacks.remove(&id).is_some()
     }
 
     /// Remove a voltage callback
@@ -148,7 +138,11 @@ impl PowerSupplyClientBuilder {
 
         let (client, event_loop) = AsyncClient::new(mqttoptions, 100);
 
-        PowerSupplyClient::new_with_client(self.psu_name.unwrap(), client, event_loop)
+        PowerSupplyClient::new_with_client(
+            self.psu_name.unwrap(),
+            RumqttCustomAsyncClient::new(client, rumqttc::QoS::AtMostOnce, true),
+            event_loop,
+        )
     }
 }
 
@@ -156,11 +150,17 @@ impl PowerSupplyClientBuilder {
 pub struct PowerSupplyClient {
     pub psu_name: String,
 
-    mqtt_client: AsyncClient,
+    /// The underlying MQTT client
+    mqtt_client: RumqttCustomAsyncClient,
 
     mutable_data: Arc<Mutex<MutableData>>,
 
     callbacks: Arc<Mutex<DynamicCallbacks>>,
+
+    /// Callbacks for output enable state changes
+    // oe_callbacks: Arc<Mutex<AsyncCallbackManager<bool>>>,
+    /// Channel for output enable state changes
+    oe_channel: (broadcast::Sender<bool>, broadcast::Receiver<bool>),
 
     /// psu/{name}/control/oe
     topic_control_oe: String,
@@ -185,6 +185,8 @@ impl Clone for PowerSupplyClient {
             mqtt_client: self.mqtt_client.clone(),
             mutable_data: Arc::clone(&self.mutable_data),
             callbacks: Arc::clone(&self.callbacks),
+            // oe_callbacks: Arc::clone(&self.oe_callbacks),
+            oe_channel: (self.oe_channel.0.clone(), self.oe_channel.1.resubscribe()),
             topic_control_oe: self.topic_control_oe.clone(),
             topic_control_oe_cmd: self.topic_control_oe_cmd.clone(),
             topic_control_voltage: self.topic_control_voltage.clone(),
@@ -196,15 +198,6 @@ impl Clone for PowerSupplyClient {
 }
 
 impl PowerSupplyClient {
-    /// Subscribe to all relevant MQTT topics
-    async fn subscribe_to_all(client: AsyncClient, topics: Vec<String>) {
-        for topic in topics {
-            client
-                .subscribe(topic, rumqttc::QoS::AtMostOnce)
-                .await
-                .unwrap();
-        }
-    }
     /// Task loop to handle MQTT events and update client state
     async fn task_loop(
         client: PowerSupplyClient,
@@ -212,7 +205,10 @@ impl PowerSupplyClient {
         sub_topics: Vec<String>,
     ) {
         // Subscribe to all relevant topics
-        Self::subscribe_to_all(client.mqtt_client.clone(), sub_topics.clone()).await;
+        client
+            .mqtt_client
+            .subscribe_to_all(sub_topics.clone())
+            .await;
 
         loop {
             while let Ok(event) = event_loop.poll().await {
@@ -267,11 +263,8 @@ impl PowerSupplyClient {
                 data.enabled = enabled;
             }
 
-            // Trigger all OE callbacks
-            let callbacks = self.callbacks.lock().await;
-            for callback in callbacks.oe_callbacks.values() {
-                callback(enabled).await;
-            }
+            // Broadcast to all listeners
+            self.oe_channel.0.send(enabled).expect("channel error");
         } else if topic == &self.topic_control_voltage {
             let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
             let voltage_str = msg.trim().to_string();
@@ -310,7 +303,7 @@ impl PowerSupplyClient {
     /// Create a new PowerSupplyClient with existing MQTT client and event loop
     pub fn new_with_client(
         psu_name: String,
-        client: AsyncClient,
+        client: RumqttCustomAsyncClient,
         event_loop: rumqttc::EventLoop,
     ) -> Self {
         // Prepare MQTT topics
@@ -326,12 +319,16 @@ impl PowerSupplyClient {
         // let topic_measure_current_refresh_freq =
         //     psu_topic(psu_name.clone(), "measure/current/refresh_freq");
 
+        let (oe_tx, oe_rx) = broadcast::channel(32);
+
         let obj = Self {
             psu_name,
             mqtt_client: client,
 
             mutable_data: Arc::new(Mutex::new(MutableData::default())),
             callbacks: Arc::new(Mutex::new(DynamicCallbacks::default())),
+            // oe_callbacks: Arc::new(Mutex::new(AsyncCallbackManager::new())),
+            oe_channel: (oe_tx, oe_rx),
 
             topic_control_oe,
             topic_control_oe_cmd,
@@ -379,23 +376,11 @@ impl PowerSupplyClient {
 
     // ------------------------------------------------------------------------
 
-    /// Publish a message to a topic
-    pub async fn publish<A: Into<String>>(
-        &self,
-        topic: A,
-        payload: Bytes,
-    ) -> Result<(), rumqttc::ClientError> {
-        self.mqtt_client
-            .publish(topic.into(), rumqttc::QoS::AtLeastOnce, false, payload)
-            .await
-    }
-
-    // ------------------------------------------------------------------------
-
     /// Enable the power supply output
     pub async fn enable_output(&self) -> Result<(), ClientError> {
         let payload = Bytes::from("ON");
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_oe_cmd.clone(), payload)
             .await
         {
@@ -410,6 +395,7 @@ impl PowerSupplyClient {
     pub async fn disable_output(&self) -> Result<(), ClientError> {
         let payload = Bytes::from("OFF");
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_oe_cmd.clone(), payload)
             .await
         {
@@ -424,6 +410,7 @@ impl PowerSupplyClient {
     pub async fn set_voltage(&self, voltage: String) -> Result<(), ClientError> {
         let payload = Bytes::from(voltage);
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_voltage_cmd.clone(), payload)
             .await
         {
@@ -438,6 +425,7 @@ impl PowerSupplyClient {
     pub async fn set_current(&self, current: String) -> Result<(), ClientError> {
         let payload = Bytes::from(current);
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_current_cmd.clone(), payload)
             .await
         {
@@ -449,16 +437,6 @@ impl PowerSupplyClient {
     // ------------------------------------------------------------------------
     // Dynamic Callback Management
     // ------------------------------------------------------------------------
-
-    /// Add a callback for OE (Output Enable) state changes
-    /// Returns the callback ID that can be used to remove it later
-    pub async fn add_oe_callback<F>(&self, callback: F) -> CallbackId
-    where
-        F: Fn(bool) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync + 'static,
-    {
-        let mut callbacks = self.callbacks.lock().await;
-        callbacks.add_oe_callback(Box::new(callback))
-    }
 
     // ------------------------------------------------------------------------
 
@@ -486,15 +464,6 @@ impl PowerSupplyClient {
 
     // ------------------------------------------------------------------------
 
-    /// Remove an OE callback by its ID
-    /// Returns true if the callback was found and removed
-    pub async fn remove_oe_callback(&self, id: CallbackId) -> bool {
-        let mut callbacks = self.callbacks.lock().await;
-        callbacks.remove_oe_callback(id)
-    }
-
-    // ------------------------------------------------------------------------
-
     /// Remove a voltage callback by its ID
     /// Returns true if the callback was found and removed
     pub async fn remove_voltage_callback(&self, id: CallbackId) -> bool {
@@ -509,22 +478,6 @@ impl PowerSupplyClient {
     pub async fn remove_current_callback(&self, id: CallbackId) -> bool {
         let mut callbacks = self.callbacks.lock().await;
         callbacks.remove_current_callback(id)
-    }
-
-    // ------------------------------------------------------------------------
-
-    /// Helper method to add a simple logging callback for OE changes
-    /// Returns the callback ID
-    pub async fn add_oe_logging(&self) -> CallbackId {
-        self.add_oe_callback(|enabled| {
-            Box::pin(async move {
-                println!(
-                    "[PSU] Output Enable: {}",
-                    if enabled { "ON" } else { "OFF" }
-                );
-            })
-        })
-        .await
     }
 
     // ------------------------------------------------------------------------
@@ -559,7 +512,6 @@ impl PowerSupplyClient {
     /// Returns a vector of callback IDs
     pub async fn add_all_logging(&self) -> Vec<CallbackId> {
         vec![
-            self.add_oe_logging().await,
             self.add_voltage_logging().await,
             self.add_current_logging().await,
         ]
@@ -570,20 +522,16 @@ impl PowerSupplyClient {
     /// Remove all callbacks of all types
     pub async fn clear_all_callbacks(&self) {
         let mut callbacks = self.callbacks.lock().await;
-        callbacks.oe_callbacks.clear();
         callbacks.voltage_callbacks.clear();
         callbacks.current_callbacks.clear();
     }
 
     // ------------------------------------------------------------------------
 
-    /// Get the count of active callbacks for each type
-    pub async fn get_callback_counts(&self) -> (usize, usize, usize) {
-        let callbacks = self.callbacks.lock().await;
-        (
-            callbacks.oe_callbacks.len(),
-            callbacks.voltage_callbacks.len(),
-            callbacks.current_callbacks.len(),
-        )
+    /// Subscribe to output enable state changes
+    pub fn subscribe_oe_changes(&self) -> broadcast::Receiver<bool> {
+        self.oe_channel.0.subscribe()
     }
+
+    // ------------------------------------------------------------------------
 }
