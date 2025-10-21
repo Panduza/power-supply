@@ -2,10 +2,11 @@ mod broker;
 mod config;
 mod drivers;
 mod factory;
-mod gui;
+
 mod mcp;
 mod mqtt_runner;
 mod path;
+mod server;
 
 mod client;
 
@@ -38,7 +39,7 @@ fn app_component() -> Element {
     use_context_provider(|| app_state);
 
     rsx! {
-        gui::Gui {}
+        server::gui::Gui {}
     }
 }
 

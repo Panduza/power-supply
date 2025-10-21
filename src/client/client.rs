@@ -15,6 +15,7 @@ pub use data::MutableData;
 mod error;
 pub use error::ClientError;
 
+use pza_toolkit::rumqtt_client::RumqttCustomAsyncClient;
 use std::collections::HashMap;
 
 /// Type alias for async callbacks
@@ -148,7 +149,11 @@ impl PowerSupplyClientBuilder {
 
         let (client, event_loop) = AsyncClient::new(mqttoptions, 100);
 
-        PowerSupplyClient::new_with_client(self.psu_name.unwrap(), client, event_loop)
+        PowerSupplyClient::new_with_client(
+            self.psu_name.unwrap(),
+            RumqttCustomAsyncClient::new(client, rumqttc::QoS::AtMostOnce, true),
+            event_loop,
+        )
     }
 }
 
@@ -156,11 +161,15 @@ impl PowerSupplyClientBuilder {
 pub struct PowerSupplyClient {
     pub psu_name: String,
 
-    mqtt_client: AsyncClient,
+    /// The underlying MQTT client
+    mqtt_client: RumqttCustomAsyncClient,
 
     mutable_data: Arc<Mutex<MutableData>>,
 
     callbacks: Arc<Mutex<DynamicCallbacks>>,
+
+    /// Callbacks for output enable state changes
+    oe_callbacks: Arc<Mutex<AsyncCallbackManager<bool>>>,
 
     /// psu/{name}/control/oe
     topic_control_oe: String,
@@ -196,15 +205,6 @@ impl Clone for PowerSupplyClient {
 }
 
 impl PowerSupplyClient {
-    /// Subscribe to all relevant MQTT topics
-    async fn subscribe_to_all(client: AsyncClient, topics: Vec<String>) {
-        for topic in topics {
-            client
-                .subscribe(topic, rumqttc::QoS::AtMostOnce)
-                .await
-                .unwrap();
-        }
-    }
     /// Task loop to handle MQTT events and update client state
     async fn task_loop(
         client: PowerSupplyClient,
@@ -212,7 +212,10 @@ impl PowerSupplyClient {
         sub_topics: Vec<String>,
     ) {
         // Subscribe to all relevant topics
-        Self::subscribe_to_all(client.mqtt_client.clone(), sub_topics.clone()).await;
+        client
+            .mqtt_client
+            .subscribe_to_all(sub_topics.clone())
+            .await;
 
         loop {
             while let Ok(event) = event_loop.poll().await {
@@ -310,7 +313,7 @@ impl PowerSupplyClient {
     /// Create a new PowerSupplyClient with existing MQTT client and event loop
     pub fn new_with_client(
         psu_name: String,
-        client: AsyncClient,
+        client: RumqttCustomAsyncClient,
         event_loop: rumqttc::EventLoop,
     ) -> Self {
         // Prepare MQTT topics
@@ -379,23 +382,11 @@ impl PowerSupplyClient {
 
     // ------------------------------------------------------------------------
 
-    /// Publish a message to a topic
-    pub async fn publish<A: Into<String>>(
-        &self,
-        topic: A,
-        payload: Bytes,
-    ) -> Result<(), rumqttc::ClientError> {
-        self.mqtt_client
-            .publish(topic.into(), rumqttc::QoS::AtLeastOnce, false, payload)
-            .await
-    }
-
-    // ------------------------------------------------------------------------
-
     /// Enable the power supply output
     pub async fn enable_output(&self) -> Result<(), ClientError> {
         let payload = Bytes::from("ON");
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_oe_cmd.clone(), payload)
             .await
         {
@@ -410,6 +401,7 @@ impl PowerSupplyClient {
     pub async fn disable_output(&self) -> Result<(), ClientError> {
         let payload = Bytes::from("OFF");
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_oe_cmd.clone(), payload)
             .await
         {
@@ -424,6 +416,7 @@ impl PowerSupplyClient {
     pub async fn set_voltage(&self, voltage: String) -> Result<(), ClientError> {
         let payload = Bytes::from(voltage);
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_voltage_cmd.clone(), payload)
             .await
         {
@@ -438,6 +431,7 @@ impl PowerSupplyClient {
     pub async fn set_current(&self, current: String) -> Result<(), ClientError> {
         let payload = Bytes::from(current);
         if let Err(e) = self
+            .mqtt_client
             .publish(self.topic_control_current_cmd.clone(), payload)
             .await
         {
