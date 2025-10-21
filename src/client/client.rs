@@ -1,6 +1,7 @@
 use super::config::GlobalConfig;
 use super::config::MqttBrokerConfig;
 use bytes::Bytes;
+use pza_toolkit::async_callback_manager::AsyncCallbackManager;
 use rand::Rng;
 use rumqttc::{AsyncClient, MqttOptions};
 use std::future::Future;
@@ -28,7 +29,6 @@ pub type CallbackId = u64;
 /// Dynamic callbacks structure to hold multiple callbacks per event type
 #[derive(Default)]
 pub struct DynamicCallbacks {
-    pub oe_callbacks: HashMap<CallbackId, AsyncCallback<bool>>,
     pub voltage_callbacks: HashMap<CallbackId, AsyncCallback<String>>,
     pub current_callbacks: HashMap<CallbackId, AsyncCallback<String>>,
     next_id: CallbackId,
@@ -39,13 +39,6 @@ impl DynamicCallbacks {
     pub fn next_id(&mut self) -> CallbackId {
         let id = self.next_id;
         self.next_id += 1;
-        id
-    }
-
-    /// Add a callback for OE state changes
-    pub fn add_oe_callback(&mut self, callback: AsyncCallback<bool>) -> CallbackId {
-        let id = self.next_id();
-        self.oe_callbacks.insert(id, callback);
         id
     }
 
@@ -61,11 +54,6 @@ impl DynamicCallbacks {
         let id = self.next_id();
         self.current_callbacks.insert(id, callback);
         id
-    }
-
-    /// Remove an OE callback
-    pub fn remove_oe_callback(&mut self, id: CallbackId) -> bool {
-        self.oe_callbacks.remove(&id).is_some()
     }
 
     /// Remove a voltage callback
@@ -194,6 +182,7 @@ impl Clone for PowerSupplyClient {
             mqtt_client: self.mqtt_client.clone(),
             mutable_data: Arc::clone(&self.mutable_data),
             callbacks: Arc::clone(&self.callbacks),
+            oe_callbacks: Arc::clone(&self.oe_callbacks),
             topic_control_oe: self.topic_control_oe.clone(),
             topic_control_oe_cmd: self.topic_control_oe_cmd.clone(),
             topic_control_voltage: self.topic_control_voltage.clone(),
@@ -270,11 +259,9 @@ impl PowerSupplyClient {
                 data.enabled = enabled;
             }
 
-            // Trigger all OE callbacks
-            let callbacks = self.callbacks.lock().await;
-            for callback in callbacks.oe_callbacks.values() {
-                callback(enabled).await;
-            }
+            // Handle pending requests
+            let oe_callbacks = self.oe_callbacks.lock().await;
+            oe_callbacks.execute_all_callbacks(&enabled).await;
         } else if topic == &self.topic_control_voltage {
             let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
             let voltage_str = msg.trim().to_string();
@@ -335,6 +322,7 @@ impl PowerSupplyClient {
 
             mutable_data: Arc::new(Mutex::new(MutableData::default())),
             callbacks: Arc::new(Mutex::new(DynamicCallbacks::default())),
+            oe_callbacks: Arc::new(Mutex::new(AsyncCallbackManager::new())),
 
             topic_control_oe,
             topic_control_oe_cmd,
@@ -444,16 +432,6 @@ impl PowerSupplyClient {
     // Dynamic Callback Management
     // ------------------------------------------------------------------------
 
-    /// Add a callback for OE (Output Enable) state changes
-    /// Returns the callback ID that can be used to remove it later
-    pub async fn add_oe_callback<F>(&self, callback: F) -> CallbackId
-    where
-        F: Fn(bool) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync + 'static,
-    {
-        let mut callbacks = self.callbacks.lock().await;
-        callbacks.add_oe_callback(Box::new(callback))
-    }
-
     // ------------------------------------------------------------------------
 
     /// Add a callback for voltage changes
@@ -480,15 +458,6 @@ impl PowerSupplyClient {
 
     // ------------------------------------------------------------------------
 
-    /// Remove an OE callback by its ID
-    /// Returns true if the callback was found and removed
-    pub async fn remove_oe_callback(&self, id: CallbackId) -> bool {
-        let mut callbacks = self.callbacks.lock().await;
-        callbacks.remove_oe_callback(id)
-    }
-
-    // ------------------------------------------------------------------------
-
     /// Remove a voltage callback by its ID
     /// Returns true if the callback was found and removed
     pub async fn remove_voltage_callback(&self, id: CallbackId) -> bool {
@@ -503,22 +472,6 @@ impl PowerSupplyClient {
     pub async fn remove_current_callback(&self, id: CallbackId) -> bool {
         let mut callbacks = self.callbacks.lock().await;
         callbacks.remove_current_callback(id)
-    }
-
-    // ------------------------------------------------------------------------
-
-    /// Helper method to add a simple logging callback for OE changes
-    /// Returns the callback ID
-    pub async fn add_oe_logging(&self) -> CallbackId {
-        self.add_oe_callback(|enabled| {
-            Box::pin(async move {
-                println!(
-                    "[PSU] Output Enable: {}",
-                    if enabled { "ON" } else { "OFF" }
-                );
-            })
-        })
-        .await
     }
 
     // ------------------------------------------------------------------------
@@ -553,7 +506,6 @@ impl PowerSupplyClient {
     /// Returns a vector of callback IDs
     pub async fn add_all_logging(&self) -> Vec<CallbackId> {
         vec![
-            self.add_oe_logging().await,
             self.add_voltage_logging().await,
             self.add_current_logging().await,
         ]
@@ -564,20 +516,16 @@ impl PowerSupplyClient {
     /// Remove all callbacks of all types
     pub async fn clear_all_callbacks(&self) {
         let mut callbacks = self.callbacks.lock().await;
-        callbacks.oe_callbacks.clear();
         callbacks.voltage_callbacks.clear();
         callbacks.current_callbacks.clear();
     }
 
     // ------------------------------------------------------------------------
 
-    /// Get the count of active callbacks for each type
-    pub async fn get_callback_counts(&self) -> (usize, usize, usize) {
-        let callbacks = self.callbacks.lock().await;
-        (
-            callbacks.oe_callbacks.len(),
-            callbacks.voltage_callbacks.len(),
-            callbacks.current_callbacks.len(),
-        )
+    /// Get a clone of the OE callbacks manager
+    pub fn oe_callbacks(&self) -> Arc<Mutex<AsyncCallbackManager<bool>>> {
+        self.oe_callbacks.clone()
     }
+
+    // ------------------------------------------------------------------------
 }
