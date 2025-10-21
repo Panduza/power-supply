@@ -1,4 +1,6 @@
+use base64::{engine::general_purpose, Engine as _};
 use dioxus::prelude::*;
+use include_dir::{include_dir, Dir};
 use panduza_power_supply_client::{PowerSupplyClient, PowerSupplyClientBuilder};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -15,9 +17,26 @@ use current_setter::CurrentSetter;
 use device_selector::DeviceSelector;
 use voltage_setter::VoltageSetter;
 
-const FAVICON: Asset = asset!("/assets/favicon.ico");
-const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
-const MAIN_CSS: Asset = asset!("/assets/main.css");
+static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets");
+
+fn get_asset_data_url(filename: &str) -> String {
+    if let Some(file) = ASSETS_DIR.get_file(filename) {
+        let contents = file.contents();
+        let mime_type = match filename.split('.').last().unwrap_or("") {
+            "css" => "text/css",
+            "ico" => "image/x-icon",
+            "svg" => "image/svg+xml",
+            _ => "application/octet-stream",
+        };
+        format!(
+            "data:{};base64,{}",
+            mime_type,
+            general_purpose::STANDARD.encode(contents)
+        )
+    } else {
+        String::new()
+    }
+}
 
 #[component]
 pub fn Gui() -> Element {
@@ -32,9 +51,9 @@ pub fn Gui() -> Element {
     });
 
     rsx! {
-        document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
+        document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
+        document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
 
         div {
             class: "main-container",
