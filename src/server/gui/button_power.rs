@@ -1,4 +1,3 @@
-use crate::client::client::CallbackId;
 use crate::client::PowerSupplyClient;
 /// Power Button
 ///
@@ -8,9 +7,8 @@ use crate::client::PowerSupplyClient;
 /// - If the power is disabled display "OFF" and color must be Red
 ///
 use dioxus::prelude::*;
-use futures::future::BoxFuture;
 use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::Mutex;
 use tracing::info;
 
 #[derive(Props, Clone)]
@@ -31,9 +29,6 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     // 3 state possible: Some(true), Some(false), None (unknown)
     let mut output_state: Signal<Option<bool>> = use_signal(|| None);
 
-    // Signal to store the callback ID for cleanup
-    let mut callback_id = use_signal(|| None::<CallbackId>);
-
     // Effect to setup callback when component mounts or client changes
     use_effect({
         let psu_client = props.psu_client.clone();
@@ -45,37 +40,18 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                     let initial_oe = client_arc.lock().await.get_oe().await;
                     output_state.set(Some(initial_oe));
 
-                    // Create a channel for thread-safe communication between MQTT callback and UI
-                    let (tx, mut rx) = mpsc::unbounded_channel::<bool>();
-
-                    // Create the callback function
-                    let mqtt_callback = {
-                        move |enabled: bool| -> BoxFuture<'static, ()> {
-                            let tx = tx.clone();
-                            Box::pin(async move {
-                                info!("MQTT callback triggered with value: {}", enabled);
-                                // Send to UI thread via channel (thread-safe)
-                                let _ = tx.send(enabled);
-                            })
-                        }
-                    };
-
                     // Add new callback to listen for OE changes from MQTT
-                    let new_callback_id = client_arc
-                        .lock()
-                        .await
-                        .oe_callbacks()
-                        .lock()
-                        .await
-                        .add(Box::new(mqtt_callback));
-
-                    // Store the callback ID for later cleanup
-                    callback_id.set(Some(new_callback_id));
+                    let mut oe_changes = client_arc.lock().await.subscribe_oe_changes();
 
                     // Listen for messages from MQTT callback and update UI state
                     spawn(async move {
-                        while let Some(enabled) = rx.recv().await {
-                            output_state.set(Some(enabled));
+                        loop {
+                            let notification = oe_changes.recv().await;
+
+                            match notification {
+                                Ok(enabled) => output_state.set(Some(enabled)),
+                                Err(_) => todo!(),
+                            }
                         }
                     });
                 });

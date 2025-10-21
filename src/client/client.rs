@@ -8,6 +8,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::broadcast;
 use tokio::sync::Mutex;
 
 mod data;
@@ -157,7 +158,9 @@ pub struct PowerSupplyClient {
     callbacks: Arc<Mutex<DynamicCallbacks>>,
 
     /// Callbacks for output enable state changes
-    oe_callbacks: Arc<Mutex<AsyncCallbackManager<bool>>>,
+    // oe_callbacks: Arc<Mutex<AsyncCallbackManager<bool>>>,
+    /// Channel for output enable state changes
+    oe_channel: (broadcast::Sender<bool>, broadcast::Receiver<bool>),
 
     /// psu/{name}/control/oe
     topic_control_oe: String,
@@ -182,7 +185,8 @@ impl Clone for PowerSupplyClient {
             mqtt_client: self.mqtt_client.clone(),
             mutable_data: Arc::clone(&self.mutable_data),
             callbacks: Arc::clone(&self.callbacks),
-            oe_callbacks: Arc::clone(&self.oe_callbacks),
+            // oe_callbacks: Arc::clone(&self.oe_callbacks),
+            oe_channel: (self.oe_channel.0.clone(), self.oe_channel.1.resubscribe()),
             topic_control_oe: self.topic_control_oe.clone(),
             topic_control_oe_cmd: self.topic_control_oe_cmd.clone(),
             topic_control_voltage: self.topic_control_voltage.clone(),
@@ -259,9 +263,8 @@ impl PowerSupplyClient {
                 data.enabled = enabled;
             }
 
-            // Handle pending requests
-            let oe_callbacks = self.oe_callbacks.lock().await;
-            oe_callbacks.execute_all_callbacks(&enabled).await;
+            // Broadcast to all listeners
+            self.oe_channel.0.send(enabled).expect("channel error");
         } else if topic == &self.topic_control_voltage {
             let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
             let voltage_str = msg.trim().to_string();
@@ -316,13 +319,16 @@ impl PowerSupplyClient {
         // let topic_measure_current_refresh_freq =
         //     psu_topic(psu_name.clone(), "measure/current/refresh_freq");
 
+        let (oe_tx, oe_rx) = broadcast::channel(32);
+
         let obj = Self {
             psu_name,
             mqtt_client: client,
 
             mutable_data: Arc::new(Mutex::new(MutableData::default())),
             callbacks: Arc::new(Mutex::new(DynamicCallbacks::default())),
-            oe_callbacks: Arc::new(Mutex::new(AsyncCallbackManager::new())),
+            // oe_callbacks: Arc::new(Mutex::new(AsyncCallbackManager::new())),
+            oe_channel: (oe_tx, oe_rx),
 
             topic_control_oe,
             topic_control_oe_cmd,
@@ -522,9 +528,9 @@ impl PowerSupplyClient {
 
     // ------------------------------------------------------------------------
 
-    /// Get a clone of the OE callbacks manager
-    pub fn oe_callbacks(&self) -> Arc<Mutex<AsyncCallbackManager<bool>>> {
-        self.oe_callbacks.clone()
+    /// Subscribe to output enable state changes
+    pub fn subscribe_oe_changes(&self) -> broadcast::Receiver<bool> {
+        self.oe_channel.0.subscribe()
     }
 
     // ------------------------------------------------------------------------
