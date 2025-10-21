@@ -54,6 +54,7 @@ pub fn Gui() -> Element {
         document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
         document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
         document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
+        document::Link { rel: "stylesheet", href: get_asset_data_url("button_power.css") }
 
         div {
             class: "main-container",
@@ -126,22 +127,6 @@ pub fn PowerSupplyControl() -> Element {
             }
         });
     }
-
-    // Refresh current state from PSU
-    let _refresh_state = move || {
-        if let Some(client_arc) = psu_client() {
-            spawn(async move {
-                let client = client_arc.lock().await;
-                let enabled = client.get_oe().await;
-                let volt = client.get_voltage().await;
-                let curr = client.get_current().await;
-
-                output_enabled.set(enabled);
-                voltage.set(volt);
-                current.set(curr);
-            });
-        }
-    };
 
     // Callbacks for PowerButton component
     let on_output_changed = move |enabled: bool| {
@@ -224,10 +209,7 @@ pub fn PowerSupplyControl() -> Element {
                     // Output Control Card - Using PowerButton component
                     div {
                         PowerButton {
-                            output_enabled: output_enabled(),
                             psu_client: psu_client(),
-                            on_output_changed: on_output_changed,
-                            on_status_message: on_status_message,
                         }
                     }
 
