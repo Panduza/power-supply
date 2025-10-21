@@ -60,12 +60,15 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     });
 
     // Toggle output enable/disable
-    let toggle_output = {
+    let mut toggle_output = {
         let psu_client = props.psu_client.clone();
 
         move || {
             if let Some(client_arc) = psu_client.clone() {
                 let enabled = output_state.read().clone().unwrap_or(false);
+
+                // Set state to undefined immediately when user clicks
+                output_state.set(None);
 
                 spawn(async move {
                     let client = client_arc.lock().await;
@@ -74,14 +77,6 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                     } else {
                         client.enable_output().await
                     };
-
-                    match result {
-                        Ok(()) => {
-                            // Update local state immediately for responsive UI
-                            output_state.set(Some(!enabled));
-                        }
-                        Err(e) => {} // Handle error (e.g., show notification)
-                    }
                 });
             }
         }
@@ -101,7 +96,7 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                 match *output_state.read() {
                     Some(true) => "POWER ENABLED",
                     Some(false) => "POWER DISABLED",
-                    None => "UNKNOWN",
+                    None => "UPDATING...",
                 }
             }
         }
