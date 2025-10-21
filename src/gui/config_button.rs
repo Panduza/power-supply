@@ -6,7 +6,7 @@ pub fn ConfigButton() -> Element {
 
     let open_config_file = move |_| {
         spawn(async move {
-            match crate::path::global_config_file() {
+            match crate::path::server_config_file() {
                 Some(config_path) => {
                     // Open the file with the default system editor
                     #[cfg(target_os = "windows")]

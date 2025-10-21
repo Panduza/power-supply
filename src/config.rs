@@ -62,6 +62,21 @@ pub struct GlobalConfig {
 
 impl Default for GlobalConfig {
     fn default() -> Self {
+        // Create a default power supply configuration for an emulator device
+        let mut devices = HashMap::new();
+        devices.insert(
+            "emulator".to_string(),
+            PowerSupplyConfig {
+                model: "emulator".to_string(),
+                description: None,
+                security_min_voltage: Some(0.0),
+                security_max_voltage: Some(30.0),
+                security_min_current: Some(0.0),
+                security_max_current: Some(5.0),
+            },
+        );
+
+        // Return the default global configuration
         Self {
             gui: GuiConfig { enable: true },
             mcp: McpServerConfig {
@@ -73,7 +88,7 @@ impl Default for GlobalConfig {
                 host: "127.0.0.1".to_string(),
                 port: 1883,
             },
-            devices: None,
+            devices: Some(devices),
         }
     }
 }
@@ -82,7 +97,7 @@ impl GlobalConfig {
     /// Load the global configuration from the configuration file
     ///
     /// - The configuration file is expected to be in JSON5 format
-    /// - Path to the configuration file is determined by `path::global_config_file()`
+    /// - Path to the configuration file is determined by `path::server_config_file()`
     /// - If the file does not exist or cannot be read, generate a default configuration file
     /// - When generating a default configuration file
     ///     - ensure the user root directory exists first
@@ -91,7 +106,7 @@ impl GlobalConfig {
     /// - If path cannot be read, panic and stop application
     ///
     pub fn from_user_file() -> Self {
-        let config_path = crate::path::global_config_file()
+        let config_path = crate::path::server_config_file()
             .expect("Could not determine configuration file path. Application cannot continue.");
 
         info!("Loading configuration from: {}", config_path.display());
@@ -122,7 +137,7 @@ impl GlobalConfig {
     ///
     fn generate_default_config(config_path: &Path) -> Self {
         // Ensure the user root directory exists
-        if let Err(err) = crate::path::ensure_user_root_dir_exists() {
+        if let Err(err) = pza_toolkit::path::ensure_user_root_dir_exists() {
             panic!("Failed to create user root directory: {}", err);
         }
 

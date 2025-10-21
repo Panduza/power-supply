@@ -3,6 +3,7 @@ use thiserror::Error as ThisError;
 use tokio::sync::Mutex;
 use tracing::info;
 
+use crate::path::factory_manifest_file;
 use crate::{config::PowerSupplyConfig, drivers::PowerSupplyDriver, path};
 
 #[derive(ThisError, Debug, Clone)]
@@ -79,11 +80,11 @@ impl Factory {
     /// Write the manifest data to the factory manifest file
     pub fn write_manifest_to_file(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Ensure the user root directory exists
-        path::ensure_user_root_dir_exists()?;
+        pza_toolkit::path::ensure_user_root_dir_exists()?;
 
         // Get the factory manifest file path
-        let manifest_file_path = path::factory_manifest_file()
-            .ok_or("Unable to determine factory manifest file path")?;
+        let manifest_file_path =
+            factory_manifest_file().ok_or("Unable to determine factory manifest file path")?;
 
         info!(
             "Writing factory manifest to: {}",
