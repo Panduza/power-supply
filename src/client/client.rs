@@ -1,5 +1,5 @@
-use crate::config::GlobalConfig;
-use crate::config::MqttBrokerConfig;
+use super::config::GlobalConfig;
+use super::config::MqttBrokerConfig;
 use bytes::Bytes;
 use rand::Rng;
 use rumqttc::{AsyncClient, MqttOptions};

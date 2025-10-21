@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use tracing::{error, info};
 
-use panduza_power_supply_client::config::MqttBrokerConfig;
+use crate::client::config::MqttBrokerConfig;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GuiConfig {
