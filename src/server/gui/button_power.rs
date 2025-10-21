@@ -8,6 +8,7 @@ use crate::client::PowerSupplyClient;
 /// - If the power is disabled display "OFF" and color must be Red
 ///
 use dioxus::prelude::*;
+use futures::future::BoxFuture;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 
@@ -47,26 +48,28 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
         move || {
             if let Some(client_arc) = psu_client.clone() {
                 spawn(async move {
-                    // Remove previous callback if exists
-                    if let Some(id) = callback_id.read().clone() {
-                        client_arc.lock().await.remove_oe_callback(id).await;
-                    }
-
                     // Create a channel for communication between MQTT callback and UI
                     let (tx, mut rx) = mpsc::unbounded_channel::<bool>();
+
+                    // Create the callback function
+                    let mqtt_callback = {
+                        let tx = tx.clone();
+                        move |enabled: bool| -> BoxFuture<'static, ()> {
+                            let tx = tx.clone();
+                            Box::pin(async move {
+                                let _ = tx.send(enabled);
+                            })
+                        }
+                    };
 
                     // Add new callback to listen for OE changes from MQTT
                     let new_callback_id = client_arc
                         .lock()
                         .await
-                        .add_oe_callback(move |enabled| {
-                            let tx = tx.clone();
-                            Box::pin(async move {
-                                // Send the state change through the channel
-                                let _ = tx.send(enabled);
-                            })
-                        })
-                        .await;
+                        .oe_callbacks()
+                        .lock()
+                        .await
+                        .add(Box::new(mqtt_callback));
 
                     // Store the callback ID for later cleanup
                     callback_id.set(Some(new_callback_id));
@@ -88,20 +91,6 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                         }
                     });
                 });
-            }
-        }
-    });
-
-    // Cleanup effect when component unmounts
-    use_drop({
-        let psu_client = props.psu_client.clone();
-        move || {
-            if let Some(client_arc) = psu_client.clone() {
-                if let Some(id) = callback_id.read().clone() {
-                    spawn(async move {
-                        client_arc.lock().await.remove_oe_callback(id).await;
-                    });
-                }
             }
         }
     });
