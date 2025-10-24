@@ -1,4 +1,5 @@
 pub mod emulator;
+pub mod hm310t;
 pub mod kd3005p;
 
 use async_trait::async_trait;
