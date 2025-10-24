@@ -23,7 +23,7 @@ jobs:
             run: cargo build --verbose --release
           
     # ---------------------------------------------------------------------------
-    build-on-windows-builtin:
+    build-on-windows:
         runs-on: windows-latest
         steps:
             - name: Checkout project
