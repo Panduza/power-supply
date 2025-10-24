@@ -44,7 +44,8 @@ include_dir = "0.7"
 ka3005p = { git = "https://github.com/XdoctorwhoZ/ka3005p", branch = "unitary_get_values" }
 # ---
 # Local toolkit dependency
-pza-toolkit = { path = "../toolkit" }
+# pza-toolkit = { path = "../toolkit" }
+pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.0" }
 # ---
 # Random string generator
 rand = "0.8.5"

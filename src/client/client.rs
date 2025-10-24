@@ -140,7 +140,12 @@ impl PowerSupplyClientBuilder {
 
         PowerSupplyClient::new_with_client(
             self.psu_name.unwrap(),
-            RumqttCustomAsyncClient::new(client, rumqttc::QoS::AtMostOnce, true),
+            RumqttCustomAsyncClient::new(
+                client,
+                rumqttc::QoS::AtMostOnce,
+                true,
+                "power-supply".to_string(),
+            ),
             event_loop,
         )
     }

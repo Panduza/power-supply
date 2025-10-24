@@ -1,0 +1,38 @@
+# This workflow tests building the Rust project on different operating systems
+name: Cargo Build Test
+
+on:
+    push:
+        branches: [ "main" ]
+    pull_request:
+        branches: [ "main" ]
+    
+jobs:
+
+    # ---------------------------------------------------------------------------
+    build-on-ubuntu:
+      runs-on: ubuntu-latest
+      steps:
+          - name: Checkout project
+            uses: actions/checkout@v4
+
+          - name: Display cargo version
+            run: cargo --version
+          
+          - name: Try to Build
+            run: cargo build --verbose --release
+          
+    # ---------------------------------------------------------------------------
+    build-on-windows-builtin:
+        runs-on: windows-latest
+        steps:
+            - name: Checkout project
+              uses: actions/checkout@v4
+
+            - name: Display cargo version
+              run: cargo --version
+            
+            - name: Try to Build
+              run: cargo build --verbose --release
+
+                  
