@@ -22,11 +22,15 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
     // Rendering the button
     rsx! {
         div {
+
+
             div { "ON" }
             button {
                 "TOGGLE"
             }
+
             div {
+
                 input {
                     r#type: "number",
                     step: "0.01",
@@ -37,6 +41,7 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
                 span { "V" }
             }
             button { "SET" }
+
             div {
                 input {
                     r#type: "number",
