@@ -11,6 +11,9 @@ mod current_setter;
 mod device_selector;
 mod voltage_setter;
 
+mod control_box;
+use control_box::ControlBox;
+
 use button_power::PowerButton;
 use config_button::ConfigButton;
 use current_setter::CurrentSetter;
@@ -66,6 +69,7 @@ pub fn Gui() -> Element {
             }
 
             main {
+                ControlBox {}
                 PowerSupplyControl {}
             }
         }
