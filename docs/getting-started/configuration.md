@@ -189,7 +189,7 @@ Configuration for development with emulator and all interfaces enabled:
   "mcp": {
     "enable": true,
     "host": "127.0.0.1",
-    "port": 50051
+    "port": 50051  // Note: Server currently runs on port 3000 regardless of this setting
   },
   "broker": {
     "host": "127.0.0.1",
