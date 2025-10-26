@@ -29,6 +29,7 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
     // Rendering the button
     rsx! {
         div {
+            class: "control-box-container",
 
             DeviceSelector {
                 selected_device: "".to_string(),
