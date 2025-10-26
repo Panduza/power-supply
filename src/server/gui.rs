@@ -62,7 +62,6 @@ pub fn Gui() -> Element {
 
             main {
                 ControlBox {}
-                PowerSupplyControl {}
             }
         }
     }
@@ -72,9 +71,6 @@ pub fn Gui() -> Element {
 pub fn PowerSupplyControl() -> Element {
     let app_state = use_context::<crate::AppState>();
     let mut selected_psu = use_signal(|| String::new());
-    let mut output_enabled = use_signal(|| false);
-    let mut voltage = use_signal(|| "0.0".to_string());
-    let mut current = use_signal(|| "0.0".to_string());
     let mut status_message = use_signal(|| "Ready".to_string());
     let mut psu_names = use_signal(|| Vec::<String>::new());
     let mut psu_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
@@ -124,57 +120,11 @@ pub fn PowerSupplyControl() -> Element {
         });
     }
 
-    // Callbacks for PowerButton component
-    let on_output_changed = move |enabled: bool| {
-        output_enabled.set(enabled);
-    };
-
-    let on_status_message = move |message: String| {
-        status_message.set(message);
-    };
-
-    // Callbacks for VoltageSetter component
-    let on_voltage_changed = move |new_voltage: String| {
-        voltage.set(new_voltage);
-    };
-
-    // Callbacks for CurrentSetter component
-    let on_current_changed = move |new_current: String| {
-        current.set(new_current);
-    };
-
-    // Callbacks for DeviceSelector component
-    let on_device_changed = move |new_device: String| {
-        selected_psu.set(new_device);
-    };
-
     rsx! {
         div {
             class: "content-wrapper",
 
-            // Status Card
-            div {
-                class: "text-center mb-6",
-                div {
-                    class: {
-                        if status_message().contains("Error") {
-                            "status-message error"
-                        } else if status_message().contains("Connected") || status_message().contains("successfully") {
-                            "status-message success"
-                        } else {
-                            "status-message info"
-                        }
-                    },
-                    "{status_message}"
-                }
-            }
 
-            // // PSU Selection Card - Using DeviceSelector component
-            // DeviceSelector {
-            //     selected_device: selected_psu(),
-            //     device_names: psu_names(),
-            //     on_device_changed: on_device_changed,
-            // }
 
             // Configuration Button
             ConfigButton {}

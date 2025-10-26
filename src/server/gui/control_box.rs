@@ -3,12 +3,14 @@ use crate::client::PowerSupplyClient;
 use dioxus::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::info;
 
 mod button_power;
 mod current_setter;
 mod device_selector;
 mod voltage_setter;
+
+pub use button_power::PowerButton;
+pub use device_selector::DeviceSelector;
 
 #[derive(Props, Clone)]
 pub struct ControlBoxProps {
@@ -28,36 +30,15 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
     rsx! {
         div {
 
-
-            div { "ON" }
-            button {
-                "TOGGLE"
+            DeviceSelector {
+                selected_device: "".to_string(),
+                device_names: vec![],
+                on_device_changed: |_| {},
             }
 
-            div {
-
-                input {
-                    r#type: "number",
-                    step: "0.01",
-                    min: "0",
-                    placeholder: "0.00",
-                    value: 5.0,
-                }
-                span { "V" }
+            PowerButton {
+                psu_client: props.psu_client.clone(),
             }
-            button { "SET" }
-
-            div {
-                input {
-                    r#type: "number",
-                    step: "0.01",
-                    min: "0",
-                    placeholder: "0.00",
-                    value: 5.0,
-                }
-                span { "A" }
-            }
-            button { "SET" }
         }
     }
 }

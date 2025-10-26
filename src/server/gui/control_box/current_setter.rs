@@ -56,10 +56,7 @@ pub fn CurrentSetter(props: CurrentSetterProps) -> Element {
 
             div {
                 class: "component-header",
-                span {
-                    class: "current-setter-icon",
-                    "🔋"
-                }
+
                 span {
                     class: "current-setter-label",
                     "Current Limit"

@@ -109,9 +109,9 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
             // Status display
             div {
                 class: match current_state {
-                    Some(true) => "power-button-status-on",
-                    Some(false) => "power-button-status-off",
-                    None => "power-button-status-unknown",
+                    Some(true) => "power-button-status on",
+                    Some(false) => "power-button-status off",
+                    None => "power-button-status unknown",
                 },
                 match current_state {
                     Some(true) => "ENABLED",
@@ -123,9 +123,9 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
             // Toggle button
             button {
                 class: match current_state {
-                    Some(true) => "power-button-toggle-enabled",
-                    Some(false) => "power-button-toggle-enabled",
-                    None => "power-button-toggle-disabled",
+                    Some(true) => "power-button-toggle enabled",
+                    Some(false) => "power-button-toggle enabled",
+                    None => "power-button-toggle disabled",
                 },
                 disabled: current_state.is_none(),
                 onclick: toggle_output,
