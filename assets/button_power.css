@@ -60,11 +60,11 @@
 /* Toggle Button Styles */
 .power-button-toggle-enabled,
 .power-button-toggle-disabled {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
+    width: 120px;
+    height: 50px;
+    border-radius: 12px;
     border: none;
-    font-size: 24px;
+    font-size: 16px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -77,24 +77,18 @@
 }
 
 .power-button-toggle-enabled {
-    background: linear-gradient(145deg, #28a745, #20c997);
+    background: linear-gradient(145deg, #007bff, #0056b3);
     color: white;
     box-shadow:
-        0 8px 16px rgba(40, 167, 69, 0.3),
+        0 4px 12px rgba(0, 123, 255, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-.power-button-toggle-enabled::before {
-    content: "⚡";
-    font-size: 32px;
-    opacity: 0.9;
-}
-
 .power-button-toggle-enabled:hover {
-    background: linear-gradient(145deg, #218838, #1e7e34);
+    background: linear-gradient(145deg, #0056b3, #004085);
     transform: scale(1.05);
     box-shadow:
-        0 12px 24px rgba(40, 167, 69, 0.4),
+        0 6px 16px rgba(0, 123, 255, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
@@ -155,13 +149,8 @@
 
     .power-button-toggle-enabled,
     .power-button-toggle-disabled {
-        width: 70px;
-        height: 70px;
-        font-size: 20px;
-    }
-
-    .power-button-toggle-enabled::before,
-    .power-button-toggle-disabled::before {
-        font-size: 24px;
+        width: 100px;
+        height: 45px;
+        font-size: 14px;
     }
 }

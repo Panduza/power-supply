@@ -99,14 +99,20 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
             // Status display
             div {
+                class: "power-button-label",
+                "POWER"
+            }
+
+            // Status display
+            div {
                 class: match current_state {
                     Some(true) => "power-button-status-on",
                     Some(false) => "power-button-status-off",
                     None => "power-button-status-unknown",
                 },
                 match current_state {
-                    Some(true) => "POWER ENABLED",
-                    Some(false) => "POWER DISABLED",
+                    Some(true) => "ENABLED",
+                    Some(false) => "DISABLED",
                     None => "UPDATING...",
                 }
             }
