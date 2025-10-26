@@ -50,7 +50,7 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
                             match notification {
                                 Ok(enabled) => output_state.set(Some(enabled)),
-                                Err(_) => todo!(),
+                                Err(_) => break, // Exit loop on error instead of todo!()
                             }
                         }
                     });
@@ -60,27 +60,37 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     });
 
     // Toggle output enable/disable
-    let mut toggle_output = {
+    let toggle_output = {
         let psu_client = props.psu_client.clone();
 
-        move || {
+        move |_| {
             if let Some(client_arc) = psu_client.clone() {
-                let enabled = output_state.read().clone().unwrap_or(false);
+                // Read the current state once and store it
+                let current_enabled = output_state.read().clone().unwrap_or(false);
 
                 // Set state to undefined immediately when user clicks
                 output_state.set(None);
 
                 spawn(async move {
                     let client = client_arc.lock().await;
-                    let result = if enabled {
+                    let result = if current_enabled {
                         client.disable_output().await
                     } else {
                         client.enable_output().await
                     };
+
+                    if let Err(e) = result {
+                        info!("Error toggling power output: {:?}", e);
+                        // Reset to previous state on error
+                        output_state.set(Some(current_enabled));
+                    }
                 });
             }
         }
     };
+
+    // Get current state for rendering (read once)
+    let current_state = output_state.read().clone();
 
     // Rendering the button
     rsx! {
@@ -89,12 +99,12 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
             // Status display
             div {
-                class: match *output_state.read() {
+                class: match current_state {
                     Some(true) => "power-button-status-on",
                     Some(false) => "power-button-status-off",
                     None => "power-button-status-unknown",
                 },
-                match *output_state.read() {
+                match current_state {
                     Some(true) => "POWER ENABLED",
                     Some(false) => "POWER DISABLED",
                     None => "UPDATING...",
@@ -103,16 +113,14 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
             // Toggle button
             button {
-                class: match *output_state.read() {
+                class: match current_state {
                     Some(true) => "power-button-toggle-enabled",
                     Some(false) => "power-button-toggle-enabled",
                     None => "power-button-toggle-disabled",
                 },
-                onclick: move |_| match *output_state.read() {
-                    Some(true) =>  toggle_output(),
-                    Some(false) =>  toggle_output(),
-                    None => {},
-                },
+                disabled: current_state.is_none(),
+                onclick: toggle_output,
+                "TOGGLE"
             }
         }
     }
