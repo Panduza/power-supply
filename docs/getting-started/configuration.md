@@ -91,8 +91,12 @@ Controls the Model Context Protocol server for programmatic access (e.g., GitHub
   - Default: `false`
 - `host` (string): IP address to bind the MCP server
   - Default: `"127.0.0.1"`
+  - **Note**: Currently not used; server binds to `127.0.0.1`
 - `port` (number): Port number for the MCP server
   - Default: `50051`
+  - **Note**: Currently not used; server listens on port `3000`
+
+?> **Current Implementation**: The MCP server currently runs on `http://127.0.0.1:3000` regardless of the configured values. The `host` and `port` settings are reserved for future use.
 
 ### MQTT Broker Configuration
 
@@ -185,7 +189,7 @@ Configuration for development with emulator and all interfaces enabled:
   "mcp": {
     "enable": true,
     "host": "127.0.0.1",
-    "port": 3000
+    "port": 50051
   },
   "broker": {
     "host": "127.0.0.1",
