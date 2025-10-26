@@ -28,21 +28,28 @@ Panduza Power Supply is a versatile application that provides multiple interface
 
 ## Quick Start
 
-### Building the Server
+### Building and Running
 
 ```bash
-cd server
-dx serve
+# Clone the repository
+git clone https://github.com/Panduza/power-supply.git
+cd power-supply
+
+# Build and run
+cargo run --release
 ```
 
 For detailed installation instructions, configuration options, and usage examples, please refer to the documentation sections in the sidebar.
 
 ## Architecture
 
-The project is organized into two main components:
+The application is built in Rust with the following key components:
 
-- **Server**: The core application that manages power supply connections and provides interfaces (MQTT, MCP, GUI)
-- **Client**: Libraries and examples for interacting with the server
+- **Drivers**: Device-specific implementations for controlling power supplies
+- **MQTT Runner**: Manages MQTT communication and state synchronization
+- **MCP Server**: Provides Model Context Protocol interface for integrations
+- **GUI**: Native desktop interface built with Dioxus
+- **Configuration**: JSON5-based configuration management
 
 ## Contributing
 
