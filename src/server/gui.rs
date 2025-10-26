@@ -1,4 +1,8 @@
-use crate::client::{PowerSupplyClient, PowerSupplyClientBuilder};
+use crate::{
+    client::{PowerSupplyClient, PowerSupplyClientBuilder},
+    server::ServerState,
+    SERVER_STATE_STORAGE,
+};
 use base64::{engine::general_purpose, Engine as _};
 use dioxus::prelude::*;
 use include_dir::{include_dir, Dir};
@@ -35,6 +39,12 @@ fn get_asset_data_url(filename: &str) -> String {
 
 #[component]
 pub fn Gui() -> Element {
+    // server_state: ServerState
+    // Provide server state context
+
+    let server_state = SERVER_STATE_STORAGE.get().unwrap().clone();
+    use_context_provider(|| server_state);
+
     rsx! {
         document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
         document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }

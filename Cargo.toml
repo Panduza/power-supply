@@ -9,6 +9,7 @@ description = "Panduza Power Supply - MQTT broker and device management"
 
 [dependencies]
 
+once_cell = "1.21.3"
 # ---
 # Trait for async functions in traits
 async-trait = { version = "0.1.89" }
