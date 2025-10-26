@@ -42,6 +42,10 @@ fn main() {
     // Init logger
     init_logger(Level::DEBUG).expect("failed to init logger");
 
+    // Get user configuration
+    let config = config::ServerMainConfig::from_user_file();
+    info!("Loaded configuration: {:?}", config);
+
     // Create global app state
     let server_state = ServerState {
         instance_names: Arc::new(Mutex::new(Vec::new())),
@@ -70,17 +74,13 @@ fn main() {
     // });
 
     // Launch Dioxus app on the main thread
-    // dioxus::launch(|| server::gui::Gui(server_state));
-    dioxus::launch(server::gui::Gui);
+    dioxus::launch(server::Gui);
 }
 
 async fn initialize_background_services(
     instances: Arc<Mutex<Vec<mqtt_runner::RunnerHandler>>>,
     app_state: ServerState,
 ) {
-    // // Get user configuration
-    // let config = config::GlobalConfig::from_user_file();
-    // debug!("Loaded configuration: {:?}", config);
 
     // // Update broker config in app state
     // {

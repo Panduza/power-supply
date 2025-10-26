@@ -1,4 +1,4 @@
-use crate::config::GlobalConfig;
+use crate::config::ServerMainConfig;
 use config::Map;
 use config::Value;
 use rumqttd::Broker;
@@ -6,7 +6,7 @@ use rumqttd::Config;
 use tracing::info;
 
 /// Start the MQTT broker in a separate thread
-pub fn start(config: &GlobalConfig) -> std::thread::JoinHandle<()> {
+pub fn start(config: &ServerMainConfig) -> std::thread::JoinHandle<()> {
     //
     // info
     info!("----- SERVICE : START BROKER -----");

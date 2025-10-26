@@ -22,7 +22,7 @@ use tracing::info;
 use crate::client::PowerSupplyClient;
 use crate::client::PowerSupplyClientBuilder;
 
-use crate::config::GlobalConfig;
+use crate::config::ServerMainConfig;
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 struct VoltageParams {
@@ -57,7 +57,7 @@ pub struct PowerSupplyService {
 impl PowerSupplyService {
     //--------------------------------------------------------------------------
 
-    pub fn new(config: GlobalConfig, psu_name: String) -> Self {
+    pub fn new(config: ServerMainConfig, psu_name: String) -> Self {
         let client = PowerSupplyClientBuilder::from_broker_config(config.broker.clone())
             .with_power_supply_name(psu_name.clone())
             .build();

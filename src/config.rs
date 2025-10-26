@@ -46,7 +46,7 @@ pub struct PowerSupplyConfig {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GlobalConfig {
+pub struct ServerMainConfig {
     /// GUI configuration
     pub gui: GuiConfig,
 
@@ -60,7 +60,7 @@ pub struct GlobalConfig {
     pub devices: Option<HashMap<String, PowerSupplyConfig>>,
 }
 
-impl Default for GlobalConfig {
+impl Default for ServerMainConfig {
     fn default() -> Self {
         // Create a default power supply configuration for an emulator device
         let mut devices = HashMap::new();
@@ -93,7 +93,7 @@ impl Default for GlobalConfig {
     }
 }
 
-impl GlobalConfig {
+impl ServerMainConfig {
     /// Load the global configuration from the configuration file
     ///
     /// - The configuration file is expected to be in JSON5 format
@@ -112,7 +112,7 @@ impl GlobalConfig {
         info!("Loading configuration from: {}", config_path.display());
 
         match std::fs::read_to_string(&config_path) {
-            Ok(content) => match serde_json5::from_str::<GlobalConfig>(&content) {
+            Ok(content) => match serde_json5::from_str::<ServerMainConfig>(&content) {
                 Ok(config) => config,
                 Err(err) => {
                     error!(
