@@ -86,18 +86,33 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     rsx! {
         div {
             class: "power-button-container",
-            button {
+
+            // Status display
+            div {
                 class: match *output_state.read() {
-                    Some(true) => "power-button-on",  // Green when ON
-                    Some(false) => "power-button-off", // Red when OFF
-                    None => "power-button-unknown",   // Wait animation when unknown
+                    Some(true) => "power-button-status-on",
+                    Some(false) => "power-button-status-off",
+                    None => "power-button-status-unknown",
                 },
-                onclick: move |_| toggle_output(),
                 match *output_state.read() {
                     Some(true) => "POWER ENABLED",
                     Some(false) => "POWER DISABLED",
                     None => "UPDATING...",
                 }
+            }
+
+            // Toggle button
+            button {
+                class: match *output_state.read() {
+                    Some(true) => "power-button-toggle-enabled",
+                    Some(false) => "power-button-toggle-enabled",
+                    None => "power-button-toggle-disabled",
+                },
+                onclick: move |_| match *output_state.read() {
+                    Some(true) =>  toggle_output(),
+                    Some(false) =>  toggle_output(),
+                    None => {},
+                },
             }
         }
     }

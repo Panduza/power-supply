@@ -326,19 +326,6 @@ header h1 {
 
 /* ===== COMPONENT SPECIFIC STYLES ===== */
 
-/* Power Button */
-.power-button-container {
-    background: var(--bg-primary);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    box-shadow: var(--shadow-md);
-}
-
-.power-button {
-    width: 100%;
-}
 
 /* Device Selector */
 .device-selector-container {
