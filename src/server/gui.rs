@@ -5,20 +5,12 @@ use include_dir::{include_dir, Dir};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-mod button_power;
 mod config_button;
-mod current_setter;
-mod device_selector;
-mod voltage_setter;
 
 mod control_box;
 use control_box::ControlBox;
 
-use button_power::PowerButton;
 use config_button::ConfigButton;
-use current_setter::CurrentSetter;
-use device_selector::DeviceSelector;
-use voltage_setter::VoltageSetter;
 
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
@@ -177,12 +169,12 @@ pub fn PowerSupplyControl() -> Element {
                 }
             }
 
-            // PSU Selection Card - Using DeviceSelector component
-            DeviceSelector {
-                selected_device: selected_psu(),
-                device_names: psu_names(),
-                on_device_changed: on_device_changed,
-            }
+            // // PSU Selection Card - Using DeviceSelector component
+            // DeviceSelector {
+            //     selected_device: selected_psu(),
+            //     device_names: psu_names(),
+            //     on_device_changed: on_device_changed,
+            // }
 
             // Configuration Button
             ConfigButton {}
@@ -212,9 +204,9 @@ pub fn PowerSupplyControl() -> Element {
 
                     // Output Control Card - Using PowerButton component
                     div {
-                        PowerButton {
-                            psu_client: psu_client(),
-                        }
+                        // PowerButton {
+                        //     psu_client: psu_client(),
+                        // }
                     }
 
                     // Voltage and Current Control Card
@@ -224,21 +216,21 @@ pub fn PowerSupplyControl() -> Element {
                         div {
                             class: "space-y-6",
 
-                            // Voltage Control Component
-                            VoltageSetter {
-                                voltage: voltage(),
-                                psu_client: psu_client(),
-                                on_voltage_changed: on_voltage_changed,
-                                on_status_message: on_status_message,
-                            }
+                            // // Voltage Control Component
+                            // VoltageSetter {
+                            //     voltage: voltage(),
+                            //     psu_client: psu_client(),
+                            //     on_voltage_changed: on_voltage_changed,
+                            //     on_status_message: on_status_message,
+                            // }
 
-                            // Current Control Component
-                            CurrentSetter {
-                                current: current(),
-                                psu_client: psu_client(),
-                                on_current_changed: on_current_changed,
-                                on_status_message: on_status_message,
-                            }
+                            // // Current Control Component
+                            // CurrentSetter {
+                            //     current: current(),
+                            //     psu_client: psu_client(),
+                            //     on_current_changed: on_current_changed,
+                            //     on_status_message: on_status_message,
+                            // }
                         }
                     }
                 }

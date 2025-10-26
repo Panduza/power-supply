@@ -5,6 +5,11 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
 
+mod button_power;
+mod current_setter;
+mod device_selector;
+mod voltage_setter;
+
 #[derive(Props, Clone)]
 pub struct ControlBoxProps {
     /// The PSU client for controlling the power supply

@@ -92,7 +92,10 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     // Get current state for rendering (read once)
     let current_state = output_state.read().clone();
 
-    // Rendering the button
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // Rendering
     rsx! {
         div {
             class: "power-button-container",
@@ -130,4 +133,7 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
             }
         }
     }
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
 }
