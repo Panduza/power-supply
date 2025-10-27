@@ -1,7 +1,8 @@
-use crate::server::factory::Factory;
-use pza_power_supply::config::ServerMainConfig;
+use crate::config::ServerMainConfig;
+use crate::server::factory::{self, Factory};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::info;
 // Global state for sharing data between background services and GUI
 #[derive(Clone, Debug)]
 pub struct ServerState {
@@ -48,25 +49,32 @@ impl ServerState {
     //     ServerRuntime { server_config }
     // }
 
-    pub fn start_runtime(&self) {
+    /// Start background runtime services
+    pub async fn start_runtime(&self) -> anyhow::Result<()> {
         // // // Initialize devices
-        // // let mut psu_names = Vec::new();
+        // //
         // // let mut instance_handles = Vec::new();
-        // if let Some(devices) = &self.server_config.devices {
-        //     for (name, device_config) in devices {
-        //         let instance = factory
-        //             .instanciate_driver(device_config.clone())
-        //             .unwrap_or_else(|err| {
-        //                 panic!("Failed to create driver for device '{}': {}", name, err)
-        //             });
 
-        //         psu_names.push(name.clone());
+        // Create a dedicated Tokio runtime for background tasks
+        {
+            let mut instance_names = Vec::new();
+            let mut instance_handles = Vec::new();
+            let factory = self.factory.lock().await;
+            info!("Starting server runtime services...");
+            if let Some(devices) = &self.server_config.lock().await.devices {
+                for (name, device_config) in devices {
+                    let instance = factory.instanciate_driver(device_config.clone())?;
 
-        //         let runner = Runner::start(name.clone(), instance);
-        //         instance_handles.push(runner);
-        //     }
-        // }
+                    instance_names.push(name.clone());
+
+                    //         let runner = Runner::start(name.clone(), instance);
+                    instance_handles.push(runner);
+                }
+            }
+        }
+
+        Ok(())
     }
 
-    pub fn stop_runtime(&self) {}
+    pub async fn stop_runtime(&self) {}
 }

@@ -1,26 +1,24 @@
 use crate::drivers::PowerSupplyDriver;
 use bytes::Bytes;
+use pza_toolkit::rumqtt::client::init_client;
 use rumqttc::{AsyncClient, MqttOptions};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
-pub mod helper;
-use helper::{generate_random_string, psu_topic};
-
-/// Handler for the MQTT Runner task
+/// Handler for the MQTT InstanceRunner task
 pub struct RunnerHandler {
     /// Task handler
     pub task_handler: tokio::task::JoinHandle<()>,
 }
 
-/// MQTT Runner for handling power supply commands and measurements
-pub struct Runner {
+/// MQTT InstanceRunner for handling power supply commands and measurements
+pub struct InstanceRunner {
     /// MQTT client
     client: AsyncClient,
-    /// Instance name
+    /// InstanceRunner name
     name: String,
 
-    /// Driver instance
+    /// Driver instanceRunner
     driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
 
     /// psu/{name}/status
@@ -49,7 +47,7 @@ pub struct Runner {
     topic_measure_current_refresh_freq: String,
 }
 
-impl Runner {
+impl InstanceRunner {
     // --------------------------------------------------------------------------------
 
     /// Start the runner
@@ -57,17 +55,10 @@ impl Runner {
         name: String,
         driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
     ) -> RunnerHandler {
-        // Initialize MQTT client
-        let mut mqttoptions = MqttOptions::new(
-            format!("rumqtt-sync-{}", generate_random_string(5)),
-            "localhost",
-            1883,
-        );
-        mqttoptions.set_keep_alive(Duration::from_secs(3));
-        let (client, event_loop) = AsyncClient::new(mqttoptions, 100);
+        let (client, event_loop) = init_client("tttt");
 
         // Create runner object
-        let runner = Runner {
+        let runner = InstanceRunner {
             client: client.clone(),
             name: name.clone(),
             driver,
@@ -91,7 +82,11 @@ impl Runner {
     // --------------------------------------------------------------------------------
 
     /// The main async task loop for the MQTT runner
-    async fn task_loop(client: AsyncClient, mut event_loop: rumqttc::EventLoop, runner: Runner) {
+    async fn task_loop(
+        client: AsyncClient,
+        mut event_loop: rumqttc::EventLoop,
+        runner: InstanceRunner,
+    ) {
         // Subscribe to all relevant topics
         Self::subscribe_to_all(
             client.clone(),

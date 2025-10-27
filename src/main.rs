@@ -2,7 +2,6 @@ mod config;
 mod drivers;
 
 mod mcp;
-mod mqtt_runner;
 mod path;
 mod server;
 
@@ -10,14 +9,10 @@ mod client;
 
 use crate::server::services::server_services;
 use dioxus::prelude::*;
-use mqtt_runner::Runner;
+
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, error, Level};
-use tracing_subscriber::prelude::*;
-use tracing_subscriber::EnvFilter;
-
-use tracing::subscriber::{set_global_default, SetGlobalDefaultError};
+use tracing::Level;
 
 use pza_toolkit::logger::init_logger;
 
@@ -45,7 +40,7 @@ fn main() {
     // Create global app state
     let server_state = ServerState {
         factory: Arc::new(Mutex::new(factory)),
-        server_config: Arc::new(Mutex::new(server_config.clone())),
+        server_config: Arc::new(Mutex::new(server_config)),
     };
 
     SERVER_STATE_STORAGE
@@ -70,7 +65,7 @@ fn main() {
 }
 
 async fn initialize_background_services(
-    instances: Arc<Mutex<Vec<mqtt_runner::RunnerHandler>>>,
+    instances: Arc<Mutex<Vec<RunnerHandler>>>,
     app_state: ServerState,
 ) {
 
