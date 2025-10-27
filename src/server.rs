@@ -1,3 +1,4 @@
+pub mod factory;
 pub mod gui;
 pub mod services;
 pub mod state;

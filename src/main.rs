@@ -1,6 +1,5 @@
 mod config;
 mod drivers;
-mod factory;
 
 mod mcp;
 mod mqtt_runner;
@@ -40,9 +39,13 @@ fn main() {
     let server_config = ServerMainConfig::from_user_file()
         .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err));
 
+    // Create factory
+    let factory = crate::server::factory::Factory::initialize();
+
     // Create global app state
     let server_state = ServerState {
         server_config: Arc::new(Mutex::new(server_config.clone())),
+        factory: Arc::new(Mutex::new(factory)),
         instance_names: Arc::new(Mutex::new(Vec::new())),
     };
     SERVER_STATE_STORAGE
@@ -58,7 +61,8 @@ fn main() {
                 .get()
                 .expect("Failed to get server state")
                 .clone(),
-        ));
+        ))
+        .expect("Server services crash");
     });
 
     // Launch Dioxus app on the main thread
@@ -69,16 +73,6 @@ async fn initialize_background_services(
     instances: Arc<Mutex<Vec<mqtt_runner::RunnerHandler>>>,
     app_state: ServerState,
 ) {
-
-    // // Update broker config in app state
-    // {
-    //     let mut broker_config = app_state.broker_config.lock().await;
-    //     *broker_config = Some(config.broker.clone());
-    // }
-
-    // // Create factory
-    // let factory = factory::Factory::new();
-    // debug!("Factory initialized with drivers: {:?}", factory.map.keys());
 
     // // Write factory manifest to file
     // if let Err(err) = factory.write_manifest_to_file() {
