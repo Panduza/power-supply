@@ -44,10 +44,12 @@ fn main() {
 
     // Create global app state
     let server_state = ServerState {
-        server_config: Arc::new(Mutex::new(server_config.clone())),
-        factory: Arc::new(Mutex::new(factory)),
-        instance_names: Arc::new(Mutex::new(Vec::new())),
+        runtime: Arc::new(Mutex::new(server::runtime::ServerRuntime {
+            factory: Arc::new(Mutex::new(factory)),
+            server_config: Arc::new(Mutex::new(server_config.clone())),
+        })),
     };
+
     SERVER_STATE_STORAGE
         .set(Arc::new(server_state.clone()))
         .unwrap();

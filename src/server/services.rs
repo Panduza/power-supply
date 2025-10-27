@@ -3,11 +3,21 @@ use pza_toolkit::rumqtt::broker::start_broker_in_thread;
 use std::sync::Arc;
 use tracing::info;
 
-///
+/// Start background services for the server
 ///
 pub async fn server_services(server_state: Arc<ServerState>) -> anyhow::Result<()> {
+    // Start built-in MQTT broker if configured
     {
-        let broker_config = &server_state.server_config.lock().await.broker;
+        let broker_config = server_state
+            .runtime
+            .lock()
+            .await
+            .server_config
+            .as_ref()
+            .lock()
+            .await
+            .broker
+            .clone();
         if broker_config.use_builtin == Some(true) {
             start_broker_in_thread(broker_config.clone())?;
             info!("Started built-in MQTT broker");
