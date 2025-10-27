@@ -3,27 +3,27 @@ use dioxus::prelude::*;
 use std::sync::Arc;
 
 #[derive(Props, Clone)]
-pub struct DeviceSelectorProps {
-    /// Currently selected device name
-    pub selected_device: String,
-    /// List of available device names
+pub struct InstanceSelectorProps {
+    /// Currently selected instance name
+    pub selected_instance: String,
+    /// List of available instance names
     pub instances_names: Vec<String>,
-    /// Callback when the device selection changes
-    pub on_device_changed: EventHandler<String>,
+    /// Callback when the instance selection changes
+    pub on_instance_changed: EventHandler<String>,
 }
 
-impl PartialEq for DeviceSelectorProps {
+impl PartialEq for InstanceSelectorProps {
     fn eq(&self, other: &Self) -> bool {
-        self.selected_device == other.selected_device
+        self.selected_instance == other.selected_instance
             && self.instances_names == other.instances_names
     }
 }
 
 #[component]
-pub fn DeviceSelector(props: DeviceSelectorProps) -> Element {
+pub fn InstanceSelector(props: InstanceSelectorProps) -> Element {
     let server_state = use_context::<Arc<ServerState>>();
 
-    info!("Rendering DeviceSelector {:?}", server_state);
+    // info!("Rendering InstanceSelector {:?}", server_state);
 
     let mut instance_names: Signal<Option<Vec<String>>> = use_signal(|| None);
 
@@ -45,11 +45,11 @@ pub fn DeviceSelector(props: DeviceSelectorProps) -> Element {
 
             select {
                 class: "form-select",
-                value: props.selected_device.clone(),
+                value: props.selected_instance.clone(),
                 onchange: move |evt| {
-                    props.on_device_changed.call(evt.value());
+                    props.on_instance_changed.call(evt.value());
                 },
-                option { value: "", "Select a device..." }
+                option { value: "", "Select an instance..." }
                 if let Some(names) = instance_names.read().as_ref() {
                     for name in names.iter() {
                         option { value: name.clone(), "{name}" }

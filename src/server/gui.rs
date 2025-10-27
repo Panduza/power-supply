@@ -1,11 +1,8 @@
-use crate::{
-    client::{PowerSupplyClient, PowerSupplyClientBuilder},
-    server::ServerState,
-    SERVER_STATE_STORAGE,
-};
+use crate::{client::PowerSupplyClient, server::ServerState, SERVER_STATE_STORAGE};
 use base64::{engine::general_purpose, Engine as _};
 use dioxus::prelude::*;
 use include_dir::{include_dir, Dir};
+use pza_toolkit::config::IPEndpointConfig;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -13,8 +10,6 @@ mod config_button;
 
 mod control_box;
 use control_box::ControlBox;
-
-use config_button::ConfigButton;
 
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
@@ -44,35 +39,108 @@ pub fn Gui() -> Element {
 
     // Inject server state into context
     let server_state: Arc<ServerState> = SERVER_STATE_STORAGE.get().unwrap().clone();
-    use_context_provider(|| server_state);
+    use_context_provider(|| server_state.clone());
 
-    let mut psu_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
+    let mqtt_addr: Signal<Option<IPEndpointConfig>> = use_signal(|| None);
 
-    rsx! {
-        document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
-        document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
-        document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
-        document::Link { rel: "stylesheet", href: get_asset_data_url("button_power.css") }
+    use_effect(move || {
+        let server_state = server_state.clone();
+        let mut mqtt_addr = mqtt_addr.clone();
 
-        div {
-            class: "main-container",
+        spawn(async move {
+            let addr = server_state
+                .as_ref()
+                .server_config
+                .lock()
+                .await
+                .broker
+                .tcp
+                .clone()
+                .expect("No broker IP configured");
+            mqtt_addr.set(Some(addr));
+        });
+    });
 
-            header {
-                h1 {
-                    "Panduza Power Supply"
+    let mut instance_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
+
+    let mqtt_addr_value = mqtt_addr.read().clone();
+
+    if let Some(mqtt_addr) = mqtt_addr_value {
+        rsx! {
+            document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
+            document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
+            document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
+            document::Link { rel: "stylesheet", href: get_asset_data_url("button_power.css") }
+
+
+            div {
+                class: "main-container",
+
+                header {
+                    h1 {
+                        "Panduza Power Supply"
+                    }
                 }
-            }
 
-            main {
-                ControlBox {
-                    psu_client: psu_client.read().clone(),
-                    selected_device: "".to_string(),
-                    instances_names: vec![],
-                    on_device_changed: |_| {},
+                main {
+                    ControlBox {
+                        instance_client: instance_client.read().clone(),
+                        selected_instance: "".to_string(),
+                        instances_names: vec![],
+                        on_instance_changed: move |selected_instance : String| {
+
+                            let client = PowerSupplyClient::builder()
+                                .with_ip(mqtt_addr.clone())
+                                .with_power_supply_name(selected_instance.clone())
+                                .build();
+
+                            instance_client.set(Some(Arc::new(Mutex::new(client))));
+                        },
+                    }
                 }
             }
         }
+    } else {
+        rsx! {
+            div {
+                class: "main-container",
+                "Loading configuration..."
+            }
+        }
     }
+
+    // rsx! {
+    //     document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
+    //     document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
+    //     document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
+    //     document::Link { rel: "stylesheet", href: get_asset_data_url("button_power.css") }
+
+    //     div {
+    //         class: "main-container",
+
+    //         header {
+    //             h1 {
+    //                 "Panduza Power Supply"
+    //             }
+    //         }
+
+    //         main {
+    //             ControlBox {
+    //                 instance_client: instance_client.read().clone(),
+    //                 selected_instance: "".to_string(),
+    //                 instances_names: vec![],
+    //                 on_instance_changed: |selected_instance : String| {
+
+    //                     // mqtt_addr.read().clone()
+
+    //                     let client = PowerSupplyClient::builder().with_ip().with_power_supply_name(selected_instance.clone()).build();
+
+    //                     // instance_client
+    //                 },
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 // #[component]

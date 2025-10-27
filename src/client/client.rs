@@ -1,5 +1,4 @@
 use bytes::Bytes;
-use rand::Rng;
 use rumqttc::{AsyncClient, MqttOptions};
 use std::future::Future;
 use std::pin::Pin;
@@ -7,6 +6,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::sync::Mutex;
+
+mod builder;
+pub use builder::PowerSupplyClientBuilder;
 
 mod data;
 pub use data::MutableData;
@@ -68,53 +70,6 @@ impl DynamicCallbacks {
     }
 }
 
-/// Builder pattern for creating PowerSupplyClient instances
-pub struct PowerSupplyClientBuilder {
-    /// Name of the power supply unit
-    pub psu_name: Option<String>,
-
-    /// MQTT broker configuration
-    pub broker: IPEndpointConfig,
-}
-
-impl PowerSupplyClientBuilder {
-    // ------------------------------------------------------------------------
-
-    /// Create a new builder from broker configuration
-    pub fn from_broker_config(broker: IPEndpointConfig) -> Self {
-        Self {
-            psu_name: None,
-            broker,
-        }
-    }
-
-    // ------------------------------------------------------------------------
-
-    /// Set the power supply name for the client
-    pub fn with_power_supply_name<A: Into<String>>(mut self, name: A) -> Self {
-        self.psu_name = Some(name.into());
-        self
-    }
-
-    // ------------------------------------------------------------------------
-
-    /// Build the PowerSupplyClient instance
-    pub fn build(self) -> PowerSupplyClient {
-        let (client, event_loop) = rumqtt::client::init_client("power-supply");
-
-        PowerSupplyClient::new_with_client(
-            self.psu_name.unwrap(),
-            RumqttCustomAsyncClient::new(
-                client,
-                rumqttc::QoS::AtMostOnce,
-                true,
-                "power-supply".to_string(),
-            ),
-            event_loop,
-        )
-    }
-}
-
 /// Client for interacting with a power supply via MQTT
 pub struct PowerSupplyClient {
     pub psu_name: String,
@@ -167,6 +122,11 @@ impl Clone for PowerSupplyClient {
 }
 
 impl PowerSupplyClient {
+    /// Create a new builder for the PowerSupplyClient
+    pub fn builder() -> PowerSupplyClientBuilder {
+        PowerSupplyClientBuilder::default()
+    }
+
     /// Task loop to handle MQTT events and update client state
     async fn task_loop(
         client: PowerSupplyClient,

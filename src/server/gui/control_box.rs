@@ -6,46 +6,50 @@ use tokio::sync::Mutex;
 
 mod button_power;
 mod current_setter;
-mod device_selector;
+mod instance_selector;
 mod voltage_setter;
 
 pub use button_power::PowerButton;
-pub use device_selector::DeviceSelector;
+pub use instance_selector::InstanceSelector;
 
 #[derive(Props, Clone)]
 pub struct ControlBoxProps {
-    /// The PSU client for controlling the power supply
-    pub psu_client: Option<Arc<Mutex<PowerSupplyClient>>>,
+    /// The instance client for controlling the power supply
+    pub instance_client: Option<Arc<Mutex<PowerSupplyClient>>>,
 
-    /// Currently selected device name
-    pub selected_device: String,
-    /// List of available device names
+    /// Currently selected instance name
+    pub selected_instance: String,
+    /// List of available instance names
     pub instances_names: Vec<String>,
-    /// Callback when the device selection changes
-    pub on_device_changed: EventHandler<String>,
+    /// Callback when the instance selection changes
+    pub on_instance_changed: EventHandler<String>,
 }
 
 impl PartialEq for ControlBoxProps {
     fn eq(&self, other: &Self) -> bool {
-        self.psu_client.is_some() == other.psu_client.is_some()
+        self.instance_client.is_some() == other.instance_client.is_some()
     }
 }
 
 #[component]
 pub fn ControlBox(props: ControlBoxProps) -> Element {
+    let on_instance_changed = props.on_instance_changed.clone();
+
     // Rendering the button
     rsx! {
         div {
             class: "control-box-container",
 
-            DeviceSelector {
-                selected_device: "".to_string(),
+            InstanceSelector {
+                selected_instance: "".to_string(),
                 instances_names: vec![],
-                on_device_changed: |_| {},
+                on_instance_changed: move |selected_instance| {
+                    on_instance_changed.call(selected_instance);
+                },
             }
 
             PowerButton {
-                psu_client: props.psu_client.clone(),
+                instance_client: props.instance_client.clone(),
             }
         }
     }

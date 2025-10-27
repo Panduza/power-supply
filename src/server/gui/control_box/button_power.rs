@@ -13,13 +13,13 @@ use tracing::info;
 
 #[derive(Props, Clone)]
 pub struct PowerButtonProps {
-    /// The PSU client for controlling the power supply
-    pub psu_client: Option<Arc<Mutex<PowerSupplyClient>>>,
+    /// The instance client for controlling the power supply
+    pub instance_client: Option<Arc<Mutex<PowerSupplyClient>>>,
 }
 
 impl PartialEq for PowerButtonProps {
     fn eq(&self, other: &Self) -> bool {
-        self.psu_client.is_some() == other.psu_client.is_some()
+        self.instance_client.is_some() == other.instance_client.is_some()
     }
 }
 
@@ -31,10 +31,10 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
     // Effect to setup callback when component mounts or client changes
     use_effect({
-        let psu_client = props.psu_client.clone();
+        let instance_client = props.instance_client.clone();
 
         move || {
-            if let Some(client_arc) = psu_client.clone() {
+            if let Some(client_arc) = instance_client.clone() {
                 spawn(async move {
                     // Get initial output enable state
                     let initial_oe = client_arc.lock().await.get_oe().await;
@@ -61,10 +61,10 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
     // Toggle output enable/disable
     let toggle_output = {
-        let psu_client = props.psu_client.clone();
+        let instance_client = props.instance_client.clone();
 
         move |_| {
-            if let Some(client_arc) = psu_client.clone() {
+            if let Some(client_arc) = instance_client.clone() {
                 // Read the current state once and store it
                 let current_enabled = output_state.read().clone().unwrap_or(false);
 
