@@ -43,6 +43,9 @@ pub fn Gui() -> Element {
 
     let mqtt_addr: Signal<Option<IPEndpointConfig>> = use_signal(|| None);
 
+    let selected_instance: Signal<Option<String>> = use_signal(|| None);
+    let instances_names: Signal<Option<Vec<String>>> = use_signal(|| None);
+
     use_effect(move || {
         let server_state = server_state.clone();
         let mut mqtt_addr = mqtt_addr.clone();
