@@ -1,9 +1,13 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use crate::config::ServerMainConfig;
+
 // Global state for sharing data between background services and GUI
 #[derive(Clone, Debug)]
 pub struct ServerState {
+    /// Server configuration
+    pub server_config: Arc<Mutex<ServerMainConfig>>,
     /// Names of available instances
     pub instance_names: Arc<Mutex<Vec<String>>>,
     // pub broker_config: Arc<Mutex<Option<client::config::MqttBrokerConfig>>>,

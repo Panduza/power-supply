@@ -23,17 +23,8 @@ use tracing::subscriber::{set_global_default, SetGlobalDefaultError};
 
 use pza_toolkit::logger::init_logger;
 
+use config::ServerMainConfig;
 use server::ServerState;
-
-// App component that provides context
-// fn app_component() -> Element {
-//     // Get the app state from the static storage
-//     let app_state = APP_STATE_STORAGE.get().unwrap().clone();
-
-//     use_context_provider(|| app_state);
-
-//     rsx! {}
-// }
 
 pub static SERVER_STATE_STORAGE: once_cell::sync::OnceCell<Arc<ServerState>> =
     once_cell::sync::OnceCell::new();
@@ -42,27 +33,32 @@ fn main() {
     // Init logger
     init_logger(Level::DEBUG).expect("failed to init logger");
 
+    // Ensure user root directory exists
+    pza_toolkit::path::ensure_user_root_dir_exists()
+        .unwrap_or_else(|err| panic!("Failed to ensure user root directory exists: {}", err));
+
     // Get user configuration
-    let config = config::ServerMainConfig::from_user_file();
-    info!("Loaded configuration: {:?}", config);
+    let server_config = ServerMainConfig::from_user_file()
+        .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err));
 
     // Create global app state
     let server_state = ServerState {
+        server_config: Arc::new(Mutex::new(server_config)),
         instance_names: Arc::new(Mutex::new(Vec::new())),
-        // broker_config: Arc::new(Mutex::new(None)),
     };
-
-    SERVER_STATE_STORAGE.set(Arc::new(server_state)).unwrap();
+    SERVER_STATE_STORAGE
+        .set(Arc::new(server_state.clone()))
+        .unwrap();
 
     // Create a dedicated Tokio runtime for background tasks
-    let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+    // let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
 
     // Store runtime and instances in Arc for sharing between threads
-    let runtime = Arc::new(rt);
+    // let runtime = Arc::new(rt);
     // let instances = Arc::new(Mutex::new(Vec::new()));
 
     // Clone for the background task
-    let runtime_clone = Arc::clone(&runtime);
+    // let runtime_clone = Arc::clone(&runtime);
     // let instances_clone = Arc::clone(&instances);
     // let app_state_clone = app_state.clone();
 
