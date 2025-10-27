@@ -65,24 +65,27 @@ pub fn Gui() -> Element {
 
     let mqtt_addr_value = mqtt_addr.read().clone();
 
-    if let Some(mqtt_addr) = mqtt_addr_value {
-        rsx! {
-            document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
-            document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
-            document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
-            document::Link { rel: "stylesheet", href: get_asset_data_url("button_power.css") }
+    rsx! {
+        document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
+        document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
+        document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
+        document::Link { rel: "stylesheet", href: get_asset_data_url("button_power.css") }
 
 
-            div {
-                class: "main-container",
+        div {
+            class: "main-container",
 
-                header {
-                    h1 {
-                        "Panduza Power Supply"
-                    }
+            header {
+                h1 {
+                    "Panduza Power Supply"
                 }
+            }
 
-                main {
+
+            main {
+
+                if let Some(mqtt_addr) = mqtt_addr_value {
+
                     ControlBox {
                         instance_client: instance_client.read().clone(),
                         selected_instance: "".to_string(),
@@ -97,14 +100,11 @@ pub fn Gui() -> Element {
                             instance_client.set(Some(Arc::new(Mutex::new(client))));
                         },
                     }
+                } else {
+                    div {
+                        "Loading configuration..."
+                    }
                 }
-            }
-        }
-    } else {
-        rsx! {
-            div {
-                class: "main-container",
-                "Loading configuration..."
             }
         }
     }
