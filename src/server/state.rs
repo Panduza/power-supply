@@ -1,9 +1,12 @@
 use crate::config::ServerMainConfig;
-use crate::server::factory::{self, Factory};
+use crate::server::factory::Factory;
+use crate::server::instance::InstanceHandler;
 use crate::server::instance::InstanceRunner;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
+
 // Global state for sharing data between background services and GUI
 #[derive(Clone, Debug)]
 pub struct ServerState {
@@ -12,9 +15,9 @@ pub struct ServerState {
 
     /// Server configuration
     pub server_config: Arc<Mutex<ServerMainConfig>>,
-    // Names of available instances
-    // pub instance_names: Arc<Mutex<Vec<String>>>,
-    // pub broker_config: Arc<Mutex<Option<client::config::MqttBrokerConfig>>>,
+
+    /// Names of available instances
+    pub instances: Arc<Mutex<HashMap<String, InstanceHandler>>>,
 }
 
 impl PartialEq for ServerState {
@@ -52,26 +55,19 @@ impl ServerState {
 
     /// Start background runtime services
     pub async fn start_runtime(&self) -> anyhow::Result<()> {
-        // // // Initialize devices
-        // //
-        // // let mut instance_handles = Vec::new();
-
         // Create a dedicated Tokio runtime for background tasks
         {
-            let mut instance_names = Vec::new();
-            let mut instance_handles = Vec::new();
+            let mut instances = HashMap::new();
             let factory = self.factory.lock().await;
             info!("Starting server runtime services...");
             if let Some(devices) = &self.server_config.lock().await.devices {
                 for (name, device_config) in devices {
                     let instance = factory.instanciate_driver(device_config.clone())?;
 
-                    instance_names.push(name.clone());
-
-                    let runner = InstanceRunner::start(name.clone(), instance);
-                    instance_handles.push(runner);
+                    instances.insert(name.clone(), InstanceRunner::start(name.clone(), instance)?);
                 }
             }
+            *self.instances.lock().await = instances;
         }
 
         Ok(())

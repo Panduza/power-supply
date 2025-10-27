@@ -21,6 +21,10 @@ pub async fn server_services(server_state: Arc<ServerState>) -> anyhow::Result<(
         }
     }
 
+    {
+        server_state.start_runtime().await?;
+    }
+
     loop {
         // Placeholder for service tasks
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;

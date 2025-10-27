@@ -16,6 +16,13 @@ pub use device_selector::DeviceSelector;
 pub struct ControlBoxProps {
     /// The PSU client for controlling the power supply
     pub psu_client: Option<Arc<Mutex<PowerSupplyClient>>>,
+
+    /// Currently selected device name
+    pub selected_device: String,
+    /// List of available device names
+    pub instances_names: Vec<String>,
+    /// Callback when the device selection changes
+    pub on_device_changed: EventHandler<String>,
 }
 
 impl PartialEq for ControlBoxProps {
@@ -33,7 +40,7 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
 
             DeviceSelector {
                 selected_device: "".to_string(),
-                device_names: vec![],
+                instances_names: vec![],
                 on_device_changed: |_| {},
             }
 

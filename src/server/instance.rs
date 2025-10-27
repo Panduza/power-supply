@@ -5,13 +5,13 @@ use dioxus::html::form;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 use rumqttc::{AsyncClient, MqttOptions};
+use std::any;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
-/// Handler for the MQTT InstanceRunner task
-pub struct RunnerHandler {
-    /// Task handler
-    pub task_handler: tokio::task::JoinHandle<()>,
+#[derive(Debug)]
+pub struct InstanceHandler {
+    pub task_handler: Arc<Option<tokio::task::JoinHandle<()>>>,
 }
 
 /// MQTT InstanceRunner for handling power supply commands and measurements
@@ -57,7 +57,7 @@ impl InstanceRunner {
     pub fn start(
         name: String,
         driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
-    ) -> RunnerHandler {
+    ) -> anyhow::Result<InstanceHandler> {
         let (client, event_loop) = init_client("tttt");
 
         let custom_client = RumqttCustomAsyncClient::new(
@@ -88,7 +88,9 @@ impl InstanceRunner {
 
         let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
 
-        RunnerHandler { task_handler }
+        Ok(InstanceHandler {
+            task_handler: Arc::new(Some(task_handler)),
+        })
     }
 
     // --------------------------------------------------------------------------------
@@ -128,26 +130,14 @@ impl InstanceRunner {
 
     // --------------------------------------------------------------------------------
 
-    /// Subscribe to all relevant MQTT topics
-    async fn subscribe_to_all(client: AsyncClient, topics: Vec<&String>) {
-        for topic in topics {
-            client
-                .subscribe(topic, rumqttc::QoS::AtMostOnce)
-                .await
-                .unwrap();
-        }
-    }
-
-    // --------------------------------------------------------------------------------
-
     /// Initialize the runner (if needed)
-    async fn initialize(&self) {
+    async fn initialize(&self) -> anyhow::Result<()> {
         let mut driver = self.driver.lock().await;
 
-        driver.initialize().await.expect("Driver init failed");
+        driver.initialize().await?;
 
         // Publish initial output enable state
-        let oe_value = driver.output_enabled().await.unwrap();
+        let oe_value = driver.output_enabled().await?;
         self.client
             .client
             .publish(
@@ -156,11 +146,10 @@ impl InstanceRunner {
                 true,
                 Bytes::from(if oe_value { "ON" } else { "OFF" }),
             )
-            .await
-            .unwrap();
+            .await?;
 
         // Get and check initial voltage setting
-        let mut voltage = driver.get_voltage().await.unwrap();
+        let mut voltage = driver.get_voltage().await?;
         if let Ok(voltage_value) = voltage.parse::<f32>() {
             let mut adjusted_voltage = voltage_value;
 
@@ -193,11 +182,10 @@ impl InstanceRunner {
                 true,
                 Bytes::from(voltage),
             )
-            .await
-            .unwrap();
+            .await?;
 
         // Get and check initial current setting
-        let mut current = driver.get_current().await.unwrap();
+        let mut current = driver.get_current().await?;
         if let Ok(current_value) = current.parse::<f32>() {
             let mut adjusted_current = current_value;
 
@@ -230,8 +218,9 @@ impl InstanceRunner {
                 true,
                 Bytes::from(current),
             )
-            .await
-            .unwrap();
+            .await?;
+
+        Ok(())
     }
 
     // --------------------------------------------------------------------------------

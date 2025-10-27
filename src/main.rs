@@ -11,7 +11,7 @@ mod client;
 use crate::server::services::server_services;
 use dioxus::prelude::*;
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::Level;
 
@@ -42,6 +42,7 @@ fn main() {
     let server_state = ServerState {
         factory: Arc::new(Mutex::new(factory)),
         server_config: Arc::new(Mutex::new(server_config)),
+        instances: Arc::new(Mutex::new(HashMap::new())),
     };
 
     SERVER_STATE_STORAGE

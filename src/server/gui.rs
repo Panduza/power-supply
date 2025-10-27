@@ -42,8 +42,11 @@ pub fn Gui() -> Element {
     // server_state: ServerState
     // Provide server state context
 
-    let server_state = SERVER_STATE_STORAGE.get().unwrap().clone();
+    // Inject server state into context
+    let server_state: Arc<ServerState> = SERVER_STATE_STORAGE.get().unwrap().clone();
     use_context_provider(|| server_state);
+
+    let mut psu_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
 
     rsx! {
         document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
@@ -61,7 +64,12 @@ pub fn Gui() -> Element {
             }
 
             main {
-                ControlBox {}
+                ControlBox {
+                    psu_client: psu_client.read().clone(),
+                    selected_device: "".to_string(),
+                    instances_names: vec![],
+                    on_device_changed: |_| {},
+                }
             }
         }
     }
@@ -73,7 +81,6 @@ pub fn Gui() -> Element {
 //     let mut selected_psu = use_signal(|| String::new());
 //     let mut status_message = use_signal(|| "Ready".to_string());
 //     let mut psu_names = use_signal(|| Vec::<String>::new());
-//     let mut psu_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
 
 //     // Load PSU names from app state
 //     {
