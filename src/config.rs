@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
-use serde_json;
+
 use std::collections::HashMap;
-use std::path::Path;
+
 use tracing::{error, info};
 
-use crate::client::config::MqttBrokerConfig;
+use pza_toolkit::config::MqttBrokerConfig;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GuiConfig {
@@ -84,10 +84,7 @@ impl Default for ServerMainConfig {
                 host: "127.0.0.1".to_string(),
                 port: 50051,
             },
-            broker: MqttBrokerConfig {
-                host: "127.0.0.1".to_string(),
-                port: 1883,
-            },
+            broker: MqttBrokerConfig::default(),
             devices: Some(devices),
         }
     }
