@@ -1,6 +1,7 @@
 mod config;
 mod drivers;
 
+mod constants;
 mod mcp;
 mod path;
 mod server;
@@ -64,47 +65,47 @@ fn main() {
     dioxus::launch(server::Gui);
 }
 
-async fn initialize_background_services(
-    instances: Arc<Mutex<Vec<RunnerHandler>>>,
-    app_state: ServerState,
-) {
+// async fn initialize_background_services(
+//     instances: Arc<Mutex<Vec<RunnerHandler>>>,
+//     app_state: ServerState,
+// ) {
 
-    // // Initialize devices
-    // let mut psu_names = Vec::new();
-    // let mut instance_handles = Vec::new();
-    // if let Some(devices) = &config.devices {
-    //     for (name, device_config) in devices {
-    //         let instance = factory
-    //             .instanciate_driver(device_config.clone())
-    //             .unwrap_or_else(|err| {
-    //                 panic!("Failed to create driver for device '{}': {}", name, err)
-    //             });
+// // Initialize devices
+// let mut psu_names = Vec::new();
+// let mut instance_handles = Vec::new();
+// if let Some(devices) = &config.devices {
+//     for (name, device_config) in devices {
+//         let instance = factory
+//             .instanciate_driver(device_config.clone())
+//             .unwrap_or_else(|err| {
+//                 panic!("Failed to create driver for device '{}': {}", name, err)
+//             });
 
-    //         psu_names.push(name.clone());
+//         psu_names.push(name.clone());
 
-    //         let runner = Runner::start(name.clone(), instance);
-    //         instance_handles.push(runner);
-    //     }
-    // }
+//         let runner = Runner::start(name.clone(), instance);
+//         instance_handles.push(runner);
+//     }
+// }
 
-    // // Update PSU names in app state
-    // {
-    //     let mut names = app_state.psu_names.lock().await;
-    //     *names = psu_names.clone();
-    // }
+// // Update PSU names in app state
+// {
+//     let mut names = app_state.psu_names.lock().await;
+//     *names = psu_names.clone();
+// }
 
-    // mcp::McpServer::run(config.clone(), psu_names)
-    //     .await
-    //     .unwrap();
+// mcp::McpServer::run(config.clone(), psu_names)
+//     .await
+//     .unwrap();
 
-    // // Store instances for later management
-    // let mut locked_instances = instances.lock().await;
-    // *locked_instances = instance_handles;
+// // Store instances for later management
+// let mut locked_instances = instances.lock().await;
+// *locked_instances = instance_handles;
 
-    // debug!("Background services initialized successfully");
+// debug!("Background services initialized successfully");
 
-    // // Keep the runtime alive for background tasks
-    // loop {
-    //     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    // }
-}
+// // Keep the runtime alive for background tasks
+// loop {
+//     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+// }
+// }

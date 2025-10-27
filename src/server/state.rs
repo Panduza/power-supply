@@ -1,5 +1,6 @@
 use crate::config::ServerMainConfig;
 use crate::server::factory::{self, Factory};
+use crate::server::instance::InstanceRunner;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
@@ -67,7 +68,7 @@ impl ServerState {
 
                     instance_names.push(name.clone());
 
-                    //         let runner = Runner::start(name.clone(), instance);
+                    let runner = InstanceRunner::start(name.clone(), instance);
                     instance_handles.push(runner);
                 }
             }

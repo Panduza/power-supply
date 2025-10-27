@@ -1,6 +1,9 @@
+use crate::constants;
 use crate::drivers::PowerSupplyDriver;
 use bytes::Bytes;
+use dioxus::html::form;
 use pza_toolkit::rumqtt::client::init_client;
+use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 use rumqttc::{AsyncClient, MqttOptions};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
@@ -14,7 +17,7 @@ pub struct RunnerHandler {
 /// MQTT InstanceRunner for handling power supply commands and measurements
 pub struct InstanceRunner {
     /// MQTT client
-    client: AsyncClient,
+    client: RumqttCustomAsyncClient,
     /// InstanceRunner name
     name: String,
 
@@ -57,24 +60,33 @@ impl InstanceRunner {
     ) -> RunnerHandler {
         let (client, event_loop) = init_client("tttt");
 
+        let custom_client = RumqttCustomAsyncClient::new(
+            client,
+            rumqttc::QoS::AtMostOnce,
+            true,
+            format!("{}/{}", constants::MQTT_TOPIC_PREFIX, name),
+        );
+
         // Create runner object
         let runner = InstanceRunner {
-            client: client.clone(),
             name: name.clone(),
             driver,
-            topic_status: psu_topic(&name, "status"),
-            topic_error: psu_topic(&name, "error"),
-            topic_control_oe: psu_topic(&name, "control/oe"),
-            topic_control_oe_cmd: psu_topic(&name, "control/oe/cmd"),
-            topic_control_voltage: psu_topic(&name, "control/voltage"),
-            topic_control_voltage_cmd: psu_topic(&name, "control/voltage/cmd"),
-            topic_control_current: psu_topic(&name, "control/current"),
-            topic_control_current_cmd: psu_topic(&name, "control/current/cmd"),
-            topic_measure_voltage_refresh_freq: psu_topic(&name, "measure/voltage/refresh_freq"),
-            topic_measure_current_refresh_freq: psu_topic(&name, "measure/current/refresh_freq"),
+            topic_status: custom_client.topic_with_prefix("status"),
+            topic_error: custom_client.topic_with_prefix("error"),
+            topic_control_oe: custom_client.topic_with_prefix("control/oe"),
+            topic_control_oe_cmd: custom_client.topic_with_prefix("control/oe/cmd"),
+            topic_control_voltage: custom_client.topic_with_prefix("control/voltage"),
+            topic_control_voltage_cmd: custom_client.topic_with_prefix("control/voltage/cmd"),
+            topic_control_current: custom_client.topic_with_prefix("control/current"),
+            topic_control_current_cmd: custom_client.topic_with_prefix("control/current/cmd"),
+            topic_measure_voltage_refresh_freq: custom_client
+                .topic_with_prefix("measure/voltage/refresh_freq"),
+            topic_measure_current_refresh_freq: custom_client
+                .topic_with_prefix("measure/current/refresh_freq"),
+            client: custom_client,
         };
 
-        let task_handler = tokio::spawn(Self::task_loop(client.clone(), event_loop, runner));
+        let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
 
         RunnerHandler { task_handler }
     }
@@ -82,23 +94,18 @@ impl InstanceRunner {
     // --------------------------------------------------------------------------------
 
     /// The main async task loop for the MQTT runner
-    async fn task_loop(
-        client: AsyncClient,
-        mut event_loop: rumqttc::EventLoop,
-        runner: InstanceRunner,
-    ) {
+    async fn task_loop(mut event_loop: rumqttc::EventLoop, runner: InstanceRunner) {
         // Subscribe to all relevant topics
-        Self::subscribe_to_all(
-            client.clone(),
-            vec![
-                &runner.topic_control_oe_cmd,
-                &runner.topic_control_voltage_cmd,
-                &runner.topic_control_current_cmd,
-                &runner.topic_measure_voltage_refresh_freq,
-                &runner.topic_measure_current_refresh_freq,
-            ],
-        )
-        .await;
+        runner
+            .client
+            .subscribe_to_all(vec![
+                runner.topic_control_oe_cmd.clone(),
+                runner.topic_control_voltage_cmd.clone(),
+                runner.topic_control_current_cmd.clone(),
+                runner.topic_measure_voltage_refresh_freq.clone(),
+                runner.topic_measure_current_refresh_freq.clone(),
+            ])
+            .await;
 
         runner.initialize().await;
 
@@ -142,6 +149,7 @@ impl InstanceRunner {
         // Publish initial output enable state
         let oe_value = driver.output_enabled().await.unwrap();
         self.client
+            .client
             .publish(
                 self.topic_control_oe.clone(),
                 rumqttc::QoS::AtLeastOnce,
@@ -178,6 +186,7 @@ impl InstanceRunner {
         }
 
         self.client
+            .client
             .publish(
                 self.topic_control_voltage.clone(),
                 rumqttc::QoS::AtLeastOnce,
@@ -214,6 +223,7 @@ impl InstanceRunner {
         }
 
         self.client
+            .client
             .publish(
                 self.topic_control_current.clone(),
                 rumqttc::QoS::AtLeastOnce,
@@ -244,6 +254,7 @@ impl InstanceRunner {
         } else {
             // Invalid command
             self.client
+                .client
                 .publish(
                     self.topic_control_oe.clone(),
                     rumqttc::QoS::AtLeastOnce,
@@ -264,6 +275,7 @@ impl InstanceRunner {
 
         // Confirm the new state by publishing it
         self.client
+            .client
             .publish(
                 self.topic_control_oe.clone(),
                 rumqttc::QoS::AtLeastOnce,
@@ -294,6 +306,7 @@ impl InstanceRunner {
 
         // Confirm the new state by publishing it
         self.client
+            .client
             .publish(
                 self.topic_control_voltage.clone(),
                 rumqttc::QoS::AtLeastOnce,
@@ -317,6 +330,7 @@ impl InstanceRunner {
 
         // Confirm the new state by publishing it
         self.client
+            .client
             .publish(
                 self.topic_control_current.clone(),
                 rumqttc::QoS::AtLeastOnce,

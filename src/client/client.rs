@@ -15,7 +15,7 @@ mod error;
 pub use error::ClientError;
 
 use pza_toolkit::config::IPEndpointConfig;
-use pza_toolkit::rumqtt_client::RumqttCustomAsyncClient;
+use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 use std::collections::HashMap;
 
 use pza_toolkit::rumqtt;
@@ -66,26 +66,6 @@ impl DynamicCallbacks {
     pub fn remove_current_callback(&mut self, id: CallbackId) -> bool {
         self.current_callbacks.remove(&id).is_some()
     }
-}
-
-/// Generate a random string of specified length using alphanumeric characters
-fn generate_random_string(length: usize) -> String {
-    let charset: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
-                            abcdefghijklmnopqrstuvwxyz\
-                            0123456789";
-    let mut rng = rand::thread_rng();
-
-    (0..length)
-        .map(|_| {
-            let idx = rng.gen_range(0..charset.len());
-            charset[idx] as char
-        })
-        .collect()
-}
-
-/// Generate MQTT topic for a given power supply and suffix
-fn psu_topic<A: Into<String>, B: Into<String>>(name: A, suffix: B) -> String {
-    format!("power-supply/{}/{}", name.into(), suffix.into())
 }
 
 /// Builder pattern for creating PowerSupplyClient instances
@@ -296,13 +276,13 @@ impl PowerSupplyClient {
         event_loop: rumqttc::EventLoop,
     ) -> Self {
         // Prepare MQTT topics
-        let topic_control_oe = psu_topic(psu_name.clone(), "control/oe");
-        let topic_control_oe_cmd = psu_topic(psu_name.clone(), "control/oe/cmd");
+        let topic_control_oe = client.topic_with_prefix("control/oe");
+        let topic_control_oe_cmd = client.topic_with_prefix("control/oe/cmd");
         // let topic_control_oe_error = psu_topic(psu_name.clone(), "control/oe/error");
-        let topic_control_voltage = psu_topic(psu_name.clone(), "control/voltage");
-        let topic_control_voltage_cmd = psu_topic(psu_name.clone(), "control/voltage/cmd");
-        let topic_control_current = psu_topic(psu_name.clone(), "control/current");
-        let topic_control_current_cmd = psu_topic(psu_name.clone(), "control/current/cmd");
+        let topic_control_voltage = client.topic_with_prefix("control/voltage");
+        let topic_control_voltage_cmd = client.topic_with_prefix("control/voltage/cmd");
+        let topic_control_current = client.topic_with_prefix("control/current");
+        let topic_control_current_cmd = client.topic_with_prefix("control/current/cmd");
         // let topic_measure_voltage_refresh_freq =
         //     psu_topic(psu_name.clone(), "measure/voltage/refresh_freq");
         // let topic_measure_current_refresh_freq =
