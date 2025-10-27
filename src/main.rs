@@ -74,16 +74,6 @@ async fn initialize_background_services(
     app_state: ServerState,
 ) {
 
-    // // Write factory manifest to file
-    // if let Err(err) = factory.write_manifest_to_file() {
-    //     error!("Failed to write factory manifest: {}", err);
-    // } else {
-    //     debug!("Factory manifest written successfully");
-    // }
-
-    // // Start MQTT broker
-    // let _broker_handle = broker::start(&config);
-
     // // Initialize devices
     // let mut psu_names = Vec::new();
     // let mut instance_handles = Vec::new();

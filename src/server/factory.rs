@@ -1,10 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 use thiserror::Error as ThisError;
 use tokio::sync::Mutex;
+use tracing::error;
 use tracing::info;
 
 use crate::path::factory_manifest_file;
-use crate::{config::PowerSupplyConfig, drivers::PowerSupplyDriver, path};
+use crate::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
 
 #[derive(ThisError, Debug, Clone)]
 pub enum FactoryError {
@@ -53,6 +54,15 @@ impl Factory {
             "kd3005p".to_string(),
             crate::drivers::kd3005p::Kd3005pDriver::manifest(),
         );
+
+        // ----------------------------------------------------------
+
+        // Write factory manifest to file
+        if let Err(err) = factory.write_manifest_to_file() {
+            error!("Failed to write factory manifest: {}", err);
+        } else {
+            info!("Factory manifest written successfully");
+        }
 
         // ----------------------------------------------------------
         factory
