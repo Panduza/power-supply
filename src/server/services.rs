@@ -9,9 +9,6 @@ pub async fn server_services(server_state: Arc<ServerState>) -> anyhow::Result<(
     // Start built-in MQTT broker if configured
     {
         let broker_config = server_state
-            .runtime
-            .lock()
-            .await
             .server_config
             .as_ref()
             .lock()
