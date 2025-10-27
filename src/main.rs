@@ -9,12 +9,12 @@ mod server;
 
 mod client;
 
+use crate::server::services::server_services;
 use dioxus::prelude::*;
 use mqtt_runner::Runner;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, error, Level};
-
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
@@ -42,31 +42,24 @@ fn main() {
 
     // Create global app state
     let server_state = ServerState {
-        server_config: Arc::new(Mutex::new(server_config)),
+        server_config: Arc::new(Mutex::new(server_config.clone())),
         instance_names: Arc::new(Mutex::new(Vec::new())),
     };
     SERVER_STATE_STORAGE
         .set(Arc::new(server_state.clone()))
         .unwrap();
 
-    // Create a dedicated Tokio runtime for background tasks
-    // let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
-
-    // Store runtime and instances in Arc for sharing between threads
-    // let runtime = Arc::new(rt);
-    // let instances = Arc::new(Mutex::new(Vec::new()));
-
-    // Clone for the background task
-    // let runtime_clone = Arc::clone(&runtime);
-    // let instances_clone = Arc::clone(&instances);
-    // let app_state_clone = app_state.clone();
-
-    // // Spawn background initialization and management task
-    // std::thread::spawn(move || {
-    //     runtime_clone.block_on(async {
-    //         initialize_background_services(instances_clone, app_state_clone).await;
-    //     });
-    // });
+    // Spawn background initialization and management task
+    std::thread::spawn(move || {
+        // Create a dedicated Tokio runtime for background tasks
+        let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+        rt.block_on(server_services(
+            SERVER_STATE_STORAGE
+                .get()
+                .expect("Failed to get server state")
+                .clone(),
+        ));
+    });
 
     // Launch Dioxus app on the main thread
     dioxus::launch(server::Gui);

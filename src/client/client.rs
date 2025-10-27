@@ -14,8 +14,11 @@ pub use data::MutableData;
 mod error;
 pub use error::ClientError;
 
+use pza_toolkit::config::IPEndpointConfig;
 use pza_toolkit::rumqtt_client::RumqttCustomAsyncClient;
 use std::collections::HashMap;
+
+use pza_toolkit::rumqtt;
 
 /// Type alias for async callbacks
 pub type AsyncCallback<T> =
@@ -91,22 +94,14 @@ pub struct PowerSupplyClientBuilder {
     pub psu_name: Option<String>,
 
     /// MQTT broker configuration
-    pub broker: MqttBrokerConfig,
+    pub broker: IPEndpointConfig,
 }
 
 impl PowerSupplyClientBuilder {
-    /// Create a new builder from user configuration file
-    pub fn from_user_config_file() -> Self {
-        Self {
-            psu_name: None,
-            broker: GlobalConfig::from_user_file().broker,
-        }
-    }
-
     // ------------------------------------------------------------------------
 
     /// Create a new builder from broker configuration
-    pub fn from_broker_config(broker: MqttBrokerConfig) -> Self {
+    pub fn from_broker_config(broker: IPEndpointConfig) -> Self {
         Self {
             psu_name: None,
             broker,
@@ -125,15 +120,7 @@ impl PowerSupplyClientBuilder {
 
     /// Build the PowerSupplyClient instance
     pub fn build(self) -> PowerSupplyClient {
-        // Initialize MQTT client
-        let mut mqttoptions = MqttOptions::new(
-            format!("rumqtt-sync-{}", generate_random_string(5)),
-            self.broker.host,
-            self.broker.port,
-        );
-        mqttoptions.set_keep_alive(Duration::from_secs(3));
-
-        let (client, event_loop) = AsyncClient::new(mqttoptions, 100);
+        let (client, event_loop) = rumqtt::client::init_client("power-supply");
 
         PowerSupplyClient::new_with_client(
             self.psu_name.unwrap(),
