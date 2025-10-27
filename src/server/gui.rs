@@ -67,6 +67,8 @@ pub fn Gui() -> Element {
     let mut instance_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
 
     let mqtt_addr_value = mqtt_addr.read().clone();
+    let instances_names_value = instances_names.read().clone();
+    let selected_instance_value = selected_instance.read().clone();
 
     rsx! {
         document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
@@ -87,12 +89,12 @@ pub fn Gui() -> Element {
 
             main {
 
-                if let Some(mqtt_addr) = mqtt_addr_value {
+                if let (Some(mqtt_addr), Some(instances_names), Some(selected_instance)) = (mqtt_addr_value, instances_names_value, selected_instance_value) {
 
                     ControlBox {
                         instance_client: instance_client.read().clone(),
-                        selected_instance: "".to_string(),
-                        instances_names: vec![],
+                        selected_instance: selected_instance.clone(),
+                        instances_names: instances_names.clone(),
                         on_instance_changed: move |selected_instance : String| {
 
                             let client = PowerSupplyClient::builder()
