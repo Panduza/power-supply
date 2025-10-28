@@ -15,7 +15,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::Level;
 
-use pza_toolkit::logger::init_logger;
+use pza_toolkit::dioxus::logger::LoggerBuilder;
 
 use config::ServerMainConfig;
 use server::ServerState;
@@ -25,7 +25,15 @@ pub static SERVER_STATE_STORAGE: once_cell::sync::OnceCell<Arc<ServerState>> =
 
 fn main() {
     // Init logger
-    init_logger(Level::DEBUG).expect("failed to init logger");
+    LoggerBuilder::default()
+        .with_level(Level::TRACE)
+        .display_target(true)
+        .filter_rumqttd()
+        .filter_dioxus_core()
+        .filter_dioxus_signals()
+        .filter_warnings()
+        .build()
+        .expect("failed to init logger");
 
     // Ensure user root directory exists
     pza_toolkit::path::ensure_user_root_dir_exists()

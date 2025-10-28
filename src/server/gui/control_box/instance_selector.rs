@@ -31,8 +31,6 @@ pub fn InstanceSelector(props: InstanceSelectorProps) -> Element {
                 onchange: move |evt| {
                     props.on_instance_changed.call(evt.value());
                 },
-                // option { value: "", "Select an instance..." }
-
                 for name in props.instances_names.iter() {
                     option { value: name.clone(), "{name}" }
                 }
