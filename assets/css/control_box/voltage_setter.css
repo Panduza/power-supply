@@ -1,6 +1,6 @@
-/* Current Setter Component Styles */
+/* Voltage Setter Component Styles */
 
-.current-setter-container {
+.voltage-setter-container {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -14,13 +14,13 @@
     transition: all 0.3s ease;
 }
 
-.current-setter-container:hover {
+.voltage-setter-container:hover {
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
 }
 
 /* Label Styles */
-.current-setter-label {
+.voltage-setter-label {
     font-weight: 700;
     font-size: 16px;
     color: #495057;
@@ -44,15 +44,15 @@
 }
 
 .input-group:hover {
-    border-color: #ffc107;
-    box-shadow: 0 6px 16px rgba(255, 193, 7, 0.15);
+    border-color: #007bff;
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.1);
 }
 
 .input-group:focus-within {
-    border-color: #ffc107;
+    border-color: #007bff;
     box-shadow:
-        0 0 0 4px rgba(255, 193, 7, 0.1),
-        0 6px 16px rgba(255, 193, 7, 0.2);
+        0 0 0 4px rgba(0, 123, 255, 0.1),
+        0 6px 16px rgba(0, 123, 255, 0.15);
     background: #ffffff;
 }
 
@@ -75,10 +75,10 @@
 }
 
 .form-input:focus {
-    color: #f57c00;
+    color: #007bff;
 }
 
-/* Unit Label (A) Styles */
+/* Unit Label (V) Styles */
 .input-group span {
     padding: 16px 20px;
     font-size: 16px;
@@ -92,46 +92,46 @@
 }
 
 .input-group:focus-within span {
-    color: #f57c00;
-    background: linear-gradient(135deg, #fff8e1, #ffecb3);
-    border-left-color: #ffc107;
+    color: #007bff;
+    background: linear-gradient(135deg, #e3f2fd, #f1f8ff);
+    border-left-color: #007bff;
 }
 
 /* Button Styles */
-.current-setter-button {
+.voltage-setter-button {
     padding: 16px 32px;
     font-size: 16px;
     font-weight: bold;
     color: white;
-    background: linear-gradient(145deg, #ffc107, #f57c00);
+    background: linear-gradient(145deg, #007bff, #0056b3);
     border: none;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     box-shadow:
-        0 4px 12px rgba(255, 193, 7, 0.3),
+        0 4px 12px rgba(0, 123, 255, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-.current-setter-button:hover:not(:disabled) {
-    background: linear-gradient(145deg, #f57c00, #ef6c00);
+.voltage-setter-button:hover:not(:disabled) {
+    background: linear-gradient(145deg, #0056b3, #004085);
     transform: scale(1.05);
     box-shadow:
-        0 6px 16px rgba(255, 193, 7, 0.4),
+        0 6px 16px rgba(0, 123, 255, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.current-setter-button:active:not(:disabled) {
+.voltage-setter-button:active:not(:disabled) {
     transform: scale(0.95);
     box-shadow:
-        0 4px 8px rgba(255, 193, 7, 0.3),
+        0 4px 8px rgba(0, 123, 255, 0.3),
         inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.current-setter-button:disabled {
+.voltage-setter-button:disabled {
     background: linear-gradient(145deg, #6c757d, #adb5bd);
     color: #495057;
     cursor: not-allowed;
@@ -169,13 +169,13 @@
 
 /* Responsive Design */
 @media (max-width: 480px) {
-    .current-setter-container {
+    .voltage-setter-container {
         padding: 16px;
         max-width: 300px;
         gap: 12px;
     }
 
-    .current-setter-label {
+    .voltage-setter-label {
         font-size: 14px;
     }
 
@@ -190,7 +190,7 @@
         min-width: 40px;
     }
 
-    .current-setter-button {
+    .voltage-setter-button {
         padding: 12px 24px;
         font-size: 14px;
     }
@@ -209,11 +209,11 @@
     }
 }
 
-.current-setter-container {
+.voltage-setter-container {
     animation: fadeIn 0.3s ease-out;
 }
 
-/* Loading animation for when setting current */
+/* Loading animation for when setting voltage */
 @keyframes pulse {
 
     0%,
@@ -226,6 +226,6 @@
     }
 }
 
-.current-setter-button:active:not(:disabled) {
+.voltage-setter-button:active:not(:disabled) {
     animation: pulse 0.6s ease-in-out;
 }
