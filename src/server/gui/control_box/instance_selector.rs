@@ -21,24 +21,6 @@ impl PartialEq for InstanceSelectorProps {
 
 #[component]
 pub fn InstanceSelector(props: InstanceSelectorProps) -> Element {
-    let server_state = use_context::<Arc<ServerState>>();
-
-    // info!("Rendering InstanceSelector {:?}", server_state);
-
-    let mut instance_names: Signal<Option<Vec<String>>> = use_signal(|| None);
-
-    {
-        let server_state = server_state.clone();
-        use_effect(move || {
-            let server_state = server_state.clone();
-            spawn(async move {
-                let instances = server_state.instances.lock().await;
-                let names: Vec<String> = instances.keys().cloned().collect();
-                instance_names.set(Some(names));
-            });
-        });
-    }
-
     rsx! {
         div {
             class: "device-selector-container",
@@ -49,12 +31,12 @@ pub fn InstanceSelector(props: InstanceSelectorProps) -> Element {
                 onchange: move |evt| {
                     props.on_instance_changed.call(evt.value());
                 },
-                option { value: "", "Select an instance..." }
-                if let Some(names) = instance_names.read().as_ref() {
-                    for name in names.iter() {
-                        option { value: name.clone(), "{name}" }
-                    }
+                // option { value: "", "Select an instance..." }
+
+                for name in props.instances_names.iter() {
+                    option { value: name.clone(), "{name}" }
                 }
+
             }
         }
     }

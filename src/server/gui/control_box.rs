@@ -41,8 +41,8 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
             class: "control-box-container",
 
             InstanceSelector {
-                selected_instance: "".to_string(),
-                instances_names: vec![],
+                selected_instance: props.selected_instance.clone(),
+                instances_names: props.instances_names.clone(),
                 on_instance_changed: move |selected_instance| {
                     on_instance_changed.call(selected_instance);
                 },
