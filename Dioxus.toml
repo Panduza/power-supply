@@ -1,21 +1,23 @@
 [application]
+name = "pza-power-supply"
+default_platform = "desktop"
 
-[web.app]
-
-# HTML title tag content
-title = "panduza-power-supply"
-
-# include `assets` in web platform
-[web.resource]
-
-# Additional CSS style files
-style = []
-
-# Additional JavaScript files
-script = []
-
-[web.resource.dev]
-
-# Javascript code file
-# serve: [dev-server] only
-script = []
+[bundle]
+# Unique identifier for your app (reverse domain notation recommended)
+identifier = "com.panduza.power-supply"
+# Publisher/Developer name
+publisher = "Panduza"
+# App version (should match Cargo.toml version)
+version = "0.1.0"
+# App category for app stores/package managers
+category = "Utility"
+# Short description
+short_description = "Panduza Power Supply Control Interface"
+# Long description
+long_description = "A desktop application for controlling and monitoring power supply devices through MQTT and MCP protocols"
+# Copyright notice
+copyright = "Copyright (c) 2025 Panduza"
+# License identifier
+license = "GPL-3.0"
+# Include all assets
+resources = ["assets/**/*"]

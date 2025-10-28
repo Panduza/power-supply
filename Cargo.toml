@@ -9,6 +9,7 @@ description = "Panduza Power Supply - MQTT broker and device management"
 
 [dependencies]
 
+once_cell = "1.21.3"
 # ---
 # Trait for async functions in traits
 async-trait = { version = "0.1.89" }
@@ -26,7 +27,7 @@ bytes = "1.10.1"
 config = "0.15.17"
 # ---
 # Web framework for building user interfaces
-dioxus = { version = "0.7.0-rc.3", features = [] }
+dioxus = { version = "0.6.3", features = [] }
 # ---
 # Logging support for Dioxus
 dioxus-logger = "0.6.2"
@@ -45,7 +46,7 @@ ka3005p = { git = "https://github.com/XdoctorwhoZ/ka3005p", branch = "unitary_ge
 # ---
 # Local toolkit dependency
 # pza-toolkit = { path = "../toolkit" }
-pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.0" }
+pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.1" }
 # ---
 # Random string generator
 rand = "0.8.5"
@@ -86,6 +87,9 @@ thiserror = "2.0.17"
 # Async runtime
 tokio = { version = "1.48.0", features = ["full"] }
 # ---
+# Clipboard access for desktop apps
+arboard = "3.4"
+# ---
 # HTTP middleware for Tower
 tower-http = { version = "0.6", features = ["cors"] }
 # ---
@@ -101,6 +105,7 @@ url = "2.4"
 # UUID generation and parsing
 uuid = { version = "1.6", features = ["v4", "serde"] }
 
+anyhow = "1.0.100"
 
 [features]
 default = ["desktop"]
