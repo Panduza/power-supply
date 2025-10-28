@@ -42,6 +42,9 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
         let instance_client = props.instance_client.clone();
 
         move |_| {
+            // Log the toggle action
+            trace!("Toggling power output");
+
             // Read the current state once and store it
             let current_enabled = output_state.read().clone().unwrap_or(false);
 
@@ -126,7 +129,7 @@ fn setup_output_state_subscription(
     instance_client: Arc<Mutex<PowerSupplyClient>>,
     mut output_state: Signal<Option<bool>>,
 ) {
-    trace!("[PowerButton] Setting up output state subscription");
+    trace!("Setting up output state subscription");
     spawn(async move {
         // Get initial output enable state
         let initial_oe = instance_client.lock().await.get_oe().await;

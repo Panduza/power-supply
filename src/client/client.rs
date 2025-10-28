@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::sync::Mutex;
+use tracing::trace;
 
 mod builder;
 pub use builder::PowerSupplyClientBuilder;
@@ -306,30 +307,24 @@ impl PowerSupplyClient {
     // ------------------------------------------------------------------------
 
     /// Enable the power supply output
-    pub async fn enable_output(&self) -> Result<(), ClientError> {
+    pub async fn enable_output(&self) -> anyhow::Result<()> {
+        trace!("[{}] Enabling output", self.psu_name);
         let payload = Bytes::from("ON");
-        if let Err(e) = self
-            .mqtt_client
+        self.mqtt_client
             .publish(self.topic_control_oe_cmd.clone(), payload)
-            .await
-        {
-            return Err(ClientError::MqttError(e.to_string()));
-        }
+            .await?;
         Ok(())
     }
 
     // ------------------------------------------------------------------------
 
     /// Disable the power supply output
-    pub async fn disable_output(&self) -> Result<(), ClientError> {
+    pub async fn disable_output(&self) -> anyhow::Result<()> {
+        trace!("[{}] Disabling output", self.psu_name);
         let payload = Bytes::from("OFF");
-        if let Err(e) = self
-            .mqtt_client
+        self.mqtt_client
             .publish(self.topic_control_oe_cmd.clone(), payload)
-            .await
-        {
-            return Err(ClientError::MqttError(e.to_string()));
-        }
+            .await?;
         Ok(())
     }
 

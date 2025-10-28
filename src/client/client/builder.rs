@@ -1,4 +1,5 @@
 use crate::client::client::PowerSupplyClient;
+use crate::constants;
 use pza_toolkit::config::IPEndpointConfig;
 use pza_toolkit::rumqtt;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
@@ -33,18 +34,23 @@ impl PowerSupplyClientBuilder {
     // ------------------------------------------------------------------------
 
     /// Build the PowerSupplyClient instance
-    pub fn build(self) -> PowerSupplyClient {
+    pub fn build(self) -> anyhow::Result<PowerSupplyClient> {
         let (client, event_loop) = rumqtt::client::init_client("power-supply");
 
-        PowerSupplyClient::new_with_client(
-            self.psu_name.unwrap(),
+        let name = self
+            .psu_name
+            .clone()
+            .ok_or_else(|| anyhow::anyhow!("Power supply name not set"))?;
+
+        Ok(PowerSupplyClient::new_with_client(
+            name.clone(),
             RumqttCustomAsyncClient::new(
                 client,
                 rumqttc::QoS::AtMostOnce,
                 true,
-                "power-supply".to_string(),
+                format!("{}/{}", constants::MQTT_TOPIC_PREFIX, name),
             ),
             event_loop,
-        )
+        ))
     }
 }

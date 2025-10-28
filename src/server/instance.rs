@@ -8,6 +8,7 @@ use rumqttc::{AsyncClient, MqttOptions};
 use std::any;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
+use tracing::trace;
 
 #[derive(Debug)]
 pub struct InstanceHandler {
@@ -118,6 +119,7 @@ impl InstanceRunner {
                         rumqttc::Packet::Publish(packet) => {
                             let topic = packet.topic;
                             let payload = packet.payload;
+                            trace!("[{}] Received message on topic: {}", runner.name, topic);
                             runner.handle_incoming_message(&topic, payload).await;
                         }
                         _ => {}

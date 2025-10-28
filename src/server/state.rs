@@ -22,19 +22,9 @@ pub struct ServerState {
 
 impl PartialEq for ServerState {
     fn eq(&self, other: &Self) -> bool {
-        // // Note: This is a blocking comparison that requires async runtime
-        // // In practice, you might want to use try_lock() or implement async comparison
-        // let rt = tokio::runtime::Handle::try_current();
-        // if let Ok(handle) = rt {
-        //     let self_names = handle.block_on(self.instance_names.lock());
-        //     let other_names = handle.block_on(other.instance_names.lock());
-        //     *self_names == *other_names
-        // } else {
-        //     // Fallback: compare Arc pointers (same allocation = likely same data)
-        //     Arc::ptr_eq(&self.instance_names, &other.instance_names)
-        // }
-
-        true
+        Arc::ptr_eq(&self.factory, &other.factory)
+            && Arc::ptr_eq(&self.server_config, &other.server_config)
+            && Arc::ptr_eq(&self.instances, &other.instances)
     }
 }
 
