@@ -2,6 +2,7 @@ use crate::client::PowerSupplyClient;
 use dioxus::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::trace;
 
 #[derive(Props, Clone)]
 pub struct CurrentSetterProps {

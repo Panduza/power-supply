@@ -1,0 +1,15 @@
+div {
+    background-color: aquamarine;
+    border: 1px solid #cc0;
+    padding: 20px;
+
+    margin: 60px;
+
+}
+
+
+.power-button-label {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 10px;
+}

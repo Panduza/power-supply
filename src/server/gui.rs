@@ -1,37 +1,18 @@
 use crate::{client::PowerSupplyClient, server::ServerState, SERVER_STATE_STORAGE};
-use base64::{engine::general_purpose, Engine as _};
 use dioxus::prelude::*;
-use include_dir::{include_dir, Dir};
 use pza_toolkit::config::IPEndpointConfig;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::debug;
+use tracing::trace;
+use tracing::warn;
 
 mod control_box;
 mod mcp_display;
 use control_box::ControlBox;
 use mcp_display::McpDisplay;
 
-static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets");
-
-fn get_asset_data_url(filename: &str) -> String {
-    if let Some(file) = ASSETS_DIR.get_file(filename) {
-        let contents = file.contents();
-        let mime_type = match filename.split('.').last().unwrap_or("") {
-            "css" => "text/css",
-            "ico" => "image/x-icon",
-            "svg" => "image/svg+xml",
-            _ => "application/octet-stream",
-        };
-        format!(
-            "data:{};base64,{}",
-            mime_type,
-            general_purpose::STANDARD.encode(contents)
-        )
-    } else {
-        String::new()
-    }
-}
+const CSS_MAIN: Asset = asset!("/assets/css/main.css");
 
 #[component]
 pub fn Gui() -> Element {
@@ -119,6 +100,8 @@ pub fn Gui() -> Element {
     let selected_instance = s_selected.read().clone();
 
     rsx! {
+        document::Stylesheet { href: CSS_MAIN }
+
         div {
             class: "main-container",
 
@@ -137,32 +120,4 @@ pub fn Gui() -> Element {
 
         }
     }
-
-    // rsx! {
-    //     document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
-    //     document::Link { rel: "stylesheet", href: get_asset_data_url("tailwind.css") }
-    //     document::Link { rel: "stylesheet", href: get_asset_data_url("main.css") }
-    //     document::Link { rel: "stylesheet", href: get_asset_data_url("button_power.css") }
-
-    //     div {
-    //         class: "main-container",
-
-    //         header {
-    //             h1 {
-    //                 "Panduza Power Supply"
-    //             }
-    //         }
-
-    //         main {
-
-    //             if let (Some(mqtt_addr), Some(instances_names), Some(selected_instance), Some(i_client)) = (mqtt_addr_value, instances_names_value, selected_instance_value, instance_client_value) {
-
-    //             } else {
-    //                 div {
-    //                     "Loading configuration..."
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 }
