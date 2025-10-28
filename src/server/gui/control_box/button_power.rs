@@ -9,17 +9,17 @@ use crate::client::PowerSupplyClient;
 use dioxus::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{info, trace};
 
 #[derive(Props, Clone)]
 pub struct PowerButtonProps {
     /// The instance client for controlling the power supply
-    pub instance_client: Option<Arc<Mutex<PowerSupplyClient>>>,
+    pub instance_client: Arc<Mutex<PowerSupplyClient>>,
 }
 
 impl PartialEq for PowerButtonProps {
     fn eq(&self, other: &Self) -> bool {
-        self.instance_client.is_some() == other.instance_client.is_some()
+        Arc::ptr_eq(&self.instance_client, &other.instance_client)
     }
 }
 
@@ -42,28 +42,28 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
         let instance_client = props.instance_client.clone();
 
         move |_| {
-            if let Some(client_arc) = instance_client.clone() {
-                // Read the current state once and store it
-                let current_enabled = output_state.read().clone().unwrap_or(false);
+            // Read the current state once and store it
+            let current_enabled = output_state.read().clone().unwrap_or(false);
 
-                // Set state to undefined immediately when user clicks
-                output_state.set(None);
+            // Set state to undefined immediately when user clicks
+            output_state.set(None);
 
-                spawn(async move {
-                    let client = client_arc.lock().await;
-                    let result = if current_enabled {
-                        client.disable_output().await
-                    } else {
-                        client.enable_output().await
-                    };
+            // Clone the client for the async block to avoid moving it
+            let instance_client = instance_client.clone();
+            spawn(async move {
+                let client = instance_client.lock().await;
+                let result = if current_enabled {
+                    client.disable_output().await
+                } else {
+                    client.enable_output().await
+                };
 
-                    if let Err(e) = result {
-                        info!("Error toggling power output: {:?}", e);
-                        // Reset to previous state on error
-                        output_state.set(Some(current_enabled));
-                    }
-                });
-            }
+                if let Err(e) = result {
+                    info!("Error toggling power output: {:?}", e);
+                    // Reset to previous state on error
+                    output_state.set(Some(current_enabled));
+                }
+            });
         }
     };
 
@@ -123,30 +123,28 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 /// - Subscribing to OE changes from MQTT
 /// - Updating the UI state when changes are received
 fn setup_output_state_subscription(
-    instance_client: Option<Arc<Mutex<PowerSupplyClient>>>,
+    instance_client: Arc<Mutex<PowerSupplyClient>>,
     mut output_state: Signal<Option<bool>>,
 ) {
     trace!("[PowerButton] Setting up output state subscription");
     spawn(async move {
-        if let Some(client_arc) = instance_client {
-            // Get initial output enable state
-            let initial_oe = client_arc.lock().await.get_oe().await;
-            output_state.set(Some(initial_oe));
+        // Get initial output enable state
+        let initial_oe = instance_client.lock().await.get_oe().await;
+        output_state.set(Some(initial_oe));
 
-            // Add new callback to listen for OE changes from MQTT
-            let mut oe_changes = client_arc.lock().await.subscribe_oe_changes();
+        // Add new callback to listen for OE changes from MQTT
+        let mut oe_changes = instance_client.lock().await.subscribe_oe_changes();
 
-            // Listen for messages from MQTT callback and update UI state
-            spawn(async move {
-                loop {
-                    let notification = oe_changes.recv().await;
+        // Listen for messages from MQTT callback and update UI state
+        spawn(async move {
+            loop {
+                let notification = oe_changes.recv().await;
 
-                    match notification {
-                        Ok(enabled) => output_state.set(Some(enabled)),
-                        Err(_) => break, // Exit loop on error instead of todo!()
-                    }
+                match notification {
+                    Ok(enabled) => output_state.set(Some(enabled)),
+                    Err(_) => break, // Exit loop on error instead of todo!()
                 }
-            });
-        }
+            }
+        });
     });
 }

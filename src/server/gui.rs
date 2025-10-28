@@ -5,6 +5,7 @@ use include_dir::{include_dir, Dir};
 use pza_toolkit::config::IPEndpointConfig;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::debug;
 
 mod config_button;
 
@@ -63,9 +64,21 @@ pub fn Gui() -> Element {
         );
     });
 
+    let instance_client_value = instance_client.read().clone();
     let mqtt_addr_value = mqtt_addr.read().clone();
     let instances_names_value = instances_names.read().clone();
     let selected_instance_value = selected_instance.read().clone();
+
+    // Create the callback closure that can mutate instance_client
+    let mqtt_addr_value_2 = mqtt_addr_value.clone();
+    let on_instance_changed = move |selected_instance: String| {
+        let client = PowerSupplyClient::builder()
+            .with_ip(mqtt_addr_value_2.clone().expect("address not set").clone())
+            .with_power_supply_name(selected_instance.clone())
+            .build();
+
+        instance_client.set(Some(Arc::new(Mutex::new(client))));
+    };
 
     rsx! {
         document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
@@ -86,21 +99,13 @@ pub fn Gui() -> Element {
 
             main {
 
-                if let (Some(mqtt_addr), Some(instances_names), Some(selected_instance)) = (mqtt_addr_value, instances_names_value, selected_instance_value) {
+                if let (Some(mqtt_addr), Some(instances_names), Some(selected_instance), Some(i_client)) = (mqtt_addr_value, instances_names_value, selected_instance_value, instance_client_value) {
 
                     ControlBox {
-                        instance_client: instance_client.read().clone(),
+                        instance_client: i_client.clone(),
                         selected_instance: selected_instance.clone(),
                         instances_names: instances_names.clone(),
-                        on_instance_changed: move |selected_instance : String| {
-
-                            let client = PowerSupplyClient::builder()
-                                .with_ip(mqtt_addr.clone())
-                                .with_power_supply_name(selected_instance.clone())
-                                .build();
-
-                            instance_client.set(Some(Arc::new(Mutex::new(client))));
-                        },
+                        on_instance_changed: on_instance_changed,
                     }
                 } else {
                     div {

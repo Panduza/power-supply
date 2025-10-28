@@ -15,7 +15,7 @@ pub use instance_selector::InstanceSelector;
 #[derive(Props, Clone)]
 pub struct ControlBoxProps {
     /// The instance client for controlling the power supply
-    pub instance_client: Option<Arc<Mutex<PowerSupplyClient>>>,
+    pub instance_client: Arc<Mutex<PowerSupplyClient>>,
 
     /// Currently selected instance name
     pub selected_instance: String,
@@ -27,7 +27,9 @@ pub struct ControlBoxProps {
 
 impl PartialEq for ControlBoxProps {
     fn eq(&self, other: &Self) -> bool {
-        self.instance_client.is_some() == other.instance_client.is_some()
+        Arc::ptr_eq(&self.instance_client, &other.instance_client)
+            && self.selected_instance == other.selected_instance
+            && self.instances_names == other.instances_names
     }
 }
 
