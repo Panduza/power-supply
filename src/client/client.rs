@@ -330,5 +330,9 @@ impl PowerSupplyClient {
         self.current_channel.0.subscribe()
     }
 
+    pub fn name(&self) -> String {
+        self.psu_name.clone()
+    }
+
     // ------------------------------------------------------------------------
 }

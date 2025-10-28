@@ -75,6 +75,7 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
             let instance_client = instance_client.clone();
             spawn(async move {
                 let client = instance_client.lock().await;
+                trace!("Toggle output - client = {}", client.name());
                 let result = if current_enabled {
                     client.disable_output().await
                 } else {
