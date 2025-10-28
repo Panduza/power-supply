@@ -8,7 +8,9 @@ use tokio::sync::Mutex;
 use tracing::debug;
 
 mod control_box;
+mod mcp_display;
 use control_box::ControlBox;
+use mcp_display::McpDisplay;
 
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
@@ -119,12 +121,20 @@ pub fn Gui() -> Element {
     rsx! {
         div {
             class: "main-container",
+
             ControlBox {
                 instance_client: instance_client.clone(),
                 selected_instance: selected_instance.clone(),
                 instances_names: instances_names.clone(),
                 on_instance_changed: on_instance_changed,
             }
+
+            if let Some(selected) = selected_instance.clone() {
+                McpDisplay {
+                    psu_name: selected.clone()
+                }
+            }
+
         }
     }
 
