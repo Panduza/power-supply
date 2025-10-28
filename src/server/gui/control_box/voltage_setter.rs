@@ -5,65 +5,72 @@ use tokio::sync::Mutex;
 
 #[derive(Props, Clone)]
 pub struct VoltageSetterProps {
-    /// Current voltage value
-    pub voltage: String,
-    /// The PSU client for controlling the power supply
-    pub psu_client: Option<Arc<Mutex<PowerSupplyClient>>>,
-    /// Callback when the voltage value changes
-    pub on_voltage_changed: EventHandler<String>,
-    /// Callback when there's a status message to display
-    pub on_status_message: EventHandler<String>,
+    /// The instance client for controlling the power supply
+    pub instance_client: Arc<Mutex<PowerSupplyClient>>,
 }
 
 impl PartialEq for VoltageSetterProps {
     fn eq(&self, other: &Self) -> bool {
-        self.voltage == other.voltage && self.psu_client.is_some() == other.psu_client.is_some()
+        Arc::ptr_eq(&self.instance_client, &other.instance_client)
     }
 }
 
 #[component]
 pub fn VoltageSetter(props: VoltageSetterProps) -> Element {
-    let mut local_voltage = use_signal(|| props.voltage.clone());
+    let mut s_voltage_real: Signal<Option<String>> = use_signal(|| None);
+    let mut s_voltage_request: Signal<Option<String>> = use_signal(|| None);
 
-    // Update local voltage when props change
-    use_effect(move || {
-        local_voltage.set(props.voltage.clone());
+    // Setup MQTT subscription for output state changes using coroutine
+    let _subscription_coroutine = use_coroutine({
+        let instance_client = props.instance_client.clone();
+        move |_rx: UnboundedReceiver<()>| {
+            let instance_client = instance_client.clone();
+            async move {
+                trace!("Setting up output state subscription");
+
+                // Get initial output enable state
+                let initial_value = instance_client.lock().await.get_voltage().await;
+                s_voltage_real.set(Some(initial_value));
+
+                // Add new callback to listen for voltage changes from MQTT
+                let mut changes = instance_client.lock().await.subscribe_voltage_changes();
+
+                // Listen for messages from MQTT callback and update UI state
+                loop {
+                    let notification = changes.recv().await;
+                    match notification {
+                        Ok(voltage) => {
+                            s_voltage_real.set(Some(voltage));
+                            s_voltage_request.set(None);
+                        }
+                        Err(_) => break, // Exit loop on error
+                    }
+                }
+            }
+        }
     });
 
     // Set voltage function
     let set_voltage = move || {
-        if let Some(client_arc) = props.psu_client.clone() {
-            let volt = local_voltage();
-            let on_status_message = props.on_status_message.clone();
-
+        let instance_client = props.instance_client.clone();
+        if let Some(volt) = s_voltage_request.read().clone() {
             spawn(async move {
-                let client = client_arc.lock().await;
-                match client.set_voltage(volt.clone()).await {
-                    Ok(()) => {
-                        on_status_message.call(format!("Voltage set to {} V", volt));
-                    }
-                    Err(e) => {
-                        on_status_message.call(format!("Error setting voltage: {}", e));
-                    }
-                }
+                let client = instance_client.lock().await;
+                client.set_voltage(volt.clone()).await.expect("ahaha");
             });
         }
     };
+
+    let real = s_voltage_real.read().clone();
+    let request = s_voltage_request.read().clone();
 
     rsx! {
         div {
             class: "voltage-setter-container",
 
             div {
-                class: "component-header",
-                span {
-                    class: "voltage-setter-icon",
-                    "⚡"
-                }
-                span {
-                    class: "voltage-setter-label",
-                    "Voltage Control"
-                }
+                class: "voltage-setter-label",
+                "Voltage"
             }
 
             div {
@@ -74,21 +81,29 @@ pub fn VoltageSetter(props: VoltageSetterProps) -> Element {
                     step: "0.1",
                     min: "0",
                     placeholder: "0.0",
-                    value: local_voltage(),
+                    value: match request {
+                        Some(v) => v,
+                        None => {
+                            match real {
+                                Some(v) => v,
+                                None => "".to_string(),
+                            }
+                        }
+                    },
                     oninput: move |evt| {
-                        local_voltage.set(evt.value());
-                        props.on_voltage_changed.call(evt.value());
+                        s_voltage_request.set(Some(evt.value()));
                     }
                 }
                 span {
-                    class: "px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-md text-sm font-medium text-gray-700",
                     "V"
                 }
-                button {
-                    class: "btn btn-primary",
-                    onclick: move |_| set_voltage(),
-                    "Set"
-                }
+            }
+
+            button {
+                class: "voltage-setter-button",
+                disabled: s_voltage_request.read().is_none(),
+                onclick: move |_| set_voltage(),
+                "Set"
             }
         }
     }

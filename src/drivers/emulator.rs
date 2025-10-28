@@ -1,10 +1,7 @@
-use async_trait::async_trait;
-
-use tracing::info;
-
 use crate::config::PowerSupplyConfig;
-use crate::drivers::DriverError;
 use crate::drivers::PowerSupplyDriver;
+use async_trait::async_trait;
+use tracing::info;
 
 /// A power supply emulator for testing and development purposes
 pub struct PowerSupplyEmulator {
@@ -25,8 +22,8 @@ impl PowerSupplyEmulator {
     pub fn new(config: PowerSupplyConfig) -> Self {
         Self {
             state_oe: false,
-            voltage: "0".into(),
-            current: "0".into(),
+            voltage: "5.3".into(),
+            current: "1.2".into(),
             security_min_voltage: config.security_min_voltage,
             security_max_voltage: config.security_max_voltage,
             security_min_current: config.security_min_current,

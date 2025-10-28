@@ -1,6 +1,6 @@
 use crate::client::PowerSupplyClient;
 
-use dioxus::{html::option::selected, prelude::*};
+use dioxus::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -11,6 +11,7 @@ mod voltage_setter;
 
 pub use button_power::PowerButton;
 pub use instance_selector::InstanceSelector;
+pub use voltage_setter::VoltageSetter;
 
 #[derive(Props, Clone)]
 pub struct ControlBoxProps {
@@ -80,7 +81,11 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
                 }
 
                 PowerButton {
-                    instance_client: i_client,
+                    instance_client: i_client.clone(),
+                }
+
+                VoltageSetter {
+                    instance_client: i_client.clone(),
                 }
             }
         }

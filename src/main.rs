@@ -27,7 +27,7 @@ fn main() {
     // Init logger
     LoggerBuilder::default()
         .with_level(Level::TRACE)
-        .display_target(true)
+        // .display_target(true)
         .filter_rumqttd()
         .filter_dioxus_core()
         .filter_dioxus_signals()
