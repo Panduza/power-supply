@@ -37,17 +37,17 @@ Panduza Power Supply provides multiple interfaces to control and monitor power s
 
 ## Documentation
 
-Full documentation is available at: https://xdoctorwhoz.github.io/panduza-power-supply/
+Full documentation is available at: https://panduza.github.io/power-supply/
 
 Key sections:
-- [Quick Start Guide](https://xdoctorwhoz.github.io/panduza-power-supply/#/getting-started/quickstart)
-- [Installation](https://xdoctorwhoz.github.io/panduza-power-supply/#/getting-started/installation)
-- [Configuration](https://xdoctorwhoz.github.io/panduza-power-supply/#/getting-started/configuration)
-- [MQTT Interface](https://xdoctorwhoz.github.io/panduza-power-supply/#/interfaces/mqtt)
-- [MCP Interface](https://xdoctorwhoz.github.io/panduza-power-supply/#/interfaces/mcp)
-- [GUI Interface](https://xdoctorwhoz.github.io/panduza-power-supply/#/interfaces/gui)
-- [Testing](https://xdoctorwhoz.github.io/panduza-power-supply/#/testing)
-- [Contributing](https://xdoctorwhoz.github.io/panduza-power-supply/#/contributing)
+- [Quick Start Guide](https://panduza.github.io/power-supply/#/getting-started/quickstart)
+- [Installation](https://panduza.github.io/power-supply/#/getting-started/installation)
+- [Configuration](https://panduza.github.io/power-supply/#/getting-started/configuration)
+- [MQTT Interface](https://panduza.github.io/power-supply/#/interfaces/mqtt)
+- [MCP Interface](https://panduza.github.io/power-supply/#/interfaces/mcp)
+- [GUI Interface](https://panduza.github.io/power-supply/#/interfaces/gui)
+- [Testing](https://panduza.github.io/power-supply/#/testing)
+- [Contributing](https://panduza.github.io/power-supply/#/contributing)
 
 ## Example Usage
 
@@ -88,11 +88,11 @@ Then use natural language commands:
 
 The server is configured via a JSON file at `~/.xdoctorwhoz/panduza-power-supply-server.json5`.
 
-A default configuration is automatically generated on first run. See the [Configuration Guide](https://xdoctorwhoz.github.io/panduza-power-supply/#/getting-started/configuration) for details.
+A default configuration is automatically generated on first run. See the [Configuration Guide](https://panduza.github.io/power-supply/#/getting-started/configuration) for details.
 
 ## Contributing
 
-Contributions are welcome! Please see the [Contributing Guide](https://xdoctorwhoz.github.io/panduza-power-supply/#/contributing) for details.
+Contributions are welcome! Please see the [Contributing Guide](https://panduza.github.io/power-supply/#/contributing) for details.
 
 ## License
 
