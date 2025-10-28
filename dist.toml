@@ -1,0 +1,23 @@
+[package]
+# Your app's name
+name = "pza-power-supply"
+# The current version; make sure to keep this up to date!
+version = "0.1.0"
+# The URL to the git repository; this is used for publishing releases
+repository = "https://github.com/Panduza/power-supply"
+# The executables produced by your app (Dioxus will generate the platform-specific executable)
+binaries = ["pza-power-supply"]
+# The build command dist runs to produce those binaries
+build-command = ["dx", "bundle", "--release"]
+# Brief description
+description = "Panduza Power Supply - MQTT broker and device management"
+# Authors
+authors = ["XdoctorwhoZ <xavier.rodriguezalvarez@gmail.com>"]
+# License
+license = "GPL-3.0"
+
+[package.metadata.wix]
+upgrade-guid = "56CF0F5F-815A-4CA9-A177-1DCFA3CDF08E"
+path-guid = "C65E4FB4-C91F-4FDE-9BD4-1602F2DB2B24"
+license = false
+eula = false
