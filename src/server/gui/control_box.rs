@@ -3,6 +3,7 @@ use crate::client::PowerSupplyClient;
 use dioxus::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::info;
 
 mod button_power;
 mod current_setter;
@@ -44,6 +45,8 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
     let not_initialized = props.instance_client.is_none()
         || props.selected_instance.is_none()
         || no_instance_available;
+
+    info!("RELOAD");
 
     if no_instance_available {
         return rsx! {

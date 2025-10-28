@@ -29,13 +29,19 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     // 3 state possible: Some(true), Some(false), None (unknown)
     let mut output_state: Signal<Option<bool>> = use_signal(|| None);
 
-    // Setup MQTT subscription for output state changes using coroutine
-    let _subscription_coroutine = use_coroutine({
+    // Setup MQTT subscription for output state changes using effect
+    use_effect({
         let instance_client = props.instance_client.clone();
-        move |_rx: UnboundedReceiver<()>| {
+        move || {
             let instance_client = instance_client.clone();
-            async move {
-                trace!("Setting up output state subscription");
+
+            trace!("EFFECT BPOWER");
+
+            // Reset state when client changes
+            output_state.set(None);
+
+            spawn(async move {
+                trace!("Setting up output state subscription for new client");
 
                 // Get initial output enable state
                 let initial_oe = instance_client.lock().await.get_oe().await;
@@ -53,7 +59,7 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                         Err(_) => break, // Exit loop on error
                     }
                 }
-            }
+            });
         }
     });
 
@@ -93,6 +99,8 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
 
     // Get current state for rendering (read once)
     let current_state = output_state.read().clone();
+
+    info!("BBB RELOAD");
 
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
