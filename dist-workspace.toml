@@ -20,12 +20,12 @@ install-updater = false
 
 # System dependencies for different platforms
 [dist.dependencies.apt]
-libgtk-3-dev = "*"
-libsoup2.4-dev = "*"
-libwebkit2gtk-4.0-dev = "*"
-libudev-dev = "*"
-libxdo-dev = "*"
-pkg-config = "*"
+"libgtk-3-dev" = "*"
+"libsoup2.4-dev" = "*"
+"libwebkit2gtk-4.0-dev" = "*"
+"libudev-dev" = "*"
+"libxdo-dev" = "*"
+"pkg-config" = "*"
 
 # Build settings for Dioxus bundling
 [dist.build-settings]
