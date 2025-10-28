@@ -10,6 +10,7 @@ mod instance_selector;
 mod voltage_setter;
 
 pub use button_power::PowerButton;
+pub use current_setter::CurrentSetter;
 pub use instance_selector::InstanceSelector;
 pub use voltage_setter::VoltageSetter;
 
@@ -85,6 +86,10 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
                 }
 
                 VoltageSetter {
+                    instance_client: i_client.clone(),
+                }
+
+                CurrentSetter {
                     instance_client: i_client.clone(),
                 }
             }

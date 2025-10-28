@@ -1,6 +1,6 @@
 use crate::{client::PowerSupplyClient, server::ServerState, SERVER_STATE_STORAGE};
 use base64::{engine::general_purpose, Engine as _};
-use dioxus::{html::select, prelude::*};
+use dioxus::prelude::*;
 use include_dir::{include_dir, Dir};
 use pza_toolkit::config::IPEndpointConfig;
 use std::sync::Arc;
@@ -50,7 +50,7 @@ pub fn Gui() -> Element {
     let mut s_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
 
     // Coroutine to load configuration from server state
-    let ws: Coroutine<()> = use_coroutine({
+    let _coro: Coroutine<()> = use_coroutine({
         move |_rx| async move {
             // Get server state from context
             let server_state: Arc<ServerState> = use_context();
@@ -121,8 +121,6 @@ pub fn Gui() -> Element {
     rsx! {
         div {
             class: "main-container",
-
-
             ControlBox {
                 instance_client: instance_client.clone(),
                 selected_instance: selected_instance.clone(),
@@ -131,49 +129,6 @@ pub fn Gui() -> Element {
             }
         }
     }
-    // // Effects
-    // use_effect({
-    //     let s = server_state.clone();
-    //     move || {
-    //         load_mqtt_addr_from_server_config(s.clone(), mqtt_addr.clone());
-    //     }
-    // });
-
-    // // Load instances choices from server state
-    // use_effect({
-    //     let mqtt_addr_value = mqtt_addr.read().clone();
-    //     let selected_instance = selected_instance.read().clone();
-    //     move || {
-    //         // let s = s.clone();
-    //         let s = server_state.clone();
-    //         spawn(async move {
-    //             // Load instance names from server state
-    //             let names: Vec<String> =
-    //                 s.as_ref().instances.lock().await.keys().cloned().collect();
-    //             debug!("Loaded instances names: {:?}", names);
-    //             instances_names.set(Some(names.clone()));
-
-    //             // If selected_instance is None and instances_names is not empty,
-    //             // set selected_instance to the first element
-    //             if selected_instance.read().is_none() && !names.is_empty() {
-    //                 let first_name = names[0].clone();
-    //                 debug!("Setting selected_instance to: {:?}", first_name);
-    //                 selected_instance.set(Some(first_name.clone()));
-
-    //                 let client = PowerSupplyClient::builder()
-    //                     .with_ip(mqtt_addr_value.clone().expect("address not set").clone())
-    //                     .with_power_supply_name(selected_instance.clone())
-    //                     .build();
-    //                 instance_client.set(Some(Arc::new(Mutex::new(client))));
-    //             }
-    //         });
-    //     }
-    // });
-
-    // let instance_client_value = instance_client.read().clone();
-    // let mqtt_addr_value = mqtt_addr.read().clone();
-    // let instances_names_value = instances_names.read().clone();
-    // let selected_instance_value = selected_instance.read().clone();
 
     // rsx! {
     //     document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }

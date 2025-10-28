@@ -5,62 +5,72 @@ use tokio::sync::Mutex;
 
 #[derive(Props, Clone)]
 pub struct CurrentSetterProps {
-    /// Current current value
-    pub current: String,
-    /// The PSU client for controlling the power supply
-    pub psu_client: Option<Arc<Mutex<PowerSupplyClient>>>,
-    /// Callback when the current value changes
-    pub on_current_changed: EventHandler<String>,
-    /// Callback when there's a status message to display
-    pub on_status_message: EventHandler<String>,
+    /// The instance client for controlling the power supply
+    pub instance_client: Arc<Mutex<PowerSupplyClient>>,
 }
 
 impl PartialEq for CurrentSetterProps {
     fn eq(&self, other: &Self) -> bool {
-        self.current == other.current && self.psu_client.is_some() == other.psu_client.is_some()
+        Arc::ptr_eq(&self.instance_client, &other.instance_client)
     }
 }
 
 #[component]
 pub fn CurrentSetter(props: CurrentSetterProps) -> Element {
-    let mut local_current = use_signal(|| props.current.clone());
+    let mut s_current_real: Signal<Option<String>> = use_signal(|| None);
+    let mut s_current_request: Signal<Option<String>> = use_signal(|| None);
 
-    // Update local current when props change
-    use_effect(move || {
-        local_current.set(props.current.clone());
+    // Setup MQTT subscription for current changes using coroutine
+    let _subscription_coroutine = use_coroutine({
+        let instance_client = props.instance_client.clone();
+        move |_rx: UnboundedReceiver<()>| {
+            let instance_client = instance_client.clone();
+            async move {
+                trace!("Setting up current subscription");
+
+                // Get initial current value
+                let initial_value = instance_client.lock().await.get_current().await;
+                s_current_real.set(Some(initial_value));
+
+                // Add new callback to listen for current changes from MQTT
+                let mut changes = instance_client.lock().await.subscribe_current_changes();
+
+                // Listen for messages from MQTT callback and update UI state
+                loop {
+                    let notification = changes.recv().await;
+                    match notification {
+                        Ok(current) => {
+                            s_current_real.set(Some(current));
+                            s_current_request.set(None);
+                        }
+                        Err(_) => break, // Exit loop on error
+                    }
+                }
+            }
+        }
     });
 
     // Set current function
     let set_current = move || {
-        if let Some(client_arc) = props.psu_client.clone() {
-            let curr = local_current();
-            let on_status_message = props.on_status_message.clone();
-
+        let instance_client = props.instance_client.clone();
+        if let Some(curr) = s_current_request.read().clone() {
             spawn(async move {
-                let client = client_arc.lock().await;
-                match client.set_current(curr.clone()).await {
-                    Ok(()) => {
-                        on_status_message.call(format!("Current limit set to {} A", curr));
-                    }
-                    Err(e) => {
-                        on_status_message.call(format!("Error setting current: {}", e));
-                    }
-                }
+                let client = instance_client.lock().await;
+                client.set_current(curr.clone()).await.expect("ahaha");
             });
         }
     };
+
+    let real = s_current_real.read().clone();
+    let request = s_current_request.read().clone();
 
     rsx! {
         div {
             class: "current-setter-container",
 
             div {
-                class: "component-header",
-
-                span {
-                    class: "current-setter-label",
-                    "Current Limit"
-                }
+                class: "current-setter-label",
+                "Current Limit"
             }
 
             div {
@@ -71,21 +81,29 @@ pub fn CurrentSetter(props: CurrentSetterProps) -> Element {
                     step: "0.01",
                     min: "0",
                     placeholder: "0.00",
-                    value: local_current(),
+                    value: match request {
+                        Some(v) => v,
+                        None => {
+                            match real {
+                                Some(v) => v,
+                                None => "".to_string(),
+                            }
+                        }
+                    },
                     oninput: move |evt| {
-                        local_current.set(evt.value());
-                        props.on_current_changed.call(evt.value());
+                        s_current_request.set(Some(evt.value()));
                     }
                 }
                 span {
-                    class: "px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-md text-sm font-medium text-gray-700",
                     "A"
                 }
-                button {
-                    class: "btn btn-primary",
-                    onclick: move |_| set_current(),
-                    "Set"
-                }
+            }
+
+            button {
+                class: "current-setter-button",
+                disabled: s_current_request.read().is_none(),
+                onclick: move |_| set_current(),
+                "Set"
             }
         }
     }

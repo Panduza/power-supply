@@ -1,6 +1,4 @@
-use crate::server::state::ServerState;
 use dioxus::prelude::*;
-use std::sync::Arc;
 
 #[derive(Props, Clone)]
 pub struct InstanceSelectorProps {
