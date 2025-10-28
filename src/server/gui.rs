@@ -44,8 +44,8 @@ pub fn Gui() -> Element {
 
     // Signals
     let mqtt_addr: Signal<Option<IPEndpointConfig>> = use_signal(|| None);
-    let selected_instance: Signal<Option<String>> = use_signal(|| None);
-    let instances_names: Signal<Option<Vec<String>>> = use_signal(|| None);
+    let mut selected_instance: Signal<Option<String>> = use_signal(|| None);
+    let mut instances_names: Signal<Option<Vec<String>>> = use_signal(|| None);
     let mut instance_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
 
     // Effects
@@ -55,30 +55,55 @@ pub fn Gui() -> Element {
             load_mqtt_addr_from_server_config(s.clone(), mqtt_addr.clone());
         }
     });
-    use_effect(move || {
-        let s = server_state.clone();
-        load_instances_choices(
-            s.clone(),
-            instances_names.clone(),
-            selected_instance.clone(),
-        );
-    });
+
+    // Create the callback closure that can mutate instance_client
+    let on_instance_changed = {
+        let mqtt_addr_value = mqtt_addr.read().clone();
+        move |selected_instance: String| {
+            trace!("Create a new client for instance: {}", selected_instance);
+            let client = PowerSupplyClient::builder()
+                .with_ip(mqtt_addr_value.clone().expect("address not set").clone())
+                .with_power_supply_name(selected_instance.clone())
+                .build();
+            instance_client.set(Some(Arc::new(Mutex::new(client))));
+        }
+    };
+
+    // // Load instances choices from server state
+    // use_effect({
+    //     let mqtt_addr_value = mqtt_addr.read().clone();
+    //     let selected_instance = selected_instance.read().clone();
+    //     move || {
+    //         // let s = s.clone();
+    //         let s = server_state.clone();
+    //         spawn(async move {
+    //             // Load instance names from server state
+    //             let names: Vec<String> =
+    //                 s.as_ref().instances.lock().await.keys().cloned().collect();
+    //             debug!("Loaded instances names: {:?}", names);
+    //             instances_names.set(Some(names.clone()));
+
+    //             // If selected_instance is None and instances_names is not empty,
+    //             // set selected_instance to the first element
+    //             if selected_instance.read().is_none() && !names.is_empty() {
+    //                 let first_name = names[0].clone();
+    //                 debug!("Setting selected_instance to: {:?}", first_name);
+    //                 selected_instance.set(Some(first_name.clone()));
+
+    //                 let client = PowerSupplyClient::builder()
+    //                     .with_ip(mqtt_addr_value.clone().expect("address not set").clone())
+    //                     .with_power_supply_name(selected_instance.clone())
+    //                     .build();
+    //                 instance_client.set(Some(Arc::new(Mutex::new(client))));
+    //             }
+    //         });
+    //     }
+    // });
 
     let instance_client_value = instance_client.read().clone();
     let mqtt_addr_value = mqtt_addr.read().clone();
     let instances_names_value = instances_names.read().clone();
     let selected_instance_value = selected_instance.read().clone();
-
-    // Create the callback closure that can mutate instance_client
-    let mqtt_addr_value_2 = mqtt_addr_value.clone();
-    let on_instance_changed = move |selected_instance: String| {
-        let client = PowerSupplyClient::builder()
-            .with_ip(mqtt_addr_value_2.clone().expect("address not set").clone())
-            .with_power_supply_name(selected_instance.clone())
-            .build();
-
-        instance_client.set(Some(Arc::new(Mutex::new(client))));
-    };
 
     rsx! {
         document::Link { rel: "icon", href: get_asset_data_url("favicon.ico") }
@@ -133,33 +158,5 @@ fn load_mqtt_addr_from_server_config(
             .clone()
             .expect("No broker IP configured");
         mqtt_addr.set(Some(addr));
-    });
-}
-
-/// Component initialization function
-fn load_instances_choices(
-    server_state: Arc<ServerState>,
-    mut instances_names: Signal<Option<Vec<String>>>,
-    mut selected_instance: Signal<Option<String>>,
-) {
-    spawn(async move {
-        // Load instance names from server state
-        let names: Vec<String> = server_state
-            .as_ref()
-            .instances
-            .lock()
-            .await
-            .keys()
-            .cloned()
-            .collect();
-        debug!("Loaded instances names: {:?}", names);
-        instances_names.set(Some(names.clone()));
-
-        // If selected_instance is None and instances_names is not empty,
-        // set selected_instance to the first element
-        if selected_instance.read().is_none() && !names.is_empty() {
-            debug!("Setting selected_instance to: {:?}", names[0]);
-            selected_instance.set(Some(names[0].clone()));
-        }
     });
 }
