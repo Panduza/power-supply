@@ -4,43 +4,50 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 20px;
-    padding: 24px;
-    max-width: 400px;
-    margin: 0 auto;
+    gap: clamp(6px, 2vw, 12px);
+    padding: clamp(6px, 2vw, 12px);
+    width: 100%;
+    max-width: min(95%, 320px);
+    margin: 0;
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-radius: clamp(6px, 1vw, 10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 .power-button-container:hover {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
 }
 
 /* Power Label Styles */
 .power-button-label {
     font-weight: 700;
-    font-size: 16px;
+    font-size: clamp(12px, 2.5vw, 14px);
     color: #495057;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-right: 8px;
+    letter-spacing: clamp(0.4px, 0.5vw, 0.8px);
+    margin-right: clamp(2px, 1vw, 4px);
+    flex-shrink: 0;
 }
 
 /* Status Display Styles */
 .power-button-status {
     font-weight: 600;
-    font-size: 14px;
-    padding: 12px 20px;
-    border-radius: 8px;
+    font-size: clamp(10px, 2vw, 12px);
+    padding: clamp(4px, 1vw, 8px) clamp(6px, 2vw, 12px);
+    border-radius: clamp(4px, 0.5vw, 6px);
     text-align: center;
-    min-width: 120px;
+    min-width: clamp(60px, 15vw, 80px);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: clamp(0.2px, 0.3vw, 0.4px);
     transition: all 0.3s ease;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .power-button-status.on {
@@ -67,11 +74,11 @@
 
 /* Toggle Button Styles */
 .power-button-toggle {
-    width: 120px;
-    height: 50px;
-    border-radius: 12px;
+    width: clamp(60px, 15vw, 80px);
+    height: clamp(28px, 6vw, 36px);
+    border-radius: clamp(4px, 1vw, 8px);
     border: none;
-    font-size: 16px;
+    font-size: clamp(12px, 2.5vw, 14px);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -81,6 +88,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .power-button-toggle.enabled {
@@ -131,30 +139,28 @@
     }
 }
 
-/* Responsive Design */
-@media (max-width: 480px) {
+/* Responsive Design - Stack vertically on very small screens */
+@media (max-width: 280px),
+(max-height: 400px) {
     .power-button-container {
         flex-direction: column;
-        padding: 20px;
-        max-width: 180px;
-        gap: 16px;
+        gap: 4px;
+        padding: 4px;
     }
 
     .power-button-label {
-        font-size: 14px;
         margin-right: 0;
-        margin-bottom: 8px;
+        margin-bottom: 2px;
+        text-align: center;
     }
 
     .power-button-status {
-        font-size: 12px;
-        padding: 10px 16px;
-        min-width: 100px;
+        width: 100%;
+        margin-bottom: 2px;
     }
 
     .power-button-toggle {
-        width: 100px;
-        height: 45px;
-        font-size: 14px;
+        width: 100%;
+        max-width: 80px;
     }
 }

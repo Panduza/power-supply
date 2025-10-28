@@ -3,33 +3,38 @@
 .mcp-display-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 24px;
-    max-width: 600px;
-    margin: 0 auto;
+    gap: clamp(6px, 2vh, 12px);
+    padding: clamp(8px, 3vw, 16px);
+    width: 100%;
+    max-width: min(95vw, 500px);
+    margin: 0;
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-radius: clamp(6px, 1vw, 10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
     border: 1px solid rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    max-height: 25vh;
+    overflow: hidden;
 }
 
 .mcp-display-container:hover {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
 }
 
 /* Label Styles */
 .mcp-display-label {
     font-weight: 700;
-    font-size: 18px;
+    font-size: clamp(12px, 2.5vw, 14px);
     color: #495057;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
+    letter-spacing: clamp(0.4px, 0.5vw, 0.8px);
     text-align: center;
-    margin-bottom: 8px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #dee2e6;
+    margin-bottom: clamp(2px, 1vh, 4px);
+    padding-bottom: clamp(3px, 1vh, 6px);
+    border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
 }
 
 /* URL Container Styles */
@@ -37,30 +42,30 @@
     display: flex;
     align-items: stretch;
     background: linear-gradient(135deg, #ffffff, #f8f9fa);
-    border: 2px solid #dee2e6;
-    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
 }
 
 .mcp-url-container:hover {
     border-color: #17a2b8;
-    box-shadow: 0 6px 16px rgba(23, 162, 184, 0.1);
+    box-shadow: 0 4px 10px rgba(23, 162, 184, 0.08);
 }
 
 .mcp-url-container:focus-within {
     border-color: #17a2b8;
     box-shadow:
-        0 0 0 4px rgba(23, 162, 184, 0.1),
-        0 6px 16px rgba(23, 162, 184, 0.15);
+        0 0 0 3px rgba(23, 162, 184, 0.08),
+        0 4px 10px rgba(23, 162, 184, 0.12);
 }
 
 /* URL Text Styles */
 .mcp-url-text {
     flex: 1;
-    padding: 16px 20px;
-    font-size: 14px;
+    padding: clamp(6px, 2vw, 10px) clamp(8px, 2vw, 12px);
+    font-size: clamp(11px, 2.2vw, 13px);
     font-family: 'Courier New', 'Monaco', monospace;
     font-weight: 500;
     color: #495057;
@@ -68,10 +73,14 @@
     display: flex;
     align-items: center;
     word-break: break-all;
-    line-height: 1.4;
+    line-height: 1.2;
     transition: all 0.3s ease;
     user-select: all;
     /* Allow text selection */
+    min-width: 0;
+    /* Allow text to shrink */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .mcp-url-text:hover {
@@ -81,8 +90,8 @@
 
 /* Copy Button Styles */
 .mcp-copy-button {
-    padding: 16px 24px;
-    font-size: 14px;
+    padding: clamp(6px, 2vw, 10px) clamp(10px, 3vw, 16px);
+    font-size: clamp(11px, 2.2vw, 13px);
     font-weight: bold;
     color: white;
     background: linear-gradient(145deg, #17a2b8, #138496);
@@ -92,11 +101,13 @@
     outline: none;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    min-width: 80px;
+    letter-spacing: clamp(0.4px, 0.5vw, 0.8px);
+    min-width: clamp(50px, 12vw, 64px);
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .mcp-copy-button:hover {
@@ -141,8 +152,8 @@
 /* Responsive Design */
 @media (max-width: 768px) {
     .mcp-display-container {
-        padding: 20px;
-        max-width: 90%;
+        padding: 12px;
+        max-width: 95%;
     }
 
     .mcp-url-container {
@@ -150,38 +161,38 @@
     }
 
     .mcp-url-text {
-        padding: 16px;
-        font-size: 13px;
+        padding: 10px;
+        font-size: 12px;
         text-align: center;
         word-break: break-word;
     }
 
     .mcp-copy-button {
-        padding: 14px 20px;
-        font-size: 13px;
-        border-radius: 0 0 10px 10px;
+        padding: 10px 16px;
+        font-size: 12px;
+        border-radius: 0 0 6px 6px;
     }
 }
 
 @media (max-width: 480px) {
     .mcp-display-container {
-        padding: 16px;
-        gap: 16px;
+        padding: 10px;
+        gap: 8px;
     }
 
     .mcp-display-label {
-        font-size: 16px;
-        letter-spacing: 1px;
+        font-size: 12px;
+        letter-spacing: 0.6px;
     }
 
     .mcp-url-text {
-        padding: 12px;
-        font-size: 12px;
+        padding: 8px;
+        font-size: 11px;
     }
 
     .mcp-copy-button {
-        padding: 12px 16px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
     }
 }
 
@@ -211,4 +222,20 @@
 .mcp-url-text:focus {
     outline: 2px solid #17a2b8;
     outline-offset: -2px;
+}
+
+/* Hide MCP Display on very small screens */
+@media (max-width: 400px),
+(max-height: 500px) {
+    .mcp-display-container {
+        display: none !important;
+    }
+}
+
+/* Hide MCP Display on extremely small screens */
+@media (max-width: 320px),
+(max-height: 400px) {
+    .mcp-display-container {
+        display: none !important;
+    }
 }

@@ -4,30 +4,32 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
-    padding: 24px;
-    max-width: 400px;
-    margin: 0 auto;
+    gap: clamp(4px, 1vh, 8px);
+    padding: clamp(6px, 2vw, 12px);
+    width: 100%;
+    max-width: min(95%, 300px);
+    margin: 0;
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-radius: clamp(6px, 1vw, 10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 .current-setter-container:hover {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
 }
 
 /* Label Styles */
 .current-setter-label {
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     color: #495057;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
     text-align: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 /* Input Group Styles */
@@ -59,14 +61,15 @@
 /* Form Input Styles */
 .form-input {
     flex: 1;
-    padding: 16px 20px;
-    font-size: 16px;
-    font-weight: 500;
-    color: #495057;
-    background: transparent;
+    padding: clamp(6px, 2vw, 10px) clamp(8px, 2vw, 12px);
+    font-size: clamp(12px, 2.5vw, 14px);
+    font-weight: 600;
+    color: #212529 !important;
+    background: #ffffff;
     border: none;
     outline: none;
     transition: all 0.3s ease;
+    min-width: 0;
 }
 
 .form-input::placeholder {
@@ -75,20 +78,23 @@
 }
 
 .form-input:focus {
-    color: #f57c00;
+    color: #f57c00 !important;
+    background: #ffffff !important;
 }
 
 /* Unit Label (A) Styles */
 .input-group span {
-    padding: 16px 20px;
-    font-size: 16px;
-    font-weight: 700;
+    padding: clamp(4px, 1.5vw, 6px) clamp(4px, 1vw, 6px);
+    font-size: clamp(10px, 2vw, 12px);
+    font-weight: 600;
     color: #6c757d;
     background: linear-gradient(135deg, #e9ecef, #dee2e6);
     border-left: 1px solid #dee2e6;
-    min-width: 50px;
+    min-width: clamp(18px, 4vw, 24px);
+    width: clamp(18px, 4vw, 24px);
     text-align: center;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .input-group:focus-within span {
@@ -99,21 +105,23 @@
 
 /* Button Styles */
 .current-setter-button {
-    padding: 16px 32px;
-    font-size: 16px;
+    padding: clamp(4px, 1.5vh, 8px) clamp(8px, 3vw, 16px);
+    font-size: clamp(11px, 2.2vw, 13px);
     font-weight: bold;
     color: white;
     background: linear-gradient(145deg, #ffc107, #f57c00);
     border: none;
-    border-radius: 12px;
+    border-radius: clamp(4px, 1vw, 6px);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     box-shadow:
-        0 4px 12px rgba(255, 193, 7, 0.3),
+        0 2px 6px rgba(255, 193, 7, 0.25),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: clamp(0.3px, 0.4vw, 0.6px);
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .current-setter-button:hover:not(:disabled) {
@@ -170,29 +178,29 @@
 /* Responsive Design */
 @media (max-width: 480px) {
     .current-setter-container {
-        padding: 16px;
-        max-width: 300px;
-        gap: 12px;
+        padding: 8px;
+        max-width: 250px;
+        gap: 6px;
     }
 
     .current-setter-label {
-        font-size: 14px;
+        font-size: 12px;
     }
 
     .form-input {
-        padding: 12px 16px;
-        font-size: 14px;
+        padding: 8px 10px;
+        font-size: 13px;
     }
 
     .input-group span {
-        padding: 12px 16px;
-        font-size: 14px;
-        min-width: 40px;
+        padding: 8px 10px;
+        font-size: 13px;
+        min-width: 32px;
     }
 
     .current-setter-button {
-        padding: 12px 24px;
-        font-size: 14px;
+        padding: 8px 16px;
+        font-size: 13px;
     }
 }
 
