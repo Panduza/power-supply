@@ -85,25 +85,27 @@ pub fn Gui() -> Element {
     });
 
     // Create the callback closure that can mutate instance_client
-    let on_instance_changed = {
-        let mqtt_addr_value = s_addr.read().clone();
-        move |selected_instance: String| {
-            trace!("Create a new client for instance: {}", selected_instance);
+    let on_instance_changed = move |selected_instance: String| {
+        trace!("Create a new client for instance: {}", selected_instance);
+
+        // Update the selected instance signal
+        s_selected.set(Some(selected_instance.clone()));
+
+        // Get the current address from the signal
+        if let Some(addr) = s_addr.read().clone() {
             let client = PowerSupplyClient::builder()
-                .with_ip(mqtt_addr_value.clone().expect("address not set").clone())
-                .with_power_supply_name(selected_instance.clone())
+                .with_ip(addr)
+                .with_power_supply_name(selected_instance)
                 .build();
             if let Ok(client) = client {
                 s_client.set(Some(Arc::new(Mutex::new(client))));
             } else {
                 warn!("Failed to create PowerSupplyClient");
             }
+        } else {
+            warn!("Address not available yet");
         }
     };
-
-    let instance_client = s_client.read().clone();
-    let instances_names = s_names.read().clone();
-    let selected_instance = s_selected.read().clone();
 
     rsx! {
         document::Stylesheet { href: CSS_MAIN }
@@ -118,13 +120,13 @@ pub fn Gui() -> Element {
             class: "main-container",
 
             ControlBox {
-                instance_client: instance_client.clone(),
-                selected_instance: selected_instance.clone(),
-                instances_names: instances_names.clone(),
+                instance_client: s_client.read().clone(),
+                selected_instance: s_selected.read().clone(),
+                instances_names: s_names.read().clone(),
                 on_instance_changed: on_instance_changed,
             }
 
-            if let Some(selected) = selected_instance.clone() {
+            if let Some(selected) = s_selected.read().clone() {
                 McpDisplay {
                     psu_name: selected.clone()
                 }
