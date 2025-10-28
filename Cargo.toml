@@ -4,6 +4,13 @@ version = "0.1.0"
 authors = ["XdoctorwhoZ <xavier.rodriguezalvarez@gmail.com>"]
 edition = "2021"
 description = "Panduza Power Supply - MQTT broker and device management"
+repository = "https://github.com/Panduza/pza-power-supply"
+
+[package.metadata.wix]
+upgrade-guid = "C0480D1F-1DDB-4FA9-92BD-EA7616E557F3"
+path-guid = "6F3F533A-6549-424D-BA75-1A31D70DB6B3"
+license = false
+eula = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -111,8 +118,6 @@ anyhow = "1.0.100"
 default = ["desktop"]
 desktop = ["dioxus/desktop"]
 
-[profile]
-
 [profile.wasm-dev]
 inherits = "dev"
 opt-level = 1
@@ -122,3 +127,8 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
