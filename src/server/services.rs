@@ -1,3 +1,4 @@
+use crate::server::mcp::McpServer;
 use crate::ServerState;
 use pza_toolkit::rumqtt::broker::start_broker_in_thread;
 use std::sync::Arc;
@@ -23,6 +24,12 @@ pub async fn server_services(server_state: Arc<ServerState>) -> anyhow::Result<(
 
     {
         server_state.start_runtime().await?;
+    }
+
+    {
+        let instance_names = server_state.instances_names().await;
+        let ccc = server_state.server_config.as_ref().lock().await.clone();
+        McpServer::run(ccc, instance_names).await?;
     }
 
     loop {

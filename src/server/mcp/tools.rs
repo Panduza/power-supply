@@ -57,19 +57,19 @@ pub struct PowerSupplyService {
 impl PowerSupplyService {
     //--------------------------------------------------------------------------
 
-    pub fn new(config: ServerMainConfig, psu_name: String) -> Self {
-        let client =
-            PowerSupplyClientBuilder::from_broker_config(config.broker.tcp.unwrap().clone())
-                .with_power_supply_name(psu_name.clone())
-                .build();
+    pub fn new(config: ServerMainConfig, psu_name: String) -> anyhow::Result<Self> {
+        let client = PowerSupplyClientBuilder::default()
+            .with_ip(config.broker.tcp.unwrap().clone())
+            .with_power_supply_name(psu_name.clone())
+            .build()?;
         debug!("Client initialized");
 
-        Self {
+        Ok(Self {
             psu_name,
             tool_router: Self::tool_router(),
             prompt_router: Self::prompt_router(),
             state: Arc::new(Mutex::new(PowerSupplyState { client })),
-        }
+        })
     }
 }
 

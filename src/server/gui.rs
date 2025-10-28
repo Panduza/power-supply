@@ -7,8 +7,6 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::debug;
 
-mod config_button;
-
 mod control_box;
 use control_box::ControlBox;
 

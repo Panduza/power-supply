@@ -64,4 +64,9 @@ impl ServerState {
     }
 
     pub async fn stop_runtime(&self) {}
+
+    pub async fn instances_names(&self) -> Vec<String> {
+        let instances = self.instances.lock().await;
+        instances.keys().cloned().collect()
+    }
 }
