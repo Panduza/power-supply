@@ -29,11 +29,31 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     // 3 state possible: Some(true), Some(false), None (unknown)
     let mut output_state: Signal<Option<bool>> = use_signal(|| None);
 
-    // Setup MQTT subscription for output state changes when instance_client changes
-    use_effect({
+    // Setup MQTT subscription for output state changes using coroutine
+    let _subscription_coroutine = use_coroutine({
         let instance_client = props.instance_client.clone();
-        move || {
-            setup_output_state_subscription(instance_client.clone(), output_state);
+        move |_rx: UnboundedReceiver<()>| {
+            let instance_client = instance_client.clone();
+            async move {
+                trace!("Setting up output state subscription");
+
+                // Get initial output enable state
+                let initial_oe = instance_client.lock().await.get_oe().await;
+                output_state.set(Some(initial_oe));
+
+                // Add new callback to listen for OE changes from MQTT
+                let mut oe_changes = instance_client.lock().await.subscribe_oe_changes();
+
+                // Listen for messages from MQTT callback and update UI state
+                loop {
+                    let notification = oe_changes.recv().await;
+
+                    match notification {
+                        Ok(enabled) => output_state.set(Some(enabled)),
+                        Err(_) => break, // Exit loop on error
+                    }
+                }
+            }
         }
     });
 
@@ -117,37 +137,4 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-}
-
-/// Sets up MQTT subscription for output state changes
-///
-/// This function handles:
-/// - Getting initial output enable state
-/// - Subscribing to OE changes from MQTT
-/// - Updating the UI state when changes are received
-fn setup_output_state_subscription(
-    instance_client: Arc<Mutex<PowerSupplyClient>>,
-    mut output_state: Signal<Option<bool>>,
-) {
-    trace!("Setting up output state subscription");
-    spawn(async move {
-        // Get initial output enable state
-        let initial_oe = instance_client.lock().await.get_oe().await;
-        output_state.set(Some(initial_oe));
-
-        // Add new callback to listen for OE changes from MQTT
-        let mut oe_changes = instance_client.lock().await.subscribe_oe_changes();
-
-        // Listen for messages from MQTT callback and update UI state
-        spawn(async move {
-            loop {
-                let notification = oe_changes.recv().await;
-
-                match notification {
-                    Ok(enabled) => output_state.set(Some(enabled)),
-                    Err(_) => break, // Exit loop on error instead of todo!()
-                }
-            }
-        });
-    });
 }
