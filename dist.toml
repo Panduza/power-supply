@@ -5,8 +5,10 @@ name = "pza-power-supply"
 version = "0.1.0"
 # The URL to the git repository; this is used for publishing releases
 repository = "https://github.com/Panduza/power-supply"
-# The executables produced by your app
+# The executables produced by your app (Dioxus will generate the platform-specific executable)
 binaries = ["pza-power-supply"]
+# The build command dist runs to produce those binaries
+build-command = ["dx", "bundle", "--release"]
 # Brief description
 description = "Panduza Power Supply - MQTT broker and device management"
 # Authors

@@ -139,6 +139,9 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+      - name: Install Dioxus CLI
+        run: |
+          cargo install dioxus-cli --locked
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
