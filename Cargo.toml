@@ -12,14 +12,6 @@ path-guid = "6F3F533A-6549-424D-BA75-1A31D70DB6B3"
 license = false
 eula = false
 
-[package.metadata.dist]
-# Tell cargo-dist that this is a Dioxus app
-app-kind = "dioxus"
-# Specify the main binary
-main-binary = "pza-power-supply"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 
 once_cell = "1.21.3"
