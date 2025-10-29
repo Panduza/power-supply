@@ -1,10 +1,12 @@
+<div align="center">
+   
 # Panduza Power Supply
 
-Panduza Power Supply provides multiple interfaces to control and monitor power supplies from different tools and environments:
+Control and monitor power supplies from **MCP** or **MQTT**
 
-- **MQTT**: Send and receive commands and status updates via MQTT topics
-- **MCP**: Control programmatically via the Model Context Protocol (MCP) for integrations and automation
-- **Graphical Interface**: Desktop GUI for interactive use and visual feedback
+</div>
+
+![773301a3-e6d7-4a48-9b26-55415aa12544](https://github.com/user-attachments/assets/7154e15f-18ea-4266-8d48-3431ec413b3f)
 
 ## Features
 
@@ -86,7 +88,7 @@ Then use natural language commands:
 
 ## Configuration
 
-The server is configured via a JSON file at `~/.xdoctorwhoz/panduza-power-supply-server.json5`.
+The server is configured via a JSON file at `~/.panduza/pza-power-supply-server.json5`.
 
 A default configuration is automatically generated on first run. See the [Configuration Guide](https://panduza.github.io/power-supply/#/getting-started/configuration) for details.
 
