@@ -6,7 +6,8 @@ Control and monitor power supplies from **MCP** or **MQTT**
 
 </div>
 
-![773301a3-e6d7-4a48-9b26-55415aa12544](https://github.com/user-attachments/assets/7154e15f-18ea-4266-8d48-3431ec413b3f)
+![ddddddd](https://github.com/user-attachments/assets/a09d2ed7-7e3b-410e-b71e-b9d379750661)
+
 
 ## Features
 
