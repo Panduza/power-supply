@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tokio::time::{sleep, Duration};
 
 use ka3005p::Command;
 use ka3005p::Switch;
@@ -134,6 +135,10 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .read_set_voltage()
             .unwrap();
         info!("Kd3005p Driver: get_voltage = {}", voltage);
+
+        // Wait a bit for the device to process the command
+        sleep(Duration::from_millis(100)).await;
+
         Ok(voltage.to_string())
     }
 
@@ -188,6 +193,9 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .execute(Command::Save(1))
             .map_err(|e| anyhow::anyhow!("Failed to save: {:?}", e))?;
 
+        // Wait a bit for the device to process the command
+        sleep(Duration::from_millis(100)).await;
+
         Ok(())
     }
 
@@ -214,6 +222,10 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .read_set_current()
             .unwrap();
         info!("Kd3005p Driver: get_current = {}", current);
+
+        // Wait a bit for the device to process the command
+        sleep(Duration::from_millis(100)).await;
+
         Ok(current.to_string())
     }
 
@@ -267,6 +279,9 @@ impl PowerSupplyDriver for Kd3005pDriver {
             .await
             .execute(Command::Save(1))
             .map_err(|e| anyhow::anyhow!("Failed to save: {:?}", e))?;
+
+        // Wait a bit for the device to process the command
+        sleep(Duration::from_millis(100)).await;
 
         Ok(())
     }
