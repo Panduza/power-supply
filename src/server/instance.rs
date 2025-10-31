@@ -257,9 +257,6 @@ impl InstanceRunner {
             return;
         }
 
-        // Wait a bit for the device to process the command
-        tokio::time::sleep(Duration::from_millis(200)).await;
-
         // Read back the actual output enable state to confirm
         let oe_value = driver.output_enabled().await.expect("Failed to get state");
         let payload_back = Bytes::from(if oe_value { "ON" } else { "OFF" });
@@ -287,9 +284,6 @@ impl InstanceRunner {
             .set_voltage(cmd)
             .await
             .expect("Failed to set voltage");
-
-        // Wait a bit for the device to process the command
-        tokio::time::sleep(Duration::from_millis(200)).await;
 
         // Read back the actual set voltage to confirm
         let voltage = driver.get_voltage().await.expect("Failed to get voltage");
