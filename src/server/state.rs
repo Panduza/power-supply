@@ -1,7 +1,7 @@
 use crate::config::ServerMainConfig;
 use crate::server::factory::Factory;
-use crate::server::instance::InstanceHandler;
-use crate::server::instance::InstanceRunner;
+use crate::server::mqtt::MqttRunner;
+use crate::server::mqtt::MqttRunnerHandler;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -17,7 +17,7 @@ pub struct ServerState {
     pub server_config: Arc<Mutex<ServerMainConfig>>,
 
     /// Names of available instances
-    pub instances: Arc<Mutex<HashMap<String, InstanceHandler>>>,
+    pub instances: Arc<Mutex<HashMap<String, MqttRunnerHandler>>>,
 }
 
 impl PartialEq for ServerState {
@@ -54,7 +54,7 @@ impl ServerState {
                 for (name, device_config) in devices {
                     let instance = factory.instanciate_driver(device_config.clone())?;
 
-                    instances.insert(name.clone(), InstanceRunner::start(name.clone(), instance)?);
+                    instances.insert(name.clone(), MqttRunner::start(name.clone(), instance)?);
                 }
             }
             *self.instances.lock().await = instances;

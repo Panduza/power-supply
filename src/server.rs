@@ -1,7 +1,7 @@
 pub mod factory;
 pub mod gui;
-pub mod instance;
 pub mod mcp;
+pub mod mqtt;
 pub mod services;
 pub mod state;
 
