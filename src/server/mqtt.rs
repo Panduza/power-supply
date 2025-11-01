@@ -1,28 +1,25 @@
 use crate::constants;
 use crate::drivers::PowerSupplyDriver;
 use bytes::Bytes;
-use dioxus::html::form;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
-use rumqttc::{AsyncClient, MqttOptions};
-use std::any;
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::trace;
 
 #[derive(Debug)]
-pub struct InstanceHandler {
+pub struct MqttRunnerHandler {
     pub task_handler: Arc<Option<tokio::task::JoinHandle<()>>>,
 }
 
-/// MQTT InstanceRunner for handling power supply commands and measurements
-pub struct InstanceRunner {
+/// MQTT MqttRunner for handling power supply commands and measurements
+pub struct MqttRunner {
     /// MQTT client
     client: RumqttCustomAsyncClient,
-    /// InstanceRunner name
+    /// MqttRunner name
     name: String,
 
-    /// Driver instanceRunner
+    /// Driver MqttRunner
     driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
 
     /// psu/{name}/status
@@ -51,14 +48,14 @@ pub struct InstanceRunner {
     topic_measure_current_refresh_freq: String,
 }
 
-impl InstanceRunner {
+impl MqttRunner {
     // --------------------------------------------------------------------------------
 
     /// Start the runner
     pub fn start(
         name: String,
         driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
-    ) -> anyhow::Result<InstanceHandler> {
+    ) -> anyhow::Result<MqttRunnerHandler> {
         let (client, event_loop) = init_client("tttt");
 
         let custom_client = RumqttCustomAsyncClient::new(
@@ -69,7 +66,7 @@ impl InstanceRunner {
         );
 
         // Create runner object
-        let runner = InstanceRunner {
+        let runner = MqttRunner {
             name: name.clone(),
             driver,
             topic_status: custom_client.topic_with_prefix("status"),
@@ -89,7 +86,7 @@ impl InstanceRunner {
 
         let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
 
-        Ok(InstanceHandler {
+        Ok(MqttRunnerHandler {
             task_handler: Arc::new(Some(task_handler)),
         })
     }
@@ -97,7 +94,7 @@ impl InstanceRunner {
     // --------------------------------------------------------------------------------
 
     /// The main async task loop for the MQTT runner
-    async fn task_loop(mut event_loop: rumqttc::EventLoop, runner: InstanceRunner) {
+    async fn task_loop(mut event_loop: rumqttc::EventLoop, runner: MqttRunner) {
         // Subscribe to all relevant topics
         runner
             .client
