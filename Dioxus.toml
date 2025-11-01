@@ -2,6 +2,11 @@
 name = "pza-power-supply"
 default_platform = "desktop"
 
+[web.app]
+
+# HTML title tag content
+title = "Panduza Power Supply"
+
 [bundle]
 # Unique identifier for your app (reverse domain notation recommended)
 identifier = "com.panduza.power-supply"
