@@ -5,11 +5,13 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
 
+mod button_config;
 mod button_power;
 mod current_setter;
 mod instance_selector;
 mod voltage_setter;
 
+pub use button_config::ConfigButton;
 pub use button_power::PowerButton;
 pub use current_setter::CurrentSetter;
 pub use instance_selector::InstanceSelector;
@@ -95,6 +97,8 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
                 CurrentSetter {
                     instance_client: i_client.clone(),
                 }
+
+                ConfigButton {}
             }
         }
     }

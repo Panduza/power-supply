@@ -1,0 +1,92 @@
+/* Config Button Component Styles */
+
+.config-button-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: clamp(6px, 2vw, 12px);
+    padding: clamp(6px, 2vw, 12px);
+    width: 100%;
+    max-width: min(95%, 320px);
+    margin: 0;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: clamp(6px, 1vw, 10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.config-button-container:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
+/* Config Label Styles */
+.config-button-label {
+    font-weight: 700;
+    font-size: clamp(12px, 2.5vw, 14px);
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: clamp(0.4px, 0.5vw, 0.8px);
+    margin-right: clamp(2px, 1vw, 4px);
+    flex-shrink: 0;
+}
+
+/* Config Button Styles */
+.config-button {
+    flex: 1;
+    height: clamp(28px, 6vw, 36px);
+    border-radius: clamp(4px, 1vw, 8px);
+    border: none;
+    font-size: clamp(12px, 2.5vw, 14px);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: linear-gradient(145deg, #6c757d, #495057);
+    color: white;
+    box-shadow:
+        0 4px 12px rgba(108, 117, 125, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.config-button:hover {
+    background: linear-gradient(145deg, #495057, #343a40);
+    transform: scale(1.05);
+    box-shadow:
+        0 6px 16px rgba(108, 117, 125, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.config-button:active {
+    transform: scale(0.95);
+    box-shadow:
+        0 4px 8px rgba(108, 117, 125, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design - Stack vertically on very small screens */
+@media (max-width: 280px),
+(max-height: 400px) {
+    .config-button-container {
+        flex-direction: column;
+        gap: 4px;
+        padding: 4px;
+    }
+
+    .config-button-label {
+        margin-right: 0;
+        margin-bottom: 2px;
+        text-align: center;
+    }
+
+    .config-button {
+        width: 100%;
+        max-width: 200px;
+    }
+}
