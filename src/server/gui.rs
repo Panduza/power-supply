@@ -35,6 +35,7 @@ pub fn Gui() -> Element {
     let mut s_selected: Signal<Option<String>> = use_signal(|| None);
     let mut s_names: Signal<Option<Vec<String>>> = use_signal(|| None);
     let mut s_client: Signal<Option<Arc<Mutex<PowerSupplyClient>>>> = use_signal(|| None);
+    let mut s_toggle_key: Signal<Option<String>> = use_signal(|| None);
 
     // Coroutine to load configuration from server state
     let _coro: Coroutine<()> = use_coroutine({
@@ -46,6 +47,17 @@ pub fn Gui() -> Element {
             // tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
             s_addr.set(server_state.server_config.lock().await.broker.tcp.clone());
+            
+            // Load the keyboard toggle key from config
+            s_toggle_key.set(
+                server_state
+                    .server_config
+                    .lock()
+                    .await
+                    .gui
+                    .power_toggle_key
+                    .clone(),
+            );
 
             // Load instance names from server state
             let names: Vec<String> = server_state
@@ -107,6 +119,38 @@ pub fn Gui() -> Element {
         }
     };
 
+    // Keyboard event handler for power toggle
+    let on_key_down = move |event: Event<KeyboardData>| {
+        if let Some(client) = s_client.read().clone() {
+            if let Some(toggle_key) = s_toggle_key.read().clone() {
+                // Get the pressed key (normalized to lowercase)
+                let pressed_key = event.key().to_lowercase();
+                
+                // Check if the pressed key matches the configured toggle key
+                if pressed_key == toggle_key.to_lowercase() {
+                    trace!("Power toggle key pressed: {}", pressed_key);
+                    
+                    // Clone the client for the async block
+                    let client_clone = client.clone();
+                    spawn(async move {
+                        let client = client_clone.lock().await;
+                        let current_oe = client.get_oe().await;
+                        
+                        let result = if current_oe {
+                            client.disable_output().await
+                        } else {
+                            client.enable_output().await
+                        };
+                        
+                        if let Err(e) = result {
+                            warn!("Error toggling power output via keyboard: {:?}", e);
+                        }
+                    });
+                }
+            }
+        }
+    };
+
     rsx! {
         document::Stylesheet { href: CSS_MAIN }
         document::Stylesheet { href: CSS_CONTROL_BOX }
@@ -118,6 +162,8 @@ pub fn Gui() -> Element {
 
         div {
             class: "main-container",
+            onkeydown: on_key_down,
+            tabindex: 0,
 
             ControlBox {
                 instance_client: s_client.read().clone(),

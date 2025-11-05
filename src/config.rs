@@ -10,6 +10,9 @@ use pza_toolkit::config::MqttBrokerConfig;
 pub struct GuiConfig {
     /// Enable or disable the GUI
     pub enable: bool,
+    /// Keyboard shortcut to toggle power output
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub power_toggle_key: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -78,7 +81,10 @@ impl Default for ServerMainConfig {
 
         // Return the default global configuration
         Self {
-            gui: GuiConfig { enable: true },
+            gui: GuiConfig {
+                enable: true,
+                power_toggle_key: Some("p".to_string()),
+            },
             mcp: McpServerConfig {
                 enable: false,
                 host: "127.0.0.1".to_string(),

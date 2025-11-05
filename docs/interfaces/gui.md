@@ -53,6 +53,7 @@ The power button controls the output enable state.
 
 **Usage**:
 - Click to toggle output on/off
+- Or press the configured keyboard shortcut (default: `p`)
 - The button provides immediate visual feedback
 - Changes are reflected in MQTT topics simultaneously
 
@@ -249,7 +250,47 @@ The GUI is designed for efficiency:
 
 ## Keyboard Shortcuts
 
-Currently, the GUI primarily uses mouse/touch interaction. Keyboard shortcuts may be added in future versions.
+The GUI supports keyboard shortcuts for quick control:
+
+### Power Toggle Shortcut
+
+**Feature**: Press a configurable key to toggle the power output on/off without using the mouse.
+
+**Configuration**:
+```json
+{
+  "gui": {
+    "enable": true,
+    "power_toggle_key": "p"
+  }
+}
+```
+
+**Usage**:
+1. Ensure the GUI window is focused (click anywhere in the window)
+2. Press the configured key (default: `p`)
+3. The power output will toggle between enabled and disabled
+4. The same visual feedback as clicking the power button is shown
+
+**Configuration Options**:
+- Single character keys: `"p"`, `"t"`, `"o"`, etc.
+- Special keys: `"space"`, `"enter"`, etc.
+- Case-insensitive: `"P"` and `"p"` are equivalent
+- Default: `"p"` (for "power")
+
+**Tips**:
+- Choose a key that doesn't conflict with system shortcuts
+- Use an intuitive key like `"p"` for power or `"t"` for toggle
+- The shortcut only works when the GUI window has focus
+- To disable keyboard shortcuts, set `power_toggle_key` to `null` or remove it from the configuration
+
+### Future Shortcuts
+
+Future versions may include additional keyboard shortcuts for:
+- Voltage adjustment
+- Current adjustment
+- Device switching
+- Configuration access
 
 ## Accessibility
 
