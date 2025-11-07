@@ -22,7 +22,8 @@ The configuration file is in JSON5 format (JSON with comments support) and conta
 ```json
 {
   "gui": {
-    "enable": true
+    "enable": true,
+    "power_toggle_key": "p"
   },
   "mcp": {
     "enable": false,
@@ -63,7 +64,8 @@ Controls the graphical user interface.
 ```json
 {
   "gui": {
-    "enable": true  // Set to false to disable the GUI
+    "enable": true,  // Set to false to disable the GUI
+    "power_toggle_key": "p"  // Keyboard shortcut to toggle power (optional)
   }
 }
 ```
@@ -71,6 +73,11 @@ Controls the graphical user interface.
 **Parameters:**
 - `enable` (boolean): Enable or disable the GUI interface
   - Default: `true`
+- `power_toggle_key` (string, optional): Keyboard key to toggle power output
+  - Default: `"p"`
+  - When the GUI is focused, pressing this key will toggle the power supply output on/off
+  - Use a single character (case-insensitive)
+  - Examples: `"p"`, `"t"`, `"space"`, `"enter"`
 
 ### MCP Configuration
 
@@ -163,7 +170,8 @@ A minimal configuration with just MQTT and GUI enabled:
 ```json
 {
   "gui": {
-    "enable": true
+    "enable": true,
+    "power_toggle_key": "p"
   },
   "mcp": {
     "enable": false,
@@ -184,7 +192,8 @@ Configuration for development with emulator and all interfaces enabled:
 ```json
 {
   "gui": {
-    "enable": true
+    "enable": true,
+    "power_toggle_key": "p"
   },
   "mcp": {
     "enable": true,

@@ -15,11 +15,14 @@ use tracing::{info, trace};
 pub struct PowerButtonProps {
     /// The instance client for controlling the power supply
     pub instance_client: Arc<Mutex<PowerSupplyClient>>,
+    /// Keyboard shortcut key for power toggle
+    pub toggle_key: Option<String>,
 }
 
 impl PartialEq for PowerButtonProps {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.instance_client, &other.instance_client)
+            && self.toggle_key == other.toggle_key
     }
 }
 
@@ -139,7 +142,13 @@ pub fn PowerButton(props: PowerButtonProps) -> Element {
                 },
                 disabled: current_state.is_none(),
                 onclick: toggle_output,
-                "TOGGLE"
+                {
+                    if let Some(key) = &props.toggle_key {
+                        format!("TOGGLE ({})", key.to_uppercase())
+                    } else {
+                        "TOGGLE".to_string()
+                    }
+                }
             }
         }
     }

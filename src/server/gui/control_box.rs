@@ -26,12 +26,15 @@ pub struct ControlBoxProps {
     pub instances_names: Option<Vec<String>>,
     /// Callback when the instance selection changes
     pub on_instance_changed: EventHandler<String>,
+    /// Keyboard shortcut key for power toggle
+    pub toggle_key: Option<String>,
 }
 
 impl PartialEq for ControlBoxProps {
     fn eq(&self, other: &Self) -> bool {
         self.selected_instance == other.selected_instance
             && self.instances_names == other.instances_names
+            && self.toggle_key == other.toggle_key
     }
 }
 
@@ -86,6 +89,7 @@ pub fn ControlBox(props: ControlBoxProps) -> Element {
 
                 PowerButton {
                     instance_client: i_client.clone(),
+                    toggle_key: props.toggle_key.clone(),
                 }
 
                 VoltageSetter {
