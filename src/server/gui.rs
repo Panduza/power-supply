@@ -1,6 +1,8 @@
 use crate::{client::PowerSupplyClient, server::ServerState, SERVER_STATE_STORAGE};
+use dioxus::html::g::to;
 use dioxus::prelude::*;
 use pza_toolkit::config::IPEndpointConfig;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::debug;
@@ -47,7 +49,7 @@ pub fn Gui() -> Element {
             // tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
             s_addr.set(server_state.server_config.lock().await.broker.tcp.clone());
-            
+
             // Load the keyboard toggle key from config
             s_toggle_key.set(
                 server_state
@@ -124,24 +126,30 @@ pub fn Gui() -> Element {
         if let Some(client) = s_client.read().clone() {
             if let Some(toggle_key) = s_toggle_key.read().clone() {
                 // Get the pressed key (normalized to lowercase)
-                let pressed_key = event.key().to_lowercase();
-                
+                let pressed_key = event.key();
+
+                let toggle_key =
+                    Key::from_str(toggle_key.to_lowercase().as_str()).unwrap_or_else(|e| {
+                        warn!("Failed to parse toggle key from config: {:?} - take default 'T' instead", e);
+                        Key::Character("t".to_string())
+                    });
+
                 // Check if the pressed key matches the configured toggle key
-                if pressed_key == toggle_key.to_lowercase() {
+                if pressed_key == toggle_key {
                     trace!("Power toggle key pressed: {}", pressed_key);
-                    
+
                     // Clone the client for the async block
                     let client_clone = client.clone();
                     spawn(async move {
                         let client = client_clone.lock().await;
                         let current_oe = client.get_oe().await;
-                        
+
                         let result = if current_oe {
                             client.disable_output().await
                         } else {
                             client.enable_output().await
                         };
-                        
+
                         if let Err(e) = result {
                             warn!("Error toggling power output via keyboard: {:?}", e);
                         }
