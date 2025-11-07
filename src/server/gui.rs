@@ -172,12 +172,14 @@ pub fn Gui() -> Element {
             class: "main-container",
             onkeydown: on_key_down,
             tabindex: 0,
+            autofocus: true,
 
             ControlBox {
                 instance_client: s_client.read().clone(),
                 selected_instance: s_selected.read().clone(),
                 instances_names: s_names.read().clone(),
                 on_instance_changed: on_instance_changed,
+                toggle_key: s_toggle_key.read().clone(),
             }
 
             if let Some(selected) = s_selected.read().clone() {
