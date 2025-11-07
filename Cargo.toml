@@ -32,10 +32,10 @@ bytes = "1.10.1"
 config = "0.15.17"
 # ---
 # Web framework for building user interfaces
-dioxus = { version = "0.6.3", features = [] }
+dioxus = { version = "0.7.0", features = [] }
 # ---
 # Logging support for Dioxus
-dioxus-logger = "0.6.2"
+dioxus-logger = "0.7.0"
 # ---
 # Platform directories lookup
 dirs = "6.0.0"
