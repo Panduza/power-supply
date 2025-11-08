@@ -91,26 +91,19 @@ pub fn NavBar() -> Element {
                 }
             }
 
+            // Floating toggle button (when sidebar is hidden)
+            if !*sidebar_visible.read() {
+                button {
+                    class: "floating-toggle",
+                    onclick: toggle_sidebar,
+                    title: "Show sidebar (Ctrl+B)",
+                    "☰"
+                }
+            }
+
             // Main content area
             main {
                 class: if *sidebar_visible.read() { "main-content main-with-sidebar" } else { "main-content main-full-width" },
-
-                // Top bar with toggle button (when sidebar is hidden)
-                if !*sidebar_visible.read() {
-                    div {
-                        class: "top-bar",
-                        button {
-                            class: "sidebar-toggle-top",
-                            onclick: toggle_sidebar,
-                            title: "Show sidebar (Ctrl+B)",
-                            "☰"
-                        }
-                        h1 {
-                            class: "app-title",
-                            "Panduza Power Supply"
-                        }
-                    }
-                }
 
                 // Page content
                 div {
