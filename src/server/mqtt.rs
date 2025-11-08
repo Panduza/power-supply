@@ -171,7 +171,22 @@ impl MqttRunner {
                                         runner.name,
                                         topic
                                     );
-                                    runner.handle_incoming_message(&topic, payload).await;
+                                    match runner.handle_incoming_message(&topic, payload).await {
+                                        Ok(_) => {}
+                                        Err(e) => {
+                                            error!(
+                                                "[{}] Error handling message on topic {}: {}",
+                                                runner.name, topic, e
+                                            );
+                                            runner
+                                                .publish_panicking_status(format!(
+                                                    "Error handling message on topic {}: {}",
+                                                    topic, e
+                                                ))
+                                                .await
+                                                .expect("Unable to set status to Panicking");
+                                        }
+                                    }
                                 }
                                 _ => {}
                             },
