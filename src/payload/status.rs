@@ -31,25 +31,9 @@ impl StatusBuilder {
 
     // ----------------------------------------------------------------------------
 
-    /// Set the status code to Booting
-    pub fn with_code_booting(mut self) -> Self {
-        self.code = Some(StatusCode::Booting);
-        self
-    }
-
-    // ----------------------------------------------------------------------------
-
-    /// Set the status code to Running
-    pub fn with_code_running(mut self) -> Self {
-        self.code = Some(StatusCode::Running);
-        self
-    }
-
-    // ----------------------------------------------------------------------------
-
-    /// Set the status code to Crashed
-    pub fn with_code_crashed(mut self) -> Self {
-        self.code = Some(StatusCode::Crashed);
+    /// Set the status code
+    pub fn with_code(mut self, code: StatusCode) -> Self {
+        self.code = Some(code);
         self
     }
 

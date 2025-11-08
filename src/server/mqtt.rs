@@ -7,6 +7,7 @@ use tracing::warn;
 
 use crate::constants;
 use crate::drivers::PowerSupplyDriver;
+use crate::payload::payloads_generated::StatusCode;
 use crate::payload::StatusBuilder;
 use bytes::Bytes;
 use pza_toolkit::rumqtt::client::init_client;
@@ -22,6 +23,9 @@ pub struct MqttRunnerHandler {
 
 /// MQTT MqttRunner for handling power supply commands and measurements
 pub struct MqttRunner {
+    /// Current status of the instance
+    status: StatusCode,
+
     /// MQTT client
     mqtt_client: RumqttCustomAsyncClient,
     /// MqttRunner name
@@ -78,6 +82,7 @@ impl MqttRunner {
 
         // Create runner object
         let runner = MqttRunner {
+            status: StatusCode::Booting,
             name: name.clone(),
             driver,
             topic_base: custom_client.topic_with_prefix(""),
@@ -107,11 +112,11 @@ impl MqttRunner {
 
     /// The main async task loop for the MQTT runner
     async fn task_loop(mut event_loop: rumqttc::EventLoop, runner: MqttRunner) {
-        // Publish booting status
+        // Publish status (booting)
         runner
-            .publish_booting_status()
+            .publish_status()
             .await
-            .expect("Unable to publish booting status");
+            .expect("Unable to publish status");
 
         // Subscribe to all relevant topics
         runner
@@ -244,10 +249,10 @@ impl MqttRunner {
     // --------------------------------------------------------------------------------
 
     /// Publish booting status
-    async fn publish_booting_status(&self) -> anyhow::Result<()> {
+    async fn publish_status(&self) -> anyhow::Result<()> {
         // Build status payload
         let status_payload = StatusBuilder::default()
-            .with_code_booting()
+            .with_code(self.status.clone())
             .with_message("Power supply is booting".to_string())
             .build()?;
 

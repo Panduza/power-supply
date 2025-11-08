@@ -4,10 +4,10 @@ enum StatusCode : byte
     Booting = 0,
     // Driver instance is running normally
     Running = 1,
-    // Driver instance is in a panic state
-    Panic = 2
+    // Driver instance is in a panicking state
+    Panicking = 2
 }
-
+    
 table Status {
     pza_id: string;
     code: StatusCode;
