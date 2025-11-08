@@ -1,4 +1,9 @@
-enum StatusCode : byte { Booting = 0, Running = 1, Panic = 2 }
+enum StatusCode : byte 
+{
+    Booting = 0,
+    Running = 1,
+    Panic = 2
+}
 
 table Status {
     pza_id: string;
