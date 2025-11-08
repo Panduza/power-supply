@@ -56,8 +56,8 @@ include_dir = "0.7"
 ka3005p = "0.7.0"
 # ---
 # Local toolkit dependency
-# pza-toolkit = { path = "../toolkit" }
-pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.1" }
+pza-toolkit = { path = "../toolkit" }
+# pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.1" }
 # ---
 # Random string generator
 rand = "0.8.5"

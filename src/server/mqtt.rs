@@ -7,6 +7,7 @@ use tracing::warn;
 
 use crate::constants;
 use crate::drivers::PowerSupplyDriver;
+use crate::payload::StatusBuilder;
 use bytes::Bytes;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
@@ -22,7 +23,7 @@ pub struct MqttRunnerHandler {
 /// MQTT MqttRunner for handling power supply commands and measurements
 pub struct MqttRunner {
     /// MQTT client
-    client: RumqttCustomAsyncClient,
+    mqtt_client: RumqttCustomAsyncClient,
     /// MqttRunner name
     name: String,
 
@@ -92,7 +93,7 @@ impl MqttRunner {
                 .topic_with_prefix("measure/voltage/refresh_freq"),
             topic_measure_current_refresh_freq: custom_client
                 .topic_with_prefix("measure/current/refresh_freq"),
-            client: custom_client,
+            mqtt_client: custom_client,
         };
 
         let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
@@ -106,9 +107,15 @@ impl MqttRunner {
 
     /// The main async task loop for the MQTT runner
     async fn task_loop(mut event_loop: rumqttc::EventLoop, runner: MqttRunner) {
+        // Publish booting status
+        runner
+            .publish_booting_status()
+            .await
+            .expect("Unable to publish booting status");
+
         // Subscribe to all relevant topics
         runner
-            .client
+            .mqtt_client
             .subscribe_to_all(vec![
                 runner.topic_control_oe_cmd.clone(),
                 runner.topic_control_voltage_cmd.clone(),
@@ -116,7 +123,8 @@ impl MqttRunner {
                 runner.topic_measure_voltage_refresh_freq.clone(),
                 runner.topic_measure_current_refresh_freq.clone(),
             ])
-            .await;
+            .await
+            .expect("Unable to subscribe command topics");
 
         runner.initialize().await;
 
@@ -148,7 +156,7 @@ impl MqttRunner {
 
         // Publish initial output enable state
         let oe_value = driver.output_enabled().await?;
-        self.client
+        self.mqtt_client
             .client
             .publish(
                 self.topic_control_oe.clone(),
@@ -184,7 +192,7 @@ impl MqttRunner {
             }
         }
 
-        self.client
+        self.mqtt_client
             .client
             .publish(
                 self.topic_control_voltage.clone(),
@@ -220,7 +228,7 @@ impl MqttRunner {
             }
         }
 
-        self.client
+        self.mqtt_client
             .client
             .publish(
                 self.topic_control_current.clone(),
@@ -230,6 +238,31 @@ impl MqttRunner {
             )
             .await?;
 
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------------------
+
+    /// Publish booting status
+    async fn publish_booting_status(&self) -> anyhow::Result<()> {
+        // Build status payload
+        let status_payload = StatusBuilder::default()
+            .with_code_booting()
+            .with_message("Power supply is booting".to_string())
+            .build()?;
+
+        // Publish status payload
+        self.mqtt_client
+            .client
+            .publish(
+                self.topic_status.clone(),
+                rumqttc::QoS::AtMostOnce,
+                true,
+                status_payload.as_bytes().clone(),
+            )
+            .await?;
+
+        // Validate publish
         Ok(())
     }
 
@@ -293,7 +326,7 @@ impl MqttRunner {
                 .expect("Failed to disable output");
         } else {
             // Invalid command
-            self.client
+            self.mqtt_client
                 .client
                 .publish(
                     self.topic_control_oe.clone(),
@@ -311,7 +344,7 @@ impl MqttRunner {
         let payload_back = Bytes::from(if oe_value { "ON" } else { "OFF" });
 
         // Confirm the new state by publishing it
-        self.client
+        self.mqtt_client
             .client
             .publish(
                 self.topic_control_oe.clone(),
@@ -339,7 +372,7 @@ impl MqttRunner {
         let payload_back = Bytes::from(voltage);
 
         // Confirm the new state by publishing it
-        self.client
+        self.mqtt_client
             .client
             .publish(
                 self.topic_control_voltage.clone(),
@@ -363,7 +396,7 @@ impl MqttRunner {
             .expect("Failed to set current");
 
         // Confirm the new state by publishing it
-        self.client
+        self.mqtt_client
             .client
             .publish(
                 self.topic_control_current.clone(),

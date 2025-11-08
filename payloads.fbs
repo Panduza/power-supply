@@ -1,7 +1,10 @@
 enum StatusCode : byte 
 {
+    // Driver instance is booting up
     Booting = 0,
+    // Driver instance is running normally
     Running = 1,
+    // Driver instance is in a panic state
     Panic = 2
 }
 
