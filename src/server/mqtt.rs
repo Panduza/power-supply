@@ -3,6 +3,7 @@ pub mod topic_suffix;
 use anyhow::anyhow;
 pub use command_handler::CommandHandler;
 use dioxus::html::button::form;
+use tracing::error;
 use tracing::warn;
 
 use crate::constants;
@@ -111,10 +112,10 @@ impl MqttRunner {
     // --------------------------------------------------------------------------------
 
     /// The main async task loop for the MQTT runner
-    async fn task_loop(mut event_loop: rumqttc::EventLoop, runner: MqttRunner) {
+    async fn task_loop(mut event_loop: rumqttc::EventLoop, mut runner: MqttRunner) {
         // Publish status (booting)
         runner
-            .publish_status()
+            .publish_booting_status()
             .await
             .expect("Unable to publish status");
 
@@ -131,21 +132,70 @@ impl MqttRunner {
             .await
             .expect("Unable to subscribe command topics");
 
-        runner.initialize().await;
-
+        // Main event loop
         loop {
-            while let Ok(event) = event_loop.poll().await {
-                match event {
-                    rumqttc::Event::Incoming(incoming) => match incoming {
-                        rumqttc::Packet::Publish(packet) => {
-                            let topic = packet.topic;
-                            let payload = packet.payload;
-                            trace!("[{}] Received message on topic: {}", runner.name, topic);
-                            runner.handle_incoming_message(&topic, payload).await;
+            match runner.status {
+                // ------------------------------------------------------------
+                StatusCode::Booting => {
+                    // In Booting status, continue processing messages
+                    trace!("[{}] In Booting status, processing messages", runner.name);
+                    match runner.initialize().await {
+                        Ok(_) => {
+                            trace!("[{}] Initialization successful", runner.name);
+                            runner
+                                .publish_running_status()
+                                .await
+                                .expect("Unable to set status to Running");
                         }
-                        _ => {}
-                    },
-                    rumqttc::Event::Outgoing(_outgoing) => {}
+                        Err(e) => {
+                            error!("[{}] Initialization failed: {}", runner.name, e);
+                            runner
+                                .publish_panicking_status(format!("Initialization failed: {}", e))
+                                .await
+                                .expect("Unable to set status to Panicking");
+                        }
+                    }
+                }
+                // ------------------------------------------------------------
+                StatusCode::Running => {
+                    // In Running status, continue processing messages
+                    trace!("[{}] In Running status, processing messages", runner.name);
+                    while let Ok(event) = event_loop.poll().await {
+                        match event {
+                            rumqttc::Event::Incoming(incoming) => match incoming {
+                                rumqttc::Packet::Publish(packet) => {
+                                    let topic = packet.topic;
+                                    let payload = packet.payload;
+                                    trace!(
+                                        "[{}] Received message on topic: {}",
+                                        runner.name,
+                                        topic
+                                    );
+                                    runner.handle_incoming_message(&topic, payload).await;
+                                }
+                                _ => {}
+                            },
+                            rumqttc::Event::Outgoing(_outgoing) => {}
+                        }
+                    }
+                }
+                // ------------------------------------------------------------
+                StatusCode::Panicking => {
+                    // In Panicking status, stop processing messages
+                    trace!(
+                        "[{}] In Panicking status, stopping message processing",
+                        runner.name
+                    );
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+                _ => {
+                    // For other statuses, just log and continue
+                    trace!(
+                        "[{}] In {:?} status, processing messages",
+                        runner.name,
+                        runner.status
+                    );
                 }
             }
         }
@@ -249,11 +299,69 @@ impl MqttRunner {
     // --------------------------------------------------------------------------------
 
     /// Publish booting status
-    async fn publish_status(&self) -> anyhow::Result<()> {
+    async fn publish_booting_status(&mut self) -> anyhow::Result<()> {
+        // Set status to Booting
+        self.status = StatusCode::Booting;
+
         // Build status payload
         let status_payload = StatusBuilder::default()
             .with_code(self.status.clone())
             .with_message("Power supply is booting".to_string())
+            .build()?;
+
+        // Publish status payload
+        self.mqtt_client
+            .client
+            .publish(
+                self.topic_status.clone(),
+                rumqttc::QoS::AtMostOnce,
+                true,
+                status_payload.as_bytes().clone(),
+            )
+            .await?;
+
+        // Validate publish
+        Ok(())
+    }
+    // --------------------------------------------------------------------------------
+
+    /// Publish running status
+    async fn publish_running_status(&mut self) -> anyhow::Result<()> {
+        // Set status to Running
+        self.status = StatusCode::Running;
+
+        // Build status payload
+        let status_payload = StatusBuilder::default()
+            .with_code(self.status.clone())
+            .with_message("Power supply is running".to_string())
+            .build()?;
+
+        // Publish status payload
+        self.mqtt_client
+            .client
+            .publish(
+                self.topic_status.clone(),
+                rumqttc::QoS::AtMostOnce,
+                true,
+                status_payload.as_bytes().clone(),
+            )
+            .await?;
+
+        // Validate publish
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------------------
+
+    /// Publish panicking status
+    async fn publish_panicking_status(&mut self, error_message: String) -> anyhow::Result<()> {
+        // Set status to Panicking
+        self.status = StatusCode::Panicking;
+
+        // Build status payload
+        let status_payload = StatusBuilder::default()
+            .with_code(self.status.clone())
+            .with_message(error_message)
             .build()?;
 
         // Publish status payload
