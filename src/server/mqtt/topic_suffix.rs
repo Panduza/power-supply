@@ -1,0 +1,10 @@
+pub const STATUS: &str = "status";
+pub const ERROR: &str = "error";
+pub const CONTROL_OE: &str = "control/oe";
+pub const CONTROL_OE_CMD: &str = "control/oe/cmd";
+pub const CONTROL_VOLTAGE: &str = "control/voltage";
+pub const CONTROL_VOLTAGE_CMD: &str = "control/voltage/cmd";
+pub const CONTROL_CURRENT: &str = "control/current";
+pub const CONTROL_CURRENT_CMD: &str = "control/current/cmd";
+pub const MEASURE_VOLTAGE_REFRESH_FREQ: &str = "measure/voltage/refresh_freq";
+pub const MEASURE_CURRENT_REFRESH_FREQ: &str = "measure/current/refresh_freq";

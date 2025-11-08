@@ -1,3 +1,11 @@
+mod command_handler;
+pub mod topic_suffix;
+use anyhow::anyhow;
+use anyhow::Ok;
+pub use command_handler::CommandHandler;
+use dioxus::html::button::form;
+use tracing::warn;
+
 use crate::constants;
 use crate::drivers::PowerSupplyDriver;
 use bytes::Bytes;
@@ -21,6 +29,9 @@ pub struct MqttRunner {
 
     /// Driver MqttRunner
     driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
+
+    /// Base topic for the MQTT runner
+    topic_base: String,
 
     /// psu/{name}/status
     topic_status: String,
@@ -56,21 +67,22 @@ impl MqttRunner {
         name: String,
         driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
     ) -> anyhow::Result<MqttRunnerHandler> {
-        let (client, event_loop) = init_client("tttt");
+        let (client, event_loop) = init_client(format!("{}/{}", constants::SERVER_TYPE_NAME, name));
 
         let custom_client = RumqttCustomAsyncClient::new(
             client,
             rumqttc::QoS::AtMostOnce,
             true,
-            format!("{}/{}", constants::MQTT_TOPIC_PREFIX, name),
+            format!("{}/{}", constants::SERVER_TYPE_NAME, name),
         );
 
         // Create runner object
         let runner = MqttRunner {
             name: name.clone(),
             driver,
+            topic_base: custom_client.topic_with_prefix(""),
             topic_status: custom_client.topic_with_prefix("status"),
-            topic_error: custom_client.topic_with_prefix("error"),
+            topic_error: custom_client.topic_with_prefix(topic_suffix::ERROR),
             topic_control_oe: custom_client.topic_with_prefix("control/oe"),
             topic_control_oe_cmd: custom_client.topic_with_prefix("control/oe/cmd"),
             topic_control_voltage: custom_client.topic_with_prefix("control/voltage"),
@@ -224,6 +236,47 @@ impl MqttRunner {
 
     // --------------------------------------------------------------------------------
 
+    /// Handle incoming MQTT messages
+    ///
+    /// This function must manage error handling internally, updating error topics.
+    /// If this returns an error, it indicates a critical failure in message handling
+    /// and the runner should pass the instance into 'Panic' status.
+    ///
+    async fn handle_incoming_message(&self, topic: &String, payload: Bytes) -> anyhow::Result<()> {
+        // Extract suffix from topic
+        let suffix = topic
+            .strip_prefix(&self.topic_base)
+            .ok_or_else(|| anyhow!("Failed to extract suffix from topic: {}", topic))?;
+
+        // Match the suffix to determine the command
+        let cmd = CommandHandler::from_str(suffix);
+
+        // Handle commands based on the topic
+        match cmd {
+            Some(CommandHandler::OutputSet) => {
+                self.handle_output_enable_command(payload).await;
+            }
+            Some(CommandHandler::VoltageSet) => {
+                self.handle_voltage_command(payload).await;
+            }
+            Some(CommandHandler::CurrentSet) => {
+                self.handle_current_command(payload).await;
+            }
+            None => {
+                // Unknown command
+                warn!(
+                    "[{}] Unknown command for topic suffix: {}",
+                    self.name, suffix
+                );
+            }
+        }
+
+        // Acknowledge the command
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------------------
+
     /// Handle output enable/disable commands
     async fn handle_output_enable_command(&self, payload: Bytes) {
         // Handle ON/OFF payload
@@ -321,38 +374,5 @@ impl MqttRunner {
             )
             .await
             .unwrap();
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// Handle incoming MQTT messages
-    /// TODO => handle error return here
-    async fn handle_incoming_message(&self, topic: &String, payload: Bytes) {
-        // ON/OFF Output Enable
-        if topic.eq(&self.topic_control_oe_cmd) {
-            self.handle_output_enable_command(payload).await;
-        }
-        // Set Voltage
-        else if topic.eq(&self.topic_control_voltage_cmd) {
-            self.handle_voltage_command(payload).await;
-        }
-        // Set Current
-        else if topic.eq(&self.topic_control_current_cmd) {
-            self.handle_current_command(payload).await;
-        }
-        // Set Measurement Refresh Frequencies
-        else if topic.eq(&self.topic_measure_voltage_refresh_freq) {
-            let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(_freq) = cmd.parse::<u64>() {
-                // Set voltage measurement refresh frequency
-                // (Implementation depends on the driver capabilities)
-            }
-        } else if topic.eq(&self.topic_measure_current_refresh_freq) {
-            let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(_freq) = cmd.parse::<u64>() {
-                // Set current measurement refresh frequency
-                // (Implementation depends on the driver capabilities)
-            }
-        }
     }
 }
