@@ -1,0 +1,12 @@
+enum StatusCode : byte { Booting = 0, Running = 1, Crashed = 2 }
+
+table Status {
+    pza_id: string;
+    code: StatusCode;
+    message: string;
+}
+
+table Error {
+    pza_id: string;
+    message: string;
+}

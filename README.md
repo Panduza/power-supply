@@ -97,6 +97,17 @@ A default configuration is automatically generated on first run. See the [Config
 
 Contributions are welcome! Please see the [Contributing Guide](https://panduza.github.io/power-supply/#/contributing) for details.
 
+
+```bash
+./flatc.exe --version
+# flatc version 25.2.10
+```
+
+```bash
+# To rebuild flatbuffers
+./flatc.exe --rust -o src/payload/ payloads.fbs
+```
+
 ## License
 
 This project is licensed under the terms specified in the LICENSE file.

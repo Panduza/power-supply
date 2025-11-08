@@ -13,7 +13,10 @@ license = false
 eula = false
 
 [dependencies]
-
+# ---
+# Zero-copy serialization library
+flatbuffers = "25.9.23"
+# ---
 once_cell = "1.21.3"
 # ---
 # Trait for async functions in traits

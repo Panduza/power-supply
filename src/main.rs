@@ -7,6 +7,7 @@ mod path;
 mod server;
 
 mod client;
+mod payload;
 
 use crate::server::services::server_services;
 use dioxus::prelude::*;
