@@ -9,6 +9,8 @@ use tracing::debug;
 use tracing::trace;
 use tracing::warn;
 
+mod routes;
+
 mod control_box;
 mod mcp_display;
 use control_box::ControlBox;

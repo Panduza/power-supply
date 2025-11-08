@@ -37,6 +37,9 @@ dioxus = { version = "0.6.3", features = [] }
 # Logging support for Dioxus
 dioxus-logger = "0.6.2"
 # ---
+# Router for Dioxus applications
+dioxus-router = "0.6.3"
+# ---
 # Platform directories lookup
 dirs = "6.0.0"
 # ---
