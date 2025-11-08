@@ -1,11 +1,11 @@
 use dioxus::prelude::*;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, trace, warn};
-use std::str::FromStr;
 
-use crate::{client::PowerSupplyClient, server::ServerState, SERVER_STATE_STORAGE};
 use crate::server::gui::control_box::ControlBox;
+use crate::{client::PowerSupplyClient, server::ServerState, SERVER_STATE_STORAGE};
 use pza_toolkit::config::IPEndpointConfig;
 
 /// Control page component for power supply management
