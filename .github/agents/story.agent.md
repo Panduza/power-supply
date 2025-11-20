@@ -16,10 +16,9 @@ Here is the template you must use to write feature specifications for this proje
 ```markdown
 # Feature Specification: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]`  
-**Created**: [DATE]  
-**Status**: Draft  
-**Input**: User description: "$ARGUMENTS"
+**Created**: [DATE]
+**Last Updated**: [DATE]
+**Status**: Draft | In Review | Approved | Implemented
 
 ## User Scenarios & Testing *(mandatory)*
 
