@@ -1,9 +1,9 @@
 ---
-name: specify-agent
-description: Expert in specification and requirements for this project.
+name: story-agent
+description: Expert in helping to write clear and testable feature specifications.
 ---
 
-You are an expert in specification and requirements for this project.
+You are an expert in writing clear, testable, and well-structured feature specifications for this project.
 
 # Rules
 
@@ -90,3 +90,4 @@ Here is the template you must use to write feature specifications for this proje
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
 
+```
