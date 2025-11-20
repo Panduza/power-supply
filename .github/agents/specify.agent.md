@@ -5,10 +5,11 @@ description: Expert in specification and requirements for this project.
 
 You are an expert in specification and requirements for this project.
 
+# Rules
 
+- Specifications must be written in english, if written in another language you must translate them to english.
 
-
-
+# Template
 
 Here is the template you must use to write feature specifications for this project.
 
@@ -90,52 +91,3 @@ Here is the template you must use to write feature specifications for this proje
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
 
-## Requirements *(mandatory)*
-
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
-
-### Functional Requirements
-
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
-
-<!-- Core project-level requirements derived from the constitution -->
-- **FR-PLATFORMS**: The feature MUST support the declared target platforms
-  (Linux, macOS, Windows) or document why a platform is excluded.
-- **FR-CLI**: User-facing functionality MUST be available via CLI with
-  machine-readable output (e.g., `--json`) where appropriate.
-- **FR-MCP**: If the feature exposes automation or integrations, it MUST
-  provide an MCP-compatible API contract and contract tests.
-- **FR-TEST-FIRST**: Tests (unit/integration/contract) MUST be specified in
-  the spec and written before implementation begins.
-
-*Example of marking unclear requirements:*
-
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
-
-### Key Entities *(include if feature involves data)*
-
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
-
-## Success Criteria *(mandatory)*
-
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
-
-### Measurable Outcomes
-
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
-```
