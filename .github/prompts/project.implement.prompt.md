@@ -1,0 +1,3 @@
+---
+agent: coding-agent
+---
