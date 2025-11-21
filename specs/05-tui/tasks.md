@@ -1,54 +1,56 @@
 # 05 - Terminal User Interface (TUI) — Tasks
 
-But: découper le travail en petites tâches PR‑friendly, mapées sur les stories et tests.
+Primary language: English. All documents and generated code for this feature MUST be written in English unless a specific exception is documented.
 
-1. Task 01 — Spec: Stories & Requirements
-   - Créer `specs/05-tui/stories.md` et `requirements.md`. (PR: docs only)
-   - Acceptance: fichiers ajoutés et revus.
+Purpose: break the work into small, PR-friendly tasks mapped to the stories and tests.
 
-2. Task 02 — CLI skeleton & parsing
-   - Ajouter un sous‑module `cli` (ou étendre `main.rs`) pour parser les commandes: `power`, `set voltage`, `get voltage`, `set current`, `get current`, `status`.
-   - Utiliser `clap` ou un parseur existant du projet.
-   - Implémenter `--help` et `--json` flag global.
-   - Tests: unitaires pour parsing et validation d'arguments.
+1. [ ] Task 01 — Spec: Stories & Requirements
+   - Create `specs/05-tui/stories.md` and `requirements.md`. (PR: docs only)
+   - Acceptance: files added and reviewed.
 
-3. Task 03 — Implement `power on|off`
-   - Implémenter l'appel vers l'API device (driver) pour changer l'état.
-   - Retourner message texte et JSON selon flag.
-   - Tests d'intégration simulées avec driver `emulator`.
+2. [ ] Task 02 — CLI skeleton & parsing
+   - Add a `cli` submodule (or extend `main.rs`) to parse commands: `power`, `set voltage`, `get voltage`, `set current`, `get current`, `status`.
+   - Use `clap` or an existing parser in the project.
+   - Implement `--help` and a global `--json` flag.
+   - Tests: unit tests for parsing and argument validation.
 
-4. Task 04 — Implement `set/get voltage`
-   - Validation des bornes et format (ex: 2 décimales pour V).
-   - Appel au driver, lecture de la mesure, sortie texte/JSON.
-   - Tests: unité (validation), intégration (`emulator`), schéma JSON.
+3. [ ] Task 03 — Implement `power on|off`
+   - Implement calls to the device API (driver) to change power state.
+   - Return text and JSON output depending on the flag.
+   - Integration tests using the `emulator` driver.
 
-5. Task 05 — Implement `set/get current`
-   - Comme voltage mais pour le courant.
-   - Tests: unité + intégration.
+4. [ ] Task 04 — Implement `set/get voltage`
+   - Validate bounds and format (e.g., two decimal places for V).
+   - Call the driver, read measured value, output text/JSON.
+   - Tests: unit (validation), integration (`emulator`), JSON schema.
 
-6. Task 06 — Implement `status` summary
-   - Aggréger `DeviceState` et formater sortie texte/JSON.
-   - Tests: valider inclusion de timestamps et stabilité du schéma.
+5. [ ] Task 05 — Implement `set/get current`
+   - Same as voltage but for current.
+   - Tests: unit + integration.
 
-7. Task 07 — Logging & Audit
-   - Ajouter persistance des commandes et réponses (fichier de log rotatif ou système existant).
-   - S'assurer que les logs n'exposent pas de secrets.
-   - Tests: vérifier écriture de log pour commandes critiques.
+6. [ ] Task 06 — Implement `status` summary
+   - Aggregate `DeviceState` and format text/JSON output.
+   - Tests: validate timestamps are included and JSON schema stability.
 
-8. Task 08 — Error handling and edge cases
-   - Tests pour appareil déconnecté, valeurs hors limites, défaut matériel.
-   - Documenter comportements d'erreur dans `docs/`.
+7. [ ] Task 07 — Logging & Audit
+   - Add persistence of commands and responses (rotating file or existing logging system).
+   - Ensure logs do not expose secrets.
+   - Tests: verify log entries for critical commands.
 
-9. Task 09 — Docs & CI
-   - Documenter chaque commande dans `docs/` (format demandé par PR-001).
-   - Ajouter tests CLI aux workflows CI, garantir `cargo fmt` et `cargo clippy`.
+8. [ ] Task 08 — Error handling and edge cases
+   - Tests for device disconnected, out-of-range values, hardware faults.
+   - Document error behaviors in `docs/`.
 
-10. Task 10 — Release notes / Migration
-   - Si breaking changes CLI: rédiger notes de migration et bump major.
+9. [ ] Task 09 — Docs & CI
+   - Document every command in `docs/` (PR-001 requirement).
+   - Add CLI tests to CI workflows; ensure `cargo fmt` and `cargo clippy` pass.
 
-Notes PR strategy:
-- Chaque task 02–06 idéalement un PR séparé (petite surface), incluant tests et docs minimales.
-- Tâches 3–6 doivent fournir `--json` dès la première itération pour répondre à PR-008.
+10. [ ] Task 10 — Release notes / Migration
+   - If CLI breaking changes occur: write migration notes and bump major version.
 
-Références:
-- Spécification source: `specs/5-tui.md` (migration vers ce dossier).
+Notes on PR strategy:
+- Prefer separate PRs for Tasks 02–06 (small surface & tests included).
+- Tasks 03–06 should provide `--json` from the first iteration to satisfy PR-008.
+
+References:
+- Origin spec: `specs/5-tui.md` (migrated to this folder).

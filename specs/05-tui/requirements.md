@@ -1,44 +1,46 @@
 # 05 - Terminal User Interface (TUI) — Requirements
 
+Primary language: English. All documents and generated code for this feature MUST be written in English unless a specific exception is documented.
+
 ## Functional Requirements
 
-- FR-001: Fournir une CLI TUI exposant les contrôles principaux: `power on|off`, `set voltage <V>`, `get voltage`, `set current <A>`, `get current`, `status`.
-- FR-002: Valider les formats numériques et les bornes avant d'appeler les APIs matérielles.
-- FR-003: Supporter une sortie machine‑lisible via l'option `--json` pour toutes les commandes de mesure/état.
-- FR-004: Persister des logs utilisateur lisibles pour l'audit (format texte) sans exposer d'informations sensibles.
-- FR-005: Fournir des codes d'erreur et messages clairs pour les échecs de communication matérielle.
-- FR-006: Inclure un timestamp ISO8601 (`last_updated`) pour mesures et changements d'état.
+- FR-001: Provide a CLI TUI exposing the core controls: `power on|off`, `set voltage <V>`, `get voltage`, `set current <A>`, `get current`, `status`.
+- FR-002: Validate numeric formats and bounds before calling device APIs.
+- FR-003: Support machine-readable output via the `--json` option for all measurement/state commands.
+- FR-004: Persist user-friendly command logs for auditing (text format) without exposing sensitive information.
+- FR-005: Surface clear error codes and messages for hardware communication failures.
+- FR-006: Include an ISO8601 timestamp (`last_updated`) for measurements and state changes.
 
 ## Platform / Cross-cutting
 
-- FR-PLATFORMS: Supporter Linux, macOS, Windows. Documenter toute limitation plateforme.
-- FR-CLI: Tous les comportements utilisateurs exposés par le TUI doivent être accessibles via la CLI, avec `--help` détaillé.
-- FR-MCP: Si une intégration est exposée, fournir un contrat MCP et des tests de contrat (à préciser si nécessaire).
-- FR-TEST-FIRST: Les tests doivent être spécifiés ici et implémentés avant l'implémentation (tests unitaires/integration CLI).
+- FR-PLATFORMS: Support Linux, macOS, and Windows. Document any platform-specific limitations.
+- FR-CLI: All user-facing functionality exposed by the TUI must be available via the CLI and listed in `--help`.
+- FR-MCP: If exposing automation/integrations, provide an MCP-compatible contract and contract tests (specify if required).
+- FR-TEST-FIRST: Tests must be specified here and implemented before implementation (unit/integration CLI tests).
 
-## Tests à implémenter (exigés par la règle PR-002)
-- Test `power_on_off`: exécuter `power on` puis `power off` / valider `status --json`.
-- Test `set_voltage_bounds`: vérifier que les valeurs invalides sont rejetées et les valeurs valides appliquées.
-- Test `get_voltage_json_schema`: vérifier que `get voltage --json` respecte le schéma.
-- Test `status_json_schema`: valider la stabilité du format JSON retourné par `status --json`.
+## Tests to Implement (required by PR-002)
+- `power_on_off`: run `power on` then `power off` and validate `status --json`.
+- `set_voltage_bounds`: verify invalid values are rejected and valid values applied.
+- `get_voltage_json_schema`: ensure `get voltage --json` conforms to the schema.
+- `status_json_schema`: validate the stability of the JSON format returned by `status --json`.
 
-## Project Rules (rappel — must follow)
-- PR-001 (Docs First): Chaque commande doit avoir une entrée dans `docs/` et dans `--help`.
-- PR-002 (Test Coverage): Chaque story a au moins un test automatisé CLI.
-- PR-004 (Error Handling): Aucun panic non géré, erreurs user‑friendly + codes de sortie non‑zéro.
-- PR-007 (Formatting & Linting): `cargo fmt` et `cargo clippy` doivent passer.
-- PR-008 (CLI Machine-Readable Output): Les commandes de mesure doivent offrir `--json`.
+## Project Rules (reminder - must follow)
+- PR-001 (Docs First): Every command must have an entry in `docs/` and appear in `--help`.
+- PR-002 (Test Coverage): Each story must have at least one automated CLI test.
+- PR-004 (Error Handling): No unhandled panics; user-friendly errors + non-zero exit codes.
+- PR-007 (Formatting & Linting): `cargo fmt` and `cargo clippy` must pass.
+- PR-008 (CLI Machine-Readable Output): Measurement commands must offer `--json`.
 
 ## Key Entities
-- DeviceState: `{ power: "on"|"off", voltage_set: f64, current_set: f64, voltage_measured: f64, current_measured: f64, last_updated: iso8601 }`.
-- Command: Représentation d'une commande CLI parsée, ses arguments, verdict de validation.
-- Measurement: `{ value: f64, unit: "V"|"A", timestamp: iso8601 }`.
+- `DeviceState`: `{ power: "on"|"off", voltage_set: f64, current_set: f64, voltage_measured: f64, current_measured: f64, last_updated: iso8601 }`.
+- `Command`: Representation of a parsed CLI command, its arguments, and validation result.
+- `Measurement`: `{ value: f64, unit: "V"|"A", timestamp: iso8601 }`.
 
-## Success Criteria (mesurables)
-- SC-001: Réponse < 1s pour appareils locaux lors d'opérations `power` et `status`.
-- SC-002: `set voltage` et `set current` renvoient les valeurs mesurées avec timestamp dans >95% des runs d'intégration.
-- SC-003: `status --json` conforme à un schéma stable utilisable par des scripts.
+## Success Criteria (measurable)
+- SC-001: Users can toggle power and view updated state via CLI with < 1 second response for local devices.
+- SC-002: `set voltage` and `set current` return measured values and timestamps in > 95% of integration runs.
+- SC-003: `status --json` output conforms to a stable schema usable by automation scripts.
 
-## Notes d'implémentation
-- Les bornes exactes (min/max voltage/current) doivent être lues depuis la configuration du driver (`drivers::...`) ou documentées dans `requirements.md` si le matériel impose des limites.
-- Les logs d'audit peuvent être gérés par le composant `server::services` ou équivalent; éviter d'écrire des secrets.
+## Implementation Notes
+- Exact device bounds (min/max voltage/current) should be read from the driver configuration (`drivers::...`) or documented here if hardware imposes limits.
+- Audit logs may be managed by the `server::services` component or equivalent; avoid writing secrets to logs.
