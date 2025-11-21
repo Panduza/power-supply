@@ -54,7 +54,7 @@ One-line summary of the feature and its value.
 
 ## Conventions
 
-- Place full requirements under `specs/NN-feature-name/requirements.md`.
+- Place full requirements under `specs/NN-feature-name/1-requirements.md`.
 - Keep PRs small and focused; prefer tests-first where practical.
 
 

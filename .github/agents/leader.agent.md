@@ -36,18 +36,18 @@ Your primary goal is to organize, sequence, and validate the steps needed to mov
 - All feature specifications live under `specs/` and follow a per-feature directory layout.
 - Directory format: `specs/[NN-feature-name]/` where `NN` is a zero-padded index.
 - Recommended files inside each spec directory:
-	- `stories.md` — user stories and acceptance criteria (written first)
-	- `requirements.md` — functional, non-functional, platform requirements; if tests are desired, list them here (tests are optional)
-	- `tasks.md` — granular tasks derived from the requirements, ready for implementation
+  - `0-stories.md` — user stories and acceptance criteria (written first)
+  - `1-requirements.md` — functional, non-functional, platform requirements; if tests are desired, list them here (tests are optional)
+  - `2-tasks.md` — granular tasks derived from the requirements, ready for implementation
 
 ## Workflow & Quality Gates
 
 The preferred order of work for a feature is strict and deliberate:
 
-1. Stories (first): write `stories.md` containing user stories and clear acceptance criteria. Stories define the expected behaviour and are the basis for requirements.
-2. Requirements (second): produce `requirements.md` describing functional and non-functional requirements. Explicitly list any tests to be implemented here — tests are optional and must be specified in this file when required.
-3. Tasks (third): break the requirements into small, actionable `tasks.md` items that map to single PRs or commits.
-4. Implementation (fourth): implement the tasks in small, focused PRs. If tests were specified in `requirements.md`, implement those tests alongside the code changes; otherwise tests remain optional.
+1. Stories (first): write `0-stories.md` containing user stories and clear acceptance criteria. Stories define the expected behaviour and are the basis for requirements.
+2. Requirements (second): produce `1-requirements.md` describing functional and non-functional requirements. Explicitly list any tests to be implemented here — tests are optional and must be specified in this file when required.
+3. Tasks (third): break the requirements into small, actionable `2-tasks.md` items that map to single PRs or commits.
+4. Implementation (fourth): implement the tasks in small, focused PRs. If tests were specified in `1-requirements.md`, implement those tests alongside the code changes; otherwise tests remain optional.
 5. CI Checks: every PR should pass formatting and linting (`cargo fmt`, `cargo clippy`) and any tests that the PR includes.
 6. Review: reviewers confirm that the PR implements the spec and tasks, includes the required docs and tests (if specified), and follows repository conventions.
 

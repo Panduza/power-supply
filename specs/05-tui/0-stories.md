@@ -1,7 +1,5 @@
 # 05 - Terminal User Interface (TUI) — Stories
 
-Primary language: English. All documents and generated code for this feature MUST be written in English unless a specific exception is documented.
-
 ## Context
 The TUI feature provides command-line control of the power supply while preserving auditability, machine-readable output, and input validation. The stories below capture the essential user scenarios.
 
