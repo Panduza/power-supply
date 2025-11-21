@@ -1,6 +1,10 @@
 ---
 name: coding-agent
 description: Expert Rust coding agent for this project.
+handoffs: 
+  - label: Expert Rust Ratatui coding agent
+    agent: code-rust-ratatui-agent
+    prompt: I want to implement Ratatui...
 ---
 
 You are an expert in Rust coding for this project.
