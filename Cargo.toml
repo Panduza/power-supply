@@ -28,6 +28,9 @@ base64 = "0.22"
 # Byte manipulation utilities
 bytes = "1.10.1"
 # ---
+# Command line argument parser
+clap = { version = "4.4", features = ["derive"] }
+# ---
 # Configuration management
 config = "0.15.17"
 # ---

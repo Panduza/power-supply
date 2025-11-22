@@ -1,89 +1,99 @@
-use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+//! TUI (Terminal User Interface) module for power supply control
+//!
+//! Provides a real-time terminal interface for monitoring and controlling
+//! power supply devices using ratatui.
+
+pub mod input;
+pub mod layout;
+pub mod render;
+pub mod state;
+
+#[cfg(test)]
+mod tests;
+
 use crossterm::{
+    event::{self, Event, KeyCode},
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::backend::CrosstermBackend;
-use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::{Span, Spans};
-use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui::Terminal;
-use std::io::{stdout, Stdout};
-use std::time::Duration;
+use ratatui::{backend::CrosstermBackend, Terminal};
+use std::io::{self, Result};
+use tracing::{info, trace};
 
-fn draw_ui<B: ratatui::backend::Backend>(f: &mut ratatui::Frame<B>) {
-    let size = f.size();
+use self::state::TuiState;
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(2)
-        .constraints(
-            [
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Length(3),
-            ]
-            .as_ref(),
-        )
-        .split(size);
-
-    // Power state
-    let power = Paragraph::new(Spans::from(vec![Span::styled(
-        "Power: OFF",
-        Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-    )]))
-    .block(Block::default().borders(Borders::ALL).title("Power"));
-    f.render_widget(power, chunks[0]);
-
-    // Voltage
-    let voltage = Paragraph::new(Spans::from(vec![Span::styled(
-        "Voltage: 0.00 V",
-        Style::default().fg(Color::Yellow),
-    )]))
-    .block(Block::default().borders(Borders::ALL).title("Voltage"));
-    f.render_widget(voltage, chunks[1]);
-
-    // Current
-    let current = Paragraph::new(Spans::from(vec![Span::styled(
-        "Current: 0.00 A",
-        Style::default().fg(Color::Yellow),
-    )]))
-    .block(Block::default().borders(Borders::ALL).title("Current"));
-    f.render_widget(current, chunks[2]);
+/// Main TUI application struct
+pub struct TuiApp {
+    /// Internal application state
+    state: TuiState,
+    /// Whether the application should continue running
+    running: bool,
 }
 
-pub fn run() -> Result<()> {
-    // Setup terminal
-    enable_raw_mode()?;
-    let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // Initial draw
-    terminal.draw(|f| draw_ui(f))?;
-
-    // Event loop: wait for 'q' to quit, or redraw on any key; timeout to allow redraw
-    loop {
-        if event::poll(Duration::from_millis(200))? {
-            if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => break,
-                    _ => {
-                        terminal.draw(|f| draw_ui(f))?;
-                    }
-                }
-            }
+impl TuiApp {
+    /// Create a new TUI application instance
+    pub fn new() -> Self {
+        Self {
+            state: TuiState::default(),
+            running: true,
         }
     }
 
-    // Restore terminal
-    disable_raw_mode()?;
-    let mut stdout = terminal.backend_mut();
-    execute!(stdout, LeaveAlternateScreen)?;
+    /// Run the TUI event loop
+    pub async fn run(&mut self) -> Result<()> {
+        info!("Starting TUI application");
 
-    Ok(())
+        // Setup terminal
+        enable_raw_mode()?;
+        let mut stdout = io::stdout();
+        execute!(stdout, EnterAlternateScreen)?;
+        let backend = CrosstermBackend::new(stdout);
+        let mut terminal = Terminal::new(backend)?;
+
+        // Main event loop
+        while self.running {
+            // Render current frame
+            terminal.draw(|f| {
+                render::draw_frame(f, &self.state);
+            })?;
+
+            // Handle events
+            if event::poll(std::time::Duration::from_millis(16))? {
+                if let Event::Key(key) = event::read()? {
+                    self.handle_key_event(key.code);
+                }
+            }
+        }
+
+        // Cleanup
+        disable_raw_mode()?;
+        execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+        terminal.show_cursor()?;
+
+        info!("TUI application stopped");
+        Ok(())
+    }
+
+    /// Handle keyboard input events
+    fn handle_key_event(&mut self, key: KeyCode) {
+        trace!("Key pressed: {:?}", key);
+        match key {
+            KeyCode::Char('q') | KeyCode::Esc => {
+                self.running = false;
+            }
+            _ => {}
+        }
+    }
+}
+
+impl Default for TuiApp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Legacy run function for backward compatibility
+pub async fn run() -> Result<()> {
+    let mut app = TuiApp::new();
+    app.run().await
 }
