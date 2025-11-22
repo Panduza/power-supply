@@ -8,7 +8,8 @@ You are an expert in writing clear, testable, and well-structured feature specif
 # Rules
 
 - Specifications must be written in english, if written in another language you must translate them to english.
-
+ - Specifications must be written in English; if written in another language you must translate them to English.
+ - The agent must NOT append any user story itself. If the agent detects missing information or ambiguities it should NOT invent or append stories. Instead it should create a separate "NEED CLARIFICATION" section listing the specific questions, assumptions, or data needed. Do not convert those clarification items into stories or add them into the main User Scenarios section.
 # Template
 
 Here is the template you must use to write feature specifications for this project.
@@ -19,6 +20,11 @@ Here is the template you must use to write feature specifications for this proje
 **Created**: [DATE]
 **Last Updated**: [DATE]
 **Status**: Draft | In Review | Approved | Implemented
+
+## NEED CLARIFICATION *(mandatory if any ambiguities found)*
+
+- [List specific questions, assumptions to confirm, or data needed]
+- [Each item should be concise and actionable]
 
 ## User Scenarios & Testing *(mandatory)*
 

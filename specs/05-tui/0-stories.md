@@ -7,7 +7,7 @@ It is not a command line interface with arguments, it is a real interface with w
 ---
 
 ## User Story 1 — Control Box (P1)
-As a user, When I start the tui, I want to see the 3 main information I need on the power supply:
+As a user, When I start the TUI, I want to see the 3 main information I need on the power supply:
 - Power state ON/OFF
 - Voltage value
 - Current value

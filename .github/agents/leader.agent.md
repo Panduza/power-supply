@@ -6,10 +6,10 @@ handoffs:
     agent: story-agent
     prompt: Structure the user stories for...
   - label: Write technical specifications
-    agent: requirement-agent
+    agent: req-agent
     prompt: Write the requirements for...
   - label: Cut implementation into tasks
-    agent: task-planner-agent
+    agent: task-agent
     prompt: Cut the requirements into small, independently implementable tasks.
 ---
 You are the project's workflow expert and lead agent responsible for coordinating other agents to deliver high-quality work.

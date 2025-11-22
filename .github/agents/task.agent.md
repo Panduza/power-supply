@@ -1,5 +1,5 @@
 ---
-name: task-planner-agent
+name: task-agent
 description: Expert in splitting requirements into small, independently implementable tasks.
 ---
 
