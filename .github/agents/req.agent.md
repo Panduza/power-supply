@@ -20,10 +20,6 @@ You are an expert in writing clear, concise, and testable feature requirements t
 ```markdown
 # Requirements: [FEATURE NAME]
 
-**Created**: [DATE]
-**Last Updated**: [DATE]
-**Status**: Draft | In Review | Approved | Implemented
-
 ## Summary
 
 One-line summary of the feature and its value.
