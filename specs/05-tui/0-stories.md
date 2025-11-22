@@ -6,7 +6,11 @@ It is not a command line interface with arguments, it is a real interface with w
 
 ---
 
-## User Story 1 — Control Box (P1)
+## CLI options
+As a user, I want to start the tui through the cli argument --tui.
+
+
+## Control Box
 As a user, When I start the TUI, I want to see the 3 main information I need on the power supply:
 - Power state ON/OFF
 - Voltage value

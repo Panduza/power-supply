@@ -14,7 +14,7 @@ use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::time::Duration;
 
-fn draw_ui<B: ratatui::backend::Backend>(f: &mut ratatui::frame::Frame<B>) {
+fn draw_ui<B: ratatui::backend::Backend>(f: &mut ratatui::Frame<B>) {
     let size = f.size();
 
     let chunks = Layout::default()

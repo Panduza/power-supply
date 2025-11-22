@@ -27,6 +27,20 @@ Response Style
 - Offer portable alternatives when appropriate.
 - Suggest tests and manual verification steps to validate behavior across OSes.
 
+Module path stability
+:
+- Prefer public re-exports over internal module paths. For example, use the crate-root `Frame` re-export (`ratatui::Frame`) instead of referencing internal paths like `ratatui::frame::Frame`, which may not exist across versions. Example:
+
+```rust
+use ratatui::Frame;
+
+fn draw_ui<B: ratatui::backend::Backend>(f: &mut Frame<B>) {
+	// ...rendering...
+}
+```
+
+This reduces breakage when the crate reorganizes its internal modules.
+
 Recommended snippets
 :
 1) Minimal `Cargo.toml` (how to add `ratatui` and `crossterm`)
