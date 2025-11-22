@@ -7,3 +7,4 @@ One-line summary of the TUI feature and its value. Replace this placeholder with
 ## Technical Requirements
 
 - 5-TR1: The crate ratatui must be used to code the TUI.
+- 5-TR2: The TUI source code must be located in `src/tui` directory

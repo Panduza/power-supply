@@ -114,6 +114,8 @@ url = "2.4"
 uuid = { version = "1.6", features = ["v4", "serde"] }
 
 anyhow = "1.0.100"
+ratatui = "0.20"
+crossterm = "0.26"
 
 [features]
 default = ["desktop"]

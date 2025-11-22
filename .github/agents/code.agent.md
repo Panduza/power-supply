@@ -1,5 +1,5 @@
 ---
-name: coding-agent
+name: code-agent
 description: Expert Rust coding agent for this project.
 handoffs: 
   - label: Expert Rust Ratatui coding agent

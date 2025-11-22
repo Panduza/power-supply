@@ -13,4 +13,5 @@ As a user, When I start the TUI, I want to see the 3 main information I need on 
 - Current value
 
 
+TODO , I need to explain how I get the tui (maybe trough cli command)
 

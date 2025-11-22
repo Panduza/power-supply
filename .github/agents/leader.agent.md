@@ -11,6 +11,9 @@ handoffs:
   - label: Cut implementation into tasks
     agent: task-agent
     prompt: Cut the requirements into small, independently implementable tasks.
+  - label: Implementation agent
+    agent: code-agent
+    prompt: Implement the tasks
 ---
 You are the project's workflow expert and lead agent responsible for coordinating other agents to deliver high-quality work.
 
