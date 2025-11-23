@@ -1,5 +1,5 @@
-use crate::client::PowerSupplyClient;
 use dioxus::prelude::*;
+use pza_power_supply_client::PowerSupplyClient;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::trace;

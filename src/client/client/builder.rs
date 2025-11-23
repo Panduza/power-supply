@@ -1,5 +1,5 @@
-use crate::client::client::PowerSupplyClient;
 use crate::constants;
+use crate::PowerSupplyClient;
 use pza_toolkit::config::IPEndpointConfig;
 use pza_toolkit::rumqtt;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;

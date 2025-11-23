@@ -1,4 +1,4 @@
-use crate::client::PowerSupplyClient;
+use pza_power_supply_client::PowerSupplyClient;
 /// Power Button
 ///
 /// Requirements

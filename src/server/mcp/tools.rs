@@ -19,8 +19,8 @@ use serde::{Deserialize, Serialize};
 use tracing::debug;
 use tracing::info;
 
-use crate::client::PowerSupplyClient;
-use crate::client::PowerSupplyClientBuilder;
+use pza_power_supply_client::PowerSupplyClient;
+use pza_power_supply_client::PowerSupplyClientBuilder;
 
 use crate::config::ServerMainConfig;
 

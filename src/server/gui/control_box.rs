@@ -1,4 +1,4 @@
-use crate::client::PowerSupplyClient;
+use pza_power_supply_client::PowerSupplyClient;
 
 use dioxus::prelude::*;
 use std::sync::Arc;

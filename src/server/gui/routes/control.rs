@@ -5,7 +5,8 @@ use tokio::sync::Mutex;
 use tracing::{debug, trace, warn};
 
 use crate::server::gui::control_box::ControlBox;
-use crate::{client::PowerSupplyClient, server::ServerState, SERVER_STATE_STORAGE};
+use crate::{server::ServerState, SERVER_STATE_STORAGE};
+use pza_power_supply_client::PowerSupplyClient;
 use pza_toolkit::config::IPEndpointConfig;
 
 /// Control page component for power supply management
