@@ -12,6 +12,14 @@ path-guid = "6F3F533A-6549-424D-BA75-1A31D70DB6B3"
 license = false
 eula = false
 
+[[bin]]
+name = "pza-power-supply"
+path = "src/main.rs"
+
+[lib]
+name = "pza_power_supply_lib"
+path = "src/lib.rs"
+
 [dependencies]
 
 # ---
