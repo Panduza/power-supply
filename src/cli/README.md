@@ -17,6 +17,8 @@ panduza -l
 
 - Command to start a control box TUI
 
+instance_name is optional, by default the application will choose the first instance available.
+
 ```bash
 # long
 panduza --tui [instance_name]
@@ -24,6 +26,8 @@ panduza --tui [instance_name]
 # short
 panduza -t [instance_name]
 ```
+
+
 
 ## Technical Requirements
 

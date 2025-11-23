@@ -39,6 +39,9 @@ clap = { version = "4.1.8", features = ["derive"] }
 # Configuration management
 config = "0.15.17"
 # ---
+# Cross-platform terminal control
+crossterm = "0.28"
+# ---
 # Platform directories lookup
 dirs = "6.0.0"
 # ---
@@ -68,6 +71,9 @@ pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.1" }
 # ---
 # Random string generator
 rand = "0.8.5"
+# ---
+# Terminal UI library
+ratatui = "0.29"
 # ---
 # Model Context Protocol implementation
 rmcp = { version = "0.7.0", features = [

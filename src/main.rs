@@ -5,8 +5,10 @@ mod constants;
 mod drivers;
 mod path;
 mod server;
+mod tui;
 
 use crate::server::services::server_services;
+use clap::Parser;
 use config::ServerMainConfig;
 use dioxus::prelude::*;
 use pza_toolkit::dioxus::logger::LoggerBuilder;
@@ -30,6 +32,24 @@ fn main() {
         .filter_warnings()
         .build()
         .expect("failed to init logger");
+
+    let args = cli::Args::parse();
+
+    // Handle CLI commands
+    if args.list {
+        println!("Available power supply instances:");
+        println!("(Instance discovery not yet implemented)");
+        return;
+    }
+
+    if args.tui.is_some() {
+        println!("Starting TUI...");
+        let instance_name = args.tui.filter(|s| !s.is_empty());
+        if let Err(e) = tui::run_tui(instance_name) {
+            eprintln!("TUI error: {}", e);
+        }
+        return;
+    }
 
     // Ensure user root directory exists
     pza_toolkit::path::ensure_user_root_dir_exists()
