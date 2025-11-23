@@ -1,5 +1,5 @@
 ---
-agent: module-readme-writer
+agent: module-specifier
 ---
 
 
