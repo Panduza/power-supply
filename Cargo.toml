@@ -17,7 +17,7 @@ name = "pza-power-supply"
 path = "src/main.rs"
 
 [lib]
-name = "pza_power_supply_lib"
+name = "pza_power_supply_client"
 path = "src/lib.rs"
 
 [dependencies]

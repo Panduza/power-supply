@@ -1,4 +1,3 @@
-mod client;
 mod config;
 mod constants;
 mod drivers;

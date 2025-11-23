@@ -2,7 +2,6 @@
 ///
 /// Provides a simple TUI for power supply control and monitoring.
 use std::io;
-use std::sync::Arc;
 use std::time::Duration;
 
 use crossterm::event;
@@ -30,11 +29,9 @@ use ratatui::widgets::Block;
 use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::Terminal;
-use tokio::sync::broadcast;
-use tokio::sync::Mutex;
 
-use crate::PowerSupplyClient;
-use crate::PowerSupplyClientBuilder;
+use pza_power_supply_client::PowerSupplyClient;
+use pza_power_supply_client::PowerSupplyClientBuilder;
 
 /// Application state for the TUI
 pub struct App {
@@ -68,7 +65,7 @@ impl App {
         }
     }
 
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
 
     /// Handle keyboard input events
     pub fn handle_input(&mut self, key: KeyCode) {
@@ -86,22 +83,21 @@ impl App {
         }
     }
 
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
 
     /// Check if the application should quit
     pub fn should_quit(&self) -> bool {
         self.should_quit
     }
 
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
 
     /// Initialize the PowerSupply client
     pub async fn initialize_client(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(ref instance_name) = self.instance_name {
             match PowerSupplyClientBuilder::default()
-                .psu_name(instance_name.clone())
+                .with_power_supply_name(instance_name.clone())
                 .build()
-                .await
             {
                 Ok(client) => {
                     self.client = Some(client);
@@ -117,7 +113,7 @@ impl App {
         Ok(())
     }
 
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
 
     /// Update power supply state from client
     pub async fn update_state(&mut self) {
@@ -128,7 +124,7 @@ impl App {
         }
     }
 
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
 
     /// Toggle power state
     pub async fn toggle_power(&mut self) -> Result<(), Box<dyn std::error::Error>> {
