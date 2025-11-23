@@ -8,15 +8,15 @@ mod server;
 
 mod client;
 
-use crate::server::services::server_services;
-use dioxus::prelude::*;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use std::{collections::HashMap, sync::Arc};
+use dioxus::prelude::*;
+use pza_toolkit::dioxus::logger::LoggerBuilder;
 use tokio::sync::Mutex;
 use tracing::Level;
 
-use pza_toolkit::dioxus::logger::LoggerBuilder;
-
+use crate::server::services::server_services;
 use config::ServerMainConfig;
 use server::ServerState;
 
