@@ -5,6 +5,7 @@
 ### MAIN
 
 - `main.rs` must handle server application, see `server/README.md`.
+- main function is a tokio async main.
 
 ### LIB
 

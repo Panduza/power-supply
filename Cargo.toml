@@ -3,14 +3,8 @@ name = "pza-power-supply"
 version = "0.1.1"
 authors = ["XdoctorwhoZ <xavier.rodriguezalvarez@gmail.com>"]
 edition = "2021"
-description = "Panduza Power Supply - MQTT broker and device management"
+description = "Panduza Power Supply - Control Multi-Server for Power Supplies"
 repository = "https://github.com/Panduza/pza-power-supply"
-
-[package.metadata.wix]
-upgrade-guid = "C0480D1F-1DDB-4FA9-92BD-EA7616E557F3"
-path-guid = "6F3F533A-6549-424D-BA75-1A31D70DB6B3"
-license = false
-eula = false
 
 [[bin]]
 name = "pza-power-supply"
@@ -48,19 +42,10 @@ clap = { version = "4.1.8", features = ["derive"] }
 config = "0.15.17"
 # ---
 # Cross-platform terminal control
-crossterm = "0.28"
+crossterm = "0.29.0"
 # ---
 # Platform directories lookup
 dirs = "6.0.0"
-# ---
-# Web framework for building user interfaces
-dioxus = { version = "0.6.3", features = [] }
-# ---
-# Logging support for Dioxus
-dioxus-logger = "0.6.2"
-# ---
-# Router for Dioxus applications
-dioxus-router = "0.6.3"
 # ---
 # Futures utilities
 futures = "0.3"
@@ -133,22 +118,3 @@ url = "2.4"
 # ---
 # UUID generation and parsing
 uuid = { version = "1.6", features = ["v4", "serde"] }
-
-[features]
-default = ["desktop"]
-desktop = ["dioxus/desktop"]
-
-[profile.wasm-dev]
-inherits = "dev"
-opt-level = 1
-
-[profile.server-dev]
-inherits = "dev"
-
-[profile.android-dev]
-inherits = "dev"
-
-# The profile that 'dist' will build with
-[profile.dist]
-inherits = "release"
-lto = "thin"

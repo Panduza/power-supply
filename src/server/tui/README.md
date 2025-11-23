@@ -6,6 +6,7 @@
 - Supports launching the TUI for a specific instance from the CLI.
 - The user can see the power state, the voltage and current values.
 - The user can toggle the power state by clicking on it.
+- If there is not interface instance available, the application must stop displaying an error.
 
 ## Technical Requirements
 

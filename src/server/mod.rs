@@ -9,20 +9,19 @@ pub mod tui;
 use crate::config::ServerMainConfig;
 use crate::server::services::server_services;
 use clap::Parser;
-use dioxus::prelude::*;
 use pza_toolkit::dioxus::logger::LoggerBuilder;
 pub use state::ServerState;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::Level;
+use tracing::{error, info, Level};
 
 pub static SERVER_STATE_STORAGE: once_cell::sync::OnceCell<Arc<ServerState>> =
     once_cell::sync::OnceCell::new();
 
 /// Run the power supply server
-pub fn run_server() {
-    // Init logger
+pub async fn run_server() {
+    // Configure tracing first to be able to generate logs
     LoggerBuilder::default()
         .with_level(Level::TRACE)
         // .display_target(true)
@@ -36,27 +35,11 @@ pub fn run_server() {
     // Parse CLI arguments
     let args = cli::Args::parse();
 
-    // Handle CLI commands
-    if args.list {
-        println!("Available power supply instances:");
-        println!("(Instance discovery not yet implemented)");
-        return;
-    }
-
-    // if args.tui.is_some() {
-    //     println!("Starting TUI...");
-    //     let instance_name = args.tui.filter(|s| !s.is_empty());
-    //     if let Err(e) = server::tui::run_tui(instance_name) {
-    //         eprintln!("TUI error: {}", e);
-    //     }
-    //     return;
-    // }
-
     // Ensure user root directory exists
     pza_toolkit::path::ensure_user_root_dir_exists()
         .unwrap_or_else(|err| panic!("Failed to ensure user root directory exists: {}", err));
 
-    // Get user configuration
+    // Parse server main config file
     let server_config = ServerMainConfig::from_user_file()
         .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err));
 
@@ -70,20 +53,37 @@ pub fn run_server() {
         instances: Arc::new(Mutex::new(HashMap::new())),
     };
 
+    // Store server state in global storage
     SERVER_STATE_STORAGE
         .set(Arc::new(server_state.clone()))
         .unwrap();
 
-    // Spawn background initialization and management task
-    std::thread::spawn(move || {
-        // Create a dedicated Tokio runtime for background tasks
-        let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
-        rt.block_on(server_services(
+    // Start server services in a separated task
+    let services_handle = tokio::spawn(async move {
+        server_services(
             SERVER_STATE_STORAGE
                 .get()
                 .expect("Failed to get server state")
                 .clone(),
-        ))
+        )
+        .await
         .expect("Server services crash");
     });
+
+    // Start TUI at the end if requested by user
+    if args.tui.is_some() {
+        info!("Starting TUI...");
+        let instance_name = args.tui.filter(|s| !s.is_empty());
+        if let Err(e) = tui::run_tui(instance_name).await {
+            error!("TUI error: {}", e);
+        }
+        // Cancel server services when TUI exits
+        services_handle.abort();
+    } else {
+        info!("Server is running...");
+        // Wait for server services to complete
+        services_handle
+            .await
+            .expect("Server services stopped unexpectedly");
+    }
 }

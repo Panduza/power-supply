@@ -4,6 +4,7 @@ mod drivers;
 mod path;
 mod server;
 
-fn main() {
-    server::run_server();
+#[tokio::main]
+async fn main() {
+    server::run_server().await;
 }
