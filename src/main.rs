@@ -1,24 +1,20 @@
+mod cli;
+mod client;
 mod config;
-mod drivers;
-
 mod constants;
-
+mod drivers;
 mod path;
 mod server;
 
-mod client;
-
-use std::collections::HashMap;
-use std::sync::Arc;
-
-use dioxus::prelude::*;
-use pza_toolkit::dioxus::logger::LoggerBuilder;
-use tokio::sync::Mutex;
-use tracing::Level;
-
 use crate::server::services::server_services;
 use config::ServerMainConfig;
+use dioxus::prelude::*;
+use pza_toolkit::dioxus::logger::LoggerBuilder;
 use server::ServerState;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tracing::Level;
 
 pub static SERVER_STATE_STORAGE: once_cell::sync::OnceCell<Arc<ServerState>> =
     once_cell::sync::OnceCell::new();
