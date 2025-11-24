@@ -33,4 +33,10 @@ HERE ARE THE TEST AGENT CAN CODE TO TEST THE MODULE FUNCTIONALITIES.
 
 HERE I WILL INSERT THE TESTING MANUAL SCENARIOS JUST TO GIVE CONTEXT TO THE AGENT. AGENT MUST NOT CODE THEM.
 
+- [ ] Example Test 1
+Description of manual test 1.
+No X indicates that the test is not yet passed or the manual test is failing.
+
+- [X] Example Test 2
+A X indicates that the test is already successfully passed manually.
 ```
