@@ -17,18 +17,34 @@ panduza -l
 
 - Command to start a control box TUI
 
+TUI should be by default, if the user wants to interact it must be easy and short to write.
 instance_name is optional, by default the application will choose the first instance available.
 
 ```bash
 # long
-panduza --tui [instance_name]
+panduza [instance_name]
 
 # short
-panduza -t [instance_name]
+panduza [instance_name]
 ```
 
+- Command to disbale the TUI
 
+When script call the application, it is important to be able to disable the TUI and start only server services.
+
+```bash
+panduza -–disable-tui
+```
 
 ## Technical Requirements
 
 - Use crate `clap`
+
+
+## NOTES for later improvement
+
+DO NOT PROCESS THIS
+
+–-identity must print the identity on stdout and update the identity file.
+–-scan must print the scan results on stdout.
+

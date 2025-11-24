@@ -24,4 +24,13 @@ When creating or updating a `README.md`, follow this structure:
 ## Technical Requirements
 
 - Mention important crates used.
+
+## Auto Testing Scenarios
+
+HERE ARE THE TEST AGENT CAN CODE TO TEST THE MODULE FUNCTIONALITIES.
+
+## Manual Testing Scenarios
+
+HERE I WILL INSERT THE TESTING MANUAL SCENARIOS JUST TO GIVE CONTEXT TO THE AGENT. AGENT MUST NOT CODE THEM.
+
 ```
