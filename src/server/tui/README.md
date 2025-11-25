@@ -24,7 +24,7 @@ This module provides a terminal user interface (TUI) for controlling power suppl
 
 ## Manual Testing Scenarios
 
-- [ ] No interface must lead to an application stop
+- [X] No interface must lead to an application stop
     - Remove all instance from the server config
     - Start the application `panduza`
     - Check application stop with an error message
