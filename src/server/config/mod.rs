@@ -3,9 +3,9 @@ mod power_supply;
 mod tui;
 
 pub use power_supply::PowerSupplyConfig;
+pub use tui::TuiConfig;
 
 use crate::server::config::mcp::McpConfig;
-use crate::server::config::tui::TuiConfig;
 use pza_toolkit::config::MqttBrokerConfig;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -13,7 +13,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServerMainConfig {
     /// TUI configuration
-    pub tui: TuiConfig,
+    pub tui: tui::TuiConfig,
 
     /// MCP server configuration
     pub mcp: McpConfig,
@@ -43,7 +43,7 @@ impl Default for ServerMainConfig {
 
         // Return the default global configuration
         Self {
-            tui: TuiConfig {
+            tui: tui::TuiConfig {
                 power_toggle_key: Some("p".to_string()),
             },
             mcp: McpConfig {

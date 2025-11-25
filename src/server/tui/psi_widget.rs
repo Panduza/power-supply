@@ -1,3 +1,4 @@
+use pza_power_supply_client::PowerSupplyClient;
 use ratatui::layout::Rect;
 use ratatui::style::Color;
 use ratatui::style::Modifier;
@@ -9,8 +10,6 @@ use ratatui::widgets::BorderType;
 use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
-
-use pza_power_supply_client::PowerSupplyClient;
 
 /// Power Supply Instance Widget
 ///
@@ -46,6 +45,14 @@ impl PowerSupplyInstanceWidget {
     // ------------------------------------------------------------------------------
 
     /// Set the power supply client
+    ///
+    /// Assigns an MQTT client to this widget, establishing communication
+    /// with the corresponding power supply instance. Updates the status
+    /// message to indicate successful connection.
+    ///
+    /// # Arguments
+    ///
+    /// * `client` - The PowerSupplyClient for MQTT communication
     pub fn set_client(&mut self, client: PowerSupplyClient) {
         self.client = Some(client);
         self.status_message = "Connected".to_string();
@@ -54,6 +61,11 @@ impl PowerSupplyInstanceWidget {
     // ------------------------------------------------------------------------------
 
     /// Update power supply state from client
+    ///
+    /// Retrieves the current state information (power output, voltage, current)
+    /// from the power supply via MQTT and updates the widget's display values.
+    /// This method is called periodically to keep the UI synchronized with
+    /// the actual power supply state.
     pub async fn update_state(&mut self) {
         if let Some(ref client) = self.client {
             self.power_state = client.get_oe().await;
@@ -65,6 +77,20 @@ impl PowerSupplyInstanceWidget {
     // ------------------------------------------------------------------------------
 
     /// Toggle power state
+    ///
+    /// Toggles the power output state of this power supply instance.
+    /// If currently enabled, it will be disabled, and vice versa.
+    /// Updates the status message to reflect the action taken.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If the power toggle command was executed successfully
+    /// * `Err(Box<dyn std::error::Error>)` - If the MQTT command fails
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the client is not set or if the underlying
+    /// enable_output/disable_output command fails.
     pub async fn toggle_power(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(ref client) = self.client {
             if self.power_state {
@@ -81,6 +107,15 @@ impl PowerSupplyInstanceWidget {
     // ------------------------------------------------------------------------------
 
     /// Render the widget
+    ///
+    /// Draws the power supply instance widget in the specified terminal area.
+    /// The widget displays the instance name, power state, voltage, current,
+    /// and status in a rounded border block with aligned field labels.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The ratatui Frame for rendering
+    /// * `area` - The terminal area where the widget should be drawn
     pub fn render(&self, f: &mut Frame, area: Rect) {
         // Create main block with instance name and rounded borders
         let main_block = Block::default()
@@ -89,81 +124,70 @@ impl PowerSupplyInstanceWidget {
             .border_type(BorderType::Rounded)
             .style(Style::default().fg(Color::White));
 
-        // Split the area into sections for power, voltage, current, and status
-        let chunks = ratatui::layout::Layout::default()
-            .direction(ratatui::layout::Direction::Vertical)
-            .margin(1)
-            .constraints([
-                ratatui::layout::Constraint::Length(3), // Power state
-                ratatui::layout::Constraint::Length(3), // Voltage
-                ratatui::layout::Constraint::Length(3), // Current
-                ratatui::layout::Constraint::Min(1),    // Status
-            ])
-            .split(main_block.inner(area));
-
-        // Render the main block
-        f.render_widget(main_block, area);
-
-        // Power state display
+        // Power state color and text
         let power_color = if self.power_state {
             Color::Green
         } else {
             Color::Red
         };
         let power_text = if self.power_state { "ON" } else { "OFF" };
-        let power_block = Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(power_color))
-            .title("Power");
-        let power_content = vec![Line::from(vec![Span::styled(
-            power_text,
-            Style::default()
-                .fg(power_color)
-                .add_modifier(Modifier::BOLD),
-        )])];
-        let power_paragraph = Paragraph::new(power_content)
-            .block(power_block)
-            .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(power_paragraph, chunks[0]);
 
-        // Voltage display
-        let voltage_block = Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::Yellow))
-            .title("Voltage");
-        let voltage_content = vec![Line::from(vec![Span::styled(
-            &self.voltage,
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        )])];
-        let voltage_paragraph = Paragraph::new(voltage_content)
-            .block(voltage_block)
-            .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(voltage_paragraph, chunks[1]);
+        // Create content lines with FIELD_NAME: value format
+        // Field names have different color from values and are aligned for consistent spacing
+        let content = vec![
+            Line::from(""), // Empty line for spacing
+            Line::from(vec![
+                Span::styled(
+                    "Power  : ",
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    power_text,
+                    Style::default()
+                        .fg(power_color)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+            Line::from(""), // Empty line for spacing
+            Line::from(vec![
+                Span::styled(
+                    "Voltage: ",
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(&self.voltage, Style::default().fg(Color::Yellow)),
+            ]),
+            Line::from(""), // Empty line for spacing
+            Line::from(vec![
+                Span::styled(
+                    "Current: ",
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(&self.current, Style::default().fg(Color::Cyan)),
+            ]),
+            Line::from(""), // Empty line for spacing
+            Line::from(vec![
+                Span::styled(
+                    "Status : ",
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(&self.status_message, Style::default().fg(Color::Gray)),
+            ]),
+        ];
 
-        // Current display
-        let current_block = Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::Cyan))
-            .title("Current");
-        let current_content = vec![Line::from(vec![Span::styled(
-            &self.current,
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        )])];
-        let current_paragraph = Paragraph::new(current_content)
-            .block(current_block)
-            .alignment(ratatui::layout::Alignment::Center);
-        f.render_widget(current_paragraph, chunks[2]);
+        // Create paragraph with content inside the main block
+        let paragraph = Paragraph::new(content)
+            .block(main_block)
+            .alignment(ratatui::layout::Alignment::Left)
+            .wrap(ratatui::widgets::Wrap { trim: true });
 
-        // Status display
-        let status_block = Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::White))
-            .title("Status");
-        let status_paragraph = Paragraph::new(self.status_message.as_str()).block(status_block);
-        f.render_widget(status_paragraph, chunks[3]);
+        f.render_widget(paragraph, area);
     }
 }

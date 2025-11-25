@@ -17,7 +17,13 @@ Requirements:
 
 ### LIB
 
-- lib.rs must handle client.
+- lib.rs must handle client library functionality.
+- Client library provides PowerSupplyClient for external applications to interact with power supplies via MQTT.
+
+## Sub-Module Specifications
+
+- Server Module: `server/README.md` - Main server logic and orchestration
+- Client Module: Client library implementation (see `client/` directory)
 
 ## Technical Requirements
 

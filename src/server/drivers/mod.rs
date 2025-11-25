@@ -1,19 +1,7 @@
 pub mod emulator;
 pub mod kd3005p;
 
-use anyhow::Result;
 use async_trait::async_trait;
-use thiserror::Error as ThisError;
-
-#[derive(ThisError, Debug, Clone)]
-pub enum DriverError {
-    #[error("An error occurred: {0}")]
-    Generic(String),
-    #[error("Security limit exceeded: {0}")]
-    VoltageSecurityLimitExceeded(String),
-    #[error("Security limit exceeded: {0}")]
-    CurrentSecurityLimitExceeded(String),
-}
 
 #[async_trait]
 pub trait PowerSupplyDriver: Send + Sync {

@@ -8,7 +8,7 @@ This module provides a terminal user interface (TUI) for controlling all power s
 
 - The TUI must display and manage all available power supply instances at the same time.
 - Each instance is shown in its own widget.
-- If there are no interface instances available, the application must stop.
+- If there are no interface instances available, the TUI must display an error block explaining that no instances are available.
 
 *Instance Control*
 
@@ -21,6 +21,9 @@ This module provides a terminal user interface (TUI) for controlling all power s
 - Uses Rust TUI libraries (e.g., `ratatui`, `crossterm`) for rendering and input handling.
 - May interact with async runtimes and device state.
 - The TUI must create a mqtt client `pza_power_supply_lib::PowerSupplyClient` and use it to interact with the power supply.
+
+- TUI must wait for the state ready signal before starting. Show a Loading message wait for start.
+
 - The TUI module must be splitted into clean widgets:
     - Power Supply Instance Widget
 
@@ -28,9 +31,13 @@ _Power Supply Instance Widget_
 
 - Each power supply instance must be managed in a separate widget.
 - The widget code must be located in `psi_widget.rs`.
-- Each widget must be contained in a `Block` with:
+- The widget must be contained in a `Block` with:
     - The name of the instance as the block name
     - Rounded border type
+    - Only the container have a border, inner widget must not have one.
+- Inside information must be aligned so that all values start at the same column, regardless of the length of the field name. Each line must have the format: FIELD_NAME: value, with all values vertically aligned.
+- FIELD_NAME must have a different color from value.
+- For the power state display ON in Green and OFF in red.
 
 ## Manual Testing Scenarios
 

@@ -4,16 +4,13 @@ pub mod drivers;
 pub mod factory;
 pub mod mcp;
 pub mod mqtt;
-pub mod services;
 pub mod state;
 pub mod tui;
 
 use crate::server::config::ServerMainConfig;
-use crate::server::services::server_services;
 use clap::Parser;
 use pza_toolkit::dioxus::logger::LoggerBuilder;
 pub use state::ServerState;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{error, info, Level};
@@ -49,11 +46,10 @@ pub async fn run_server() {
     let factory = crate::server::factory::Factory::initialize();
 
     // Create global app state
-    let server_state = ServerState {
-        factory: Arc::new(Mutex::new(factory)),
-        server_config: Arc::new(Mutex::new(server_config)),
-        instances: Arc::new(Mutex::new(HashMap::new())),
-    };
+    let server_state = ServerState::new(
+        Arc::new(Mutex::new(factory)),
+        Arc::new(Mutex::new(server_config)),
+    );
 
     // Store server state in global storage
     SERVER_STATE_STORAGE
@@ -62,14 +58,13 @@ pub async fn run_server() {
 
     // Start server services in a separated task
     let services_handle = tokio::spawn(async move {
-        server_services(
-            SERVER_STATE_STORAGE
-                .get()
-                .expect("Failed to get server state")
-                .clone(),
-        )
-        .await
-        .expect("Server services crash");
+        SERVER_STATE_STORAGE
+            .get()
+            .expect("Failed to get server state")
+            .clone()
+            .start_services()
+            .await
+            .expect("Server services crash");
     });
 
     // Start TUI at the end if requested by user
