@@ -1,60 +1,21 @@
-use serde::{Deserialize, Serialize};
+mod mcp;
+mod power_supply;
+mod tui;
 
-use std::collections::HashMap;
-
-use tracing::{error, info};
-
+use crate::server::config::mcp::McpConfig;
+use crate::server::config::power_supply::PowerSupplyConfig;
+use crate::server::config::tui::TuiConfig;
 use pza_toolkit::config::MqttBrokerConfig;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GuiConfig {
-    /// Enable or disable the GUI
-    pub enable: bool,
-    /// Keyboard shortcut to toggle power output
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub power_toggle_key: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct McpServerConfig {
-    /// Enable or disable the MCP server
-    pub enable: bool,
-    /// Bind address of the MCP server
-    pub host: String,
-    /// Port of the MCP server
-    pub port: u16,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PowerSupplyConfig {
-    /// Unique identifier for the power supply
-    pub model: String,
-
-    /// Optional description of the power supply
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-
-    /// Security limits for voltage
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub security_min_voltage: Option<f32>,
-    /// Security limits for voltage
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub security_max_voltage: Option<f32>,
-    /// Security limits for current
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub security_min_current: Option<f32>,
-    /// Security limits for current
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub security_max_current: Option<f32>,
-}
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServerMainConfig {
-    /// GUI configuration
-    pub gui: GuiConfig,
+    /// TUI configuration
+    pub tui: TuiConfig,
 
     /// MCP server configuration
-    pub mcp: McpServerConfig,
+    pub mcp: McpConfig,
 
     /// MQTT broker configuration
     pub broker: MqttBrokerConfig,
@@ -81,11 +42,10 @@ impl Default for ServerMainConfig {
 
         // Return the default global configuration
         Self {
-            gui: GuiConfig {
-                enable: true,
+            tui: TuiConfig {
                 power_toggle_key: Some("p".to_string()),
             },
-            mcp: McpServerConfig {
+            mcp: McpConfig {
                 enable: false,
                 host: "127.0.0.1".to_string(),
                 port: 50051,

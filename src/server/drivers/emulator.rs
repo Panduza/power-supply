@@ -1,5 +1,5 @@
-use crate::config::PowerSupplyConfig;
-use crate::drivers::PowerSupplyDriver;
+use crate::server::config::PowerSupplyConfig;
+use crate::server::drivers::PowerSupplyDriver;
 use async_trait::async_trait;
 use tracing::info;
 

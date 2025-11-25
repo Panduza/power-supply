@@ -1,5 +1,6 @@
 pub mod cli;
-mod config;
+pub mod config;
+pub mod drivers;
 pub mod factory;
 pub mod mcp;
 pub mod mqtt;
@@ -7,7 +8,7 @@ pub mod services;
 pub mod state;
 pub mod tui;
 
-use crate::config::ServerMainConfig;
+use crate::server::config::ServerMainConfig;
 use crate::server::services::server_services;
 use clap::Parser;
 use pza_toolkit::dioxus::logger::LoggerBuilder;

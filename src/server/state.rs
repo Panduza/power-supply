@@ -1,4 +1,4 @@
-use crate::config::ServerMainConfig;
+use crate::server::config::ServerMainConfig;
 use crate::server::factory::Factory;
 use crate::server::mqtt::MqttRunner;
 use crate::server::mqtt::MqttRunnerHandler;

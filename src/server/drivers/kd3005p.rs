@@ -7,9 +7,9 @@ use ka3005p::Command;
 use ka3005p::Switch;
 use tracing::info;
 
-use crate::config::PowerSupplyConfig;
-use crate::drivers::DriverError;
-use crate::drivers::PowerSupplyDriver;
+use crate::server::config::PowerSupplyConfig;
+use crate::server::drivers::DriverError;
+use crate::server::drivers::PowerSupplyDriver;
 
 use ka3005p::Ka3005p;
 

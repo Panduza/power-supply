@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::drivers::PowerSupplyDriver;
+use crate::server::drivers::PowerSupplyDriver;
 use bytes::Bytes;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
