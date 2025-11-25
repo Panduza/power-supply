@@ -71,9 +71,9 @@ pub async fn run_server() {
     });
 
     // Start TUI at the end if requested by user
-    if args.tui.is_some() {
+    if !args.disable_tui {
         info!("Starting TUI...");
-        let instance_name = args.tui.filter(|s| !s.is_empty());
+        let instance_name = args.instance_name.filter(|s| !s.is_empty());
         if let Err(e) = tui::run_tui(instance_name).await {
             error!("TUI error: {}", e);
         }
