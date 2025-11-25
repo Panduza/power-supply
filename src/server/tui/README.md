@@ -34,9 +34,43 @@ _Power Supply Instance Widget_
 
 ## Manual Testing Scenarios
 
-- [ ] No interface must lead to an application stop
+- [ ] No interface must lead to an error block
     - Remove all instances from the server config
     - Start the application `panduza`
     - Check application TUI, it must display a block explaining that no instance are available.
 
+- [ ] Test simple TUI with 1 emulator interface
+    - Load below configuration
+    - Start the application `panduza`
+    - Check that TUI contains the block for the emulator exist
+    - Check that the name is `emulator`
+
+```json
+{
+  "tui": {
+    "power_toggle_key": "p"
+  },
+  "mcp": {
+    "enable": false,
+    "host": "127.0.0.1",
+    "port": 50051
+  },
+  "broker": {
+    "use_builtin": true,
+    "tcp": {
+      "addr": "127.0.0.1",
+      "port": 1883
+    }
+  },
+  "devices": {
+    "emulator": {
+      "model": "emulator",
+      "security_min_voltage": 0.0,
+      "security_max_voltage": 30.0,
+      "security_min_current": 0.0,
+      "security_max_current": 5.0
+    }
+  }
+}
+```
 
