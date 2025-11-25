@@ -1,4 +1,5 @@
 pub mod cli;
+mod config;
 pub mod factory;
 pub mod mcp;
 pub mod mqtt;

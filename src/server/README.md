@@ -7,7 +7,7 @@
 - The main operation sequence of the server application is:
     - Configure tracing first to be able to generate logs.
     - Parse CLI arguments: `cli/README.md`
-    - Parse server main config file.
+    - Parse server config file: `config/README.md`
     - Start server services in a separated task.
     - Start TUI at the end if requested by user: `tui/README.md`
 
