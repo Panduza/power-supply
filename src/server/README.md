@@ -16,3 +16,4 @@
 - Written in Rust, organized as a module with submodules for each server component.
 - Relies on internal modules for GUI, state, and various interfaces.
 - Integrates with the rest of the application via public use statements.
+- Stop tracing when TUI is started

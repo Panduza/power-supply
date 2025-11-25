@@ -2,6 +2,7 @@
 
 This module provides a terminal user interface (TUI) for controlling all power supply instances simultaneously.
 
+
 ## Functional Requirements
 
 *Instance Management*
@@ -14,6 +15,11 @@ This module provides a terminal user interface (TUI) for controlling all power s
 
 - The user can see the power state, voltage, and current values for each instance.
 - The user can toggle the power state of any instance by interacting with its widget.
+
+*Status Bar*
+
+- The TUI must NOT display a status bar or status message area. All status feedback is removed for a cleaner interface.
+
 
 ## Technical Requirements
 
@@ -38,6 +44,12 @@ _Power Supply Instance Widget_
 - Inside information must be aligned so that all values start at the same column, regardless of the length of the field name. Each line must have the format: FIELD_NAME: value, with all values vertically aligned.
 - FIELD_NAME must have a different color from value.
 - For the power state display ON in Green and OFF in red.
+
+## Auto Testing Scenarios
+
+- Test that the TUI does not render any status bar or status message area in any state (loading, error, or normal operation).
+- Test that toggling power or encountering errors does not display a status message.
+- Test that the layout only includes the main content and help bar.
 
 ## Manual Testing Scenarios
 
@@ -80,4 +92,3 @@ _Power Supply Instance Widget_
   }
 }
 ```
-

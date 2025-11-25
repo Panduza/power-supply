@@ -13,26 +13,29 @@ use pza_toolkit::dioxus::logger::LoggerBuilder;
 pub use state::ServerState;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{error, info, Level};
+use tracing::{info, Level};
 
 pub static SERVER_STATE_STORAGE: once_cell::sync::OnceCell<Arc<ServerState>> =
     once_cell::sync::OnceCell::new();
 
 /// Run the power supply server
 pub async fn run_server() {
-    // Configure tracing first to be able to generate logs
-    LoggerBuilder::default()
-        .with_level(Level::TRACE)
-        // .display_target(true)
-        .filter_rumqttd()
-        .filter_dioxus_core()
-        .filter_dioxus_signals()
-        .filter_warnings()
-        .build()
-        .expect("failed to init logger");
-
-    // Parse CLI arguments
+    // Parse CLI arguments first to determine if TUI will be used
     let args = cli::Args::parse();
+
+    // Configure tracing only if TUI is not going to be used
+    // This prevents tracing output from interfering with the TUI display
+    if args.disable_tui {
+        LoggerBuilder::default()
+            .with_level(Level::TRACE)
+            // .display_target(true)
+            .filter_rumqttd()
+            .filter_dioxus_core()
+            .filter_dioxus_signals()
+            .filter_warnings()
+            .build()
+            .expect("failed to init logger");
+    }
 
     // Ensure user root directory exists
     pza_toolkit::path::ensure_user_root_dir_exists()
@@ -69,10 +72,11 @@ pub async fn run_server() {
 
     // Start TUI at the end if requested by user
     if !args.disable_tui {
-        info!("Starting TUI...");
+        // Note: Tracing is not initialized when TUI is enabled to avoid
+        // log output interfering with the terminal user interface
         let instance_name = args.instance_name.filter(|s| !s.is_empty());
         if let Err(e) = tui::run_tui(instance_name).await {
-            error!("TUI error: {}", e);
+            eprintln!("TUI error: {}", e); // Use eprintln since tracing is not available
         }
         // Cancel server services when TUI exits
         services_handle.abort();
