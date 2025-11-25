@@ -1,9 +1,6 @@
 pub mod client;
-pub mod config;
-
+mod constants;
 pub mod path;
 
-pub use client::client::PowerSupplyClient;
-pub use client::client::PowerSupplyClientBuilder;
-
-mod constants;
+pub use client::PowerSupplyClient;
+pub use client::PowerSupplyClientBuilder;

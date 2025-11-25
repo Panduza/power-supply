@@ -12,7 +12,7 @@ use tower_http::cors::CorsLayer;
 
 use tools::PowerSupplyService;
 
-use crate::config::ServerMainConfig;
+use crate::server::config::ServerMainConfig;
 
 pub struct McpServer {}
 

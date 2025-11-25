@@ -1,0 +1,94 @@
+# Module: tui
+
+This module provides a terminal user interface (TUI) for controlling all power supply instances simultaneously.
+
+
+## Functional Requirements
+
+*Instance Management*
+
+- The TUI must display and manage all available power supply instances at the same time.
+- Each instance is shown in its own widget.
+- If there are no interface instances available, the TUI must display an error block explaining that no instances are available.
+
+*Instance Control*
+
+- The user can see the power state, voltage, and current values for each instance.
+- The user can toggle the power state of any instance by interacting with its widget.
+
+*Status Bar*
+
+- The TUI must NOT display a status bar or status message area. All status feedback is removed for a cleaner interface.
+
+
+## Technical Requirements
+
+- Integrates with the main application logic and device drivers.
+- Uses Rust TUI libraries (e.g., `ratatui`, `crossterm`) for rendering and input handling.
+- May interact with async runtimes and device state.
+- The TUI must create a mqtt client `pza_power_supply_lib::PowerSupplyClient` and use it to interact with the power supply.
+
+- TUI must wait for the state ready signal before starting. Show a Loading message wait for start.
+
+- The TUI module must be splitted into clean widgets:
+    - Power Supply Instance Widget
+
+_Power Supply Instance Widget_
+
+- Each power supply instance must be managed in a separate widget.
+- The widget code must be located in `psi_widget.rs`.
+- The widget must be contained in a `Block` with:
+    - The name of the instance as the block name
+    - Rounded border type
+    - Only the container have a border, inner widget must not have one.
+- Inside information must be aligned so that all values start at the same column, regardless of the length of the field name. Each line must have the format: FIELD_NAME: value, with all values vertically aligned.
+- FIELD_NAME must have a different color from value.
+- For the power state display ON in Green and OFF in red.
+
+## Auto Testing Scenarios
+
+- Test that the TUI does not render any status bar or status message area in any state (loading, error, or normal operation).
+- Test that toggling power or encountering errors does not display a status message.
+- Test that the layout only includes the main content and help bar.
+
+## Manual Testing Scenarios
+
+- [ ] No interface must lead to an error block
+    - Remove all instances from the server config
+    - Start the application `panduza`
+    - Check application TUI, it must display a block explaining that no instance are available.
+
+- [ ] Test simple TUI with 1 emulator interface
+    - Load below configuration
+    - Start the application `panduza`
+    - Check that TUI contains the block for the emulator exist
+    - Check that the name is `emulator`
+
+```json
+{
+  "tui": {
+    "power_toggle_key": "p"
+  },
+  "mcp": {
+    "enable": false,
+    "host": "127.0.0.1",
+    "port": 50051
+  },
+  "broker": {
+    "use_builtin": true,
+    "tcp": {
+      "addr": "127.0.0.1",
+      "port": 1883
+    }
+  },
+  "devices": {
+    "emulator": {
+      "model": "emulator",
+      "security_min_voltage": 0.0,
+      "security_max_voltage": 30.0,
+      "security_min_current": 0.0,
+      "security_max_current": 5.0
+    }
+  }
+}
+```

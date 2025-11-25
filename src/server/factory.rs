@@ -5,7 +5,7 @@ use tracing::error;
 use tracing::info;
 
 use crate::path::factory_manifest_file;
-use crate::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
+use crate::server::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
 
 #[derive(ThisError, Debug, Clone)]
 pub enum FactoryError {
@@ -35,24 +35,24 @@ impl Factory {
         // ----------------------------------------------------------
         factory.register_driver("emulator", |config| {
             Arc::new(Mutex::new(
-                crate::drivers::emulator::PowerSupplyEmulator::new(config),
+                crate::server::drivers::emulator::PowerSupplyEmulator::new(config),
             ))
         });
         factory.manifest.insert(
             "emulator".to_string(),
-            crate::drivers::emulator::PowerSupplyEmulator::manifest(),
+            crate::server::drivers::emulator::PowerSupplyEmulator::manifest(),
         );
 
         // ----------------------------------------------------------
 
         factory.register_driver("kd3005p", |config| {
-            Arc::new(Mutex::new(crate::drivers::kd3005p::Kd3005pDriver::new(
-                config,
-            )))
+            Arc::new(Mutex::new(
+                crate::server::drivers::kd3005p::Kd3005pDriver::new(config),
+            ))
         });
         factory.manifest.insert(
             "kd3005p".to_string(),
-            crate::drivers::kd3005p::Kd3005pDriver::manifest(),
+            crate::server::drivers::kd3005p::Kd3005pDriver::manifest(),
         );
 
         // ----------------------------------------------------------
