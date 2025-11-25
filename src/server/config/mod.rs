@@ -2,8 +2,9 @@ mod mcp;
 mod power_supply;
 mod tui;
 
+pub use power_supply::PowerSupplyConfig;
+
 use crate::server::config::mcp::McpConfig;
-use crate::server::config::power_supply::PowerSupplyConfig;
 use crate::server::config::tui::TuiConfig;
 use pza_toolkit::config::MqttBrokerConfig;
 use serde::{Deserialize, Serialize};

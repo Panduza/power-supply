@@ -1,17 +1,16 @@
-use async_trait::async_trait;
 use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::time::{sleep, Duration};
 
+use async_trait::async_trait;
 use ka3005p::Command;
+use ka3005p::Ka3005p;
 use ka3005p::Switch;
+use tokio::sync::Mutex;
+use tokio::time::sleep;
+use tokio::time::Duration;
 use tracing::info;
 
 use crate::server::config::PowerSupplyConfig;
-use crate::server::drivers::DriverError;
 use crate::server::drivers::PowerSupplyDriver;
-
-use ka3005p::Ka3005p;
 
 /// A power supply emulator for testing and development purposes
 pub struct Kd3005pDriver {
