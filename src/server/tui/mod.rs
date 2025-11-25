@@ -30,6 +30,7 @@ use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::Terminal;
 
+use super::SERVER_STATE_STORAGE;
 use pza_power_supply_client::PowerSupplyClient;
 use pza_power_supply_client::PowerSupplyClientBuilder;
 
@@ -104,11 +105,15 @@ impl App {
                     self.status_message = "Connected to power supply".to_string();
                 }
                 Err(e) => {
-                    self.status_message = format!("Failed to connect: {}", e);
+                    return Err(format!(
+                        "Failed to connect to power supply instance '{}': {}",
+                        instance_name, e
+                    )
+                    .into());
                 }
             }
         } else {
-            self.status_message = "No instance specified".to_string();
+            return Err("No instance specified".into());
         }
         Ok(())
     }
@@ -143,6 +148,28 @@ impl App {
 
 /// Run the TUI application
 pub async fn run_tui(instance_name: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    // Determine which instance to use
+    let final_instance_name = match instance_name {
+        Some(name) if !name.is_empty() => name,
+        _ => {
+            // Get available instances from server state
+            let server_state = SERVER_STATE_STORAGE
+                .get()
+                .ok_or("Server state not initialized")?;
+
+            let available_instances = server_state.instances_names().await;
+
+            if available_instances.is_empty() {
+                return Err("No power supply instances available. Please configure at least one device in the server configuration.".into());
+            }
+
+            // Use the first available instance
+            let selected = available_instances[0].clone();
+            println!("No instance specified, using first available: {}", selected);
+            selected
+        }
+    };
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -150,10 +177,10 @@ pub async fn run_tui(instance_name: Option<String>) -> Result<(), Box<dyn std::e
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Create app state
-    let mut app = App::new(instance_name);
+    // Create app state with validated instance name
+    let mut app = App::new(Some(final_instance_name));
 
-    // Initialize client if instance name is provided
+    // Initialize client
     app.initialize_client().await?;
 
     let mut last_update = std::time::Instant::now();

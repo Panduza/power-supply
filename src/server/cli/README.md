@@ -28,7 +28,7 @@ panduza [instance_name]
 panduza [instance_name]
 ```
 
-- Command to disbale the TUI
+- Command to disable the TUI
 
 When script call the application, it is important to be able to disable the TUI and start only server services.
 

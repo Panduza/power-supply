@@ -1,5 +1,11 @@
 use clap::Parser;
 
+/// Command line interface arguments for the power supply application
+///
+/// This struct defines the CLI interface that allows users to:
+/// - List available power supply instances
+/// - Disable the TUI for script usage
+/// - Specify an optional instance name for TUI control
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
@@ -7,7 +13,11 @@ pub struct Args {
     #[arg(short = 'l', long)]
     pub list: bool,
 
-    /// Start a control box TUI for the specified instance
-    #[arg(short = 't', long, value_name = "INSTANCE_NAME", num_args = 0..=1, default_missing_value = "", require_equals = true)]
-    pub tui: Option<String>,
+    /// Disable the TUI and start only server services (for script usage)
+    #[arg(long = "disable-tui")]
+    pub disable_tui: bool,
+
+    /// Optional instance name for TUI control (positional argument)
+    /// If not specified, the application will choose the first instance available
+    pub instance_name: Option<String>,
 }
