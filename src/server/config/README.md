@@ -8,7 +8,19 @@
 
 Structure of the configuration file:
 - Main
-    - 
+    - TUI
+        - `power_toggle_key`: The user key to toggle the power.
+    - MCP
+        - `enable`: Enable or disable the MCP server (bool).
+        - `host`: Host address for the MCP server (string).
+        - `port`: Port number for the MCP server (integer).
+    - Power Supply
+        - `model`: Model identifier for the power supply (string).
+        - `description`: Optional description of the power supply (string, optional).
+        - `security_min_voltage`: Minimum allowed voltage (float, optional).
+        - `security_max_voltage`: Maximum allowed voltage (float, optional).
+        - `security_min_current`: Minimum allowed current (float, optional).
+        - `security_max_current`: Maximum allowed current (float, optional).
 
 ## Technical Requirements
 

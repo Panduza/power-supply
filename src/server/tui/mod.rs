@@ -1,6 +1,8 @@
 /// Terminal User Interface module
 ///
 /// Provides a simple TUI for power supply control and monitoring.
+mod psi_widget;
+
 use std::io;
 use std::time::Duration;
 
@@ -14,7 +16,7 @@ use crossterm::terminal::disable_raw_mode;
 use crossterm::terminal::enable_raw_mode;
 use crossterm::terminal::EnterAlternateScreen;
 use crossterm::terminal::LeaveAlternateScreen;
-
+use pza_power_supply_client::PowerSupplyClientBuilder;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::Alignment;
 use ratatui::layout::Constraint;
@@ -26,61 +28,39 @@ use ratatui::style::Style;
 use ratatui::text::Line;
 use ratatui::text::Span;
 use ratatui::widgets::Block;
+use ratatui::widgets::BorderType;
 use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::Terminal;
 
 use super::SERVER_STATE_STORAGE;
-use pza_power_supply_client::PowerSupplyClient;
-use pza_power_supply_client::PowerSupplyClientBuilder;
+use psi_widget::PowerSupplyInstanceWidget;
 
 /// Application state for the TUI
 pub struct App {
     /// Whether the application should quit
     should_quit: bool,
-    /// Current instance name being controlled
-    instance_name: Option<String>,
-    /// Power supply client for MQTT communication
-    client: Option<PowerSupplyClient>,
-    /// Current power state (output enable)
-    power_state: bool,
-    /// Current voltage value
-    voltage: String,
-    /// Current current value
-    current: String,
-    /// Status message
+    /// Power supply instance widgets
+    widgets: Vec<PowerSupplyInstanceWidget>,
+    /// Currently selected widget index
+    selected_widget: usize,
+    /// Global status message
     status_message: String,
 }
 
 impl App {
-    /// Create a new application instance
-    pub fn new(instance_name: Option<String>) -> Self {
+    /// Create a new application instance with power supply instances
+    pub fn new(instance_names: Vec<String>) -> Self {
+        let widgets = instance_names
+            .into_iter()
+            .map(PowerSupplyInstanceWidget::new)
+            .collect();
+
         Self {
             should_quit: false,
-            instance_name,
-            client: None,
-            power_state: false,
-            voltage: "0.00V".to_string(),
-            current: "0.00A".to_string(),
+            widgets,
+            selected_widget: 0,
             status_message: "Initializing...".to_string(),
-        }
-    }
-
-    // ------------------------------------------------------------------------------
-
-    /// Handle keyboard input events
-    pub fn handle_input(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Char('q') | KeyCode::Esc => {
-                self.should_quit = true;
-            }
-            KeyCode::Char(' ') | KeyCode::Enter => {
-                // Toggle power state on space or enter
-                if self.client.is_some() {
-                    self.status_message = "Toggling power...".to_string();
-                }
-            }
-            _ => {}
         }
     }
 
@@ -93,82 +73,86 @@ impl App {
 
     // ------------------------------------------------------------------------------
 
-    /// Initialize the PowerSupply client
-    pub async fn initialize_client(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(ref instance_name) = self.instance_name {
+    /// Handle keyboard input events
+    pub fn handle_input(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Char('q') | KeyCode::Esc => {
+                self.should_quit = true;
+            }
+            KeyCode::Char(' ') | KeyCode::Enter => {
+                // Toggle power state of selected widget
+                if !self.widgets.is_empty() {
+                    self.status_message = "Toggling power...".to_string();
+                }
+            }
+            KeyCode::Up => {
+                if self.selected_widget > 0 {
+                    self.selected_widget -= 1;
+                }
+            }
+            KeyCode::Down => {
+                if self.selected_widget < self.widgets.len().saturating_sub(1) {
+                    self.selected_widget += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // ------------------------------------------------------------------------------
+
+    /// Initialize clients for all widgets
+    pub async fn initialize_clients(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        for widget in &mut self.widgets {
             match PowerSupplyClientBuilder::default()
-                .with_power_supply_name(instance_name.clone())
+                .with_power_supply_name(widget.instance_name.clone())
                 .build()
             {
                 Ok(client) => {
-                    self.client = Some(client);
-                    self.status_message = "Connected to power supply".to_string();
+                    widget.set_client(client);
                 }
                 Err(e) => {
                     return Err(format!(
                         "Failed to connect to power supply instance '{}': {}",
-                        instance_name, e
+                        widget.instance_name, e
                     )
                     .into());
                 }
             }
-        } else {
-            return Err("No instance specified".into());
         }
+        self.status_message = "Connected to all power supplies".to_string();
         Ok(())
     }
 
     // ------------------------------------------------------------------------------
 
-    /// Update power supply state from client
+    /// Update state for all widgets
     pub async fn update_state(&mut self) {
-        if let Some(ref client) = self.client {
-            self.power_state = client.get_oe().await;
-            self.voltage = client.get_voltage().await;
-            self.current = client.get_current().await;
+        for widget in &mut self.widgets {
+            widget.update_state().await;
         }
     }
 
     // ------------------------------------------------------------------------------
 
-    /// Toggle power state
+    /// Toggle power state of selected widget
     pub async fn toggle_power(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(ref client) = self.client {
-            if self.power_state {
-                client.disable_output().await?;
-                self.status_message = "Power disabled".to_string();
-            } else {
-                client.enable_output().await?;
-                self.status_message = "Power enabled".to_string();
-            }
+        if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+            widget.toggle_power().await?;
+            self.status_message = format!("Toggled power for {}", widget.instance_name);
         }
         Ok(())
     }
 }
 
 /// Run the TUI application
-pub async fn run_tui(instance_name: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
-    // Determine which instance to use
-    let final_instance_name = match instance_name {
-        Some(name) if !name.is_empty() => name,
-        _ => {
-            // Get available instances from server state
-            let server_state = SERVER_STATE_STORAGE
-                .get()
-                .ok_or("Server state not initialized")?;
+pub async fn run_tui(_instance_name: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    // Get available instances from server state
+    let server_state = SERVER_STATE_STORAGE
+        .get()
+        .ok_or("Server state not initialized")?;
 
-            let available_instances = server_state.instances_names().await;
-
-            if available_instances.is_empty() {
-                return Err("No power supply instances available. Please configure at least one device in the server configuration.".into());
-            }
-
-            // Use the first available instance
-            let selected = available_instances[0].clone();
-            println!("No instance specified, using first available: {}", selected);
-            selected
-        }
-    };
+    let available_instances = server_state.instances_names().await;
 
     // Setup terminal
     enable_raw_mode()?;
@@ -177,11 +161,13 @@ pub async fn run_tui(instance_name: Option<String>) -> Result<(), Box<dyn std::e
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Create app state with validated instance name
-    let mut app = App::new(Some(final_instance_name));
+    // Create app state with all available instances
+    let mut app = App::new(available_instances.clone());
 
-    // Initialize client
-    app.initialize_client().await?;
+    // Initialize clients for all instances (only if instances exist)
+    if !available_instances.is_empty() {
+        app.initialize_clients().await?;
+    }
 
     let mut last_update = std::time::Instant::now();
     let mut toggle_requested = false;
@@ -207,97 +193,84 @@ pub async fn run_tui(instance_name: Option<String>) -> Result<(), Box<dyn std::e
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints([
-                    Constraint::Length(3),
-                    Constraint::Min(8),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
+                    Constraint::Length(3), // Title bar
+                    Constraint::Min(8),    // Main content
+                    Constraint::Length(3), // Status bar
+                    Constraint::Length(3), // Help bar
                 ])
                 .split(f.area());
 
             // Title bar
-            let title = match &app.instance_name {
-                Some(name) => format!("Power Supply TUI - Instance: {}", name),
-                None => "Power Supply TUI - No Instance Selected".to_string(),
-            };
-
             let title_block = Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
                 .title("Panduza Power Supply Controller");
-            let title_paragraph = Paragraph::new(title)
+            let title_text = if app.widgets.is_empty() {
+                "No Power Supply Instances Available"
+            } else {
+                "All Power Supply Instances"
+            };
+            let title_paragraph = Paragraph::new(title_text)
                 .block(title_block)
                 .alignment(Alignment::Center);
             f.render_widget(title_paragraph, chunks[0]);
 
-            // Main control panel
-            let control_chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([
-                    Constraint::Percentage(33),
-                    Constraint::Percentage(33),
-                    Constraint::Percentage(34),
-                ])
-                .split(chunks[1]);
+            // Main content area
+            if app.widgets.is_empty() {
+                // Display "no instances available" message
+                let no_instances_block = Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .style(Style::default().fg(Color::Yellow))
+                    .title("No Instances Available");
 
-            // Power state display
-            let power_color = if app.power_state {
-                Color::Green
+                let message = vec![
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "No power supply instances are configured.",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    )),
+                    Line::from(""),
+                    Line::from("Please configure at least one device in the server"),
+                    Line::from("configuration file to use the TUI."),
+                ];
+
+                let message_paragraph = Paragraph::new(message)
+                    .block(no_instances_block)
+                    .alignment(Alignment::Center);
+                f.render_widget(message_paragraph, chunks[1]);
             } else {
-                Color::Red
-            };
-            let power_text = if app.power_state { "ON" } else { "OFF" };
-            let power_block = Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(power_color))
-                .title("Power State");
-            let power_content = vec![
-                Line::from(vec![Span::styled(
-                    power_text,
-                    Style::default()
-                        .fg(power_color)
-                        .add_modifier(Modifier::BOLD)
-                        .add_modifier(Modifier::UNDERLINED),
-                )]),
-                Line::from(""),
-                Line::from("Press SPACE or"),
-                Line::from("ENTER to toggle"),
-            ];
-            let power_paragraph = Paragraph::new(power_content)
-                .block(power_block)
-                .alignment(Alignment::Center);
-            f.render_widget(power_paragraph, control_chunks[0]);
+                // Display all power supply widgets
+                let widget_count = app.widgets.len();
+                let constraints: Vec<Constraint> = (0..widget_count)
+                    .map(|_| Constraint::Percentage(100 / widget_count as u16))
+                    .collect();
 
-            // Voltage display
-            let voltage_block = Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::Yellow))
-                .title("Voltage");
-            let voltage_content = vec![Line::from(vec![Span::styled(
-                &app.voltage,
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            )])];
-            let voltage_paragraph = Paragraph::new(voltage_content)
-                .block(voltage_block)
-                .alignment(Alignment::Center);
-            f.render_widget(voltage_paragraph, control_chunks[1]);
+                let widget_chunks = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints(constraints)
+                    .split(chunks[1]);
 
-            // Current display
-            let current_block = Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::Cyan))
-                .title("Current");
-            let current_content = vec![Line::from(vec![Span::styled(
-                &app.current,
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )])];
-            let current_paragraph = Paragraph::new(current_content)
-                .block(current_block)
-                .alignment(Alignment::Center);
-            f.render_widget(current_paragraph, control_chunks[2]);
+                // Render each widget
+                for (i, widget) in app.widgets.iter().enumerate() {
+                    if let Some(area) = widget_chunks.get(i) {
+                        // Highlight the selected widget
+                        let mut area_to_use = *area;
+                        if i == app.selected_widget {
+                            // Add highlighting for selected widget
+                            let highlight_block = Block::default()
+                                .borders(Borders::ALL)
+                                .border_type(BorderType::Thick)
+                                .style(Style::default().fg(Color::Magenta));
+                            area_to_use = highlight_block.inner(area_to_use);
+                            f.render_widget(highlight_block, *area);
+                        }
+                        widget.render(f, area_to_use);
+                    }
+                }
+            }
 
             // Status bar
             let status_block = Block::default()
@@ -312,8 +285,12 @@ pub async fn run_tui(instance_name: Option<String>) -> Result<(), Box<dyn std::e
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
                 .title("Help");
-            let help_paragraph =
-                Paragraph::new("q/Esc: Quit | Space/Enter: Toggle Power").block(help_block);
+            let help_text = if app.widgets.is_empty() {
+                "q/Esc: Quit"
+            } else {
+                "q/Esc: Quit | ↑/↓: Navigate | Space/Enter: Toggle Power"
+            };
+            let help_paragraph = Paragraph::new(help_text).block(help_block);
             f.render_widget(help_paragraph, chunks[3]);
         })?;
 
@@ -321,13 +298,12 @@ pub async fn run_tui(instance_name: Option<String>) -> Result<(), Box<dyn std::e
         if event::poll(Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => {
-                        app.should_quit = true;
-                    }
                     KeyCode::Char(' ') | KeyCode::Enter => {
                         toggle_requested = true;
                     }
-                    _ => {}
+                    _ => {
+                        app.handle_input(key.code);
+                    }
                 }
             }
         }
