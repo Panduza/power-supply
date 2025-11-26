@@ -38,6 +38,7 @@ pub struct PowerSupplyClient {
     /// Channel for current changes
     current_channel: (broadcast::Sender<String>, broadcast::Receiver<String>),
 
+    /// MQTT topics used by the client
     topics: Topics,
 }
 
