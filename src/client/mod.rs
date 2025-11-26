@@ -18,6 +18,7 @@ mod error;
 pub use error::ClientError;
 
 use crate::payload::PowerStatePayload;
+use crate::topics::Topics;
 
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 
@@ -36,6 +37,8 @@ pub struct PowerSupplyClient {
     voltage_channel: (broadcast::Sender<String>, broadcast::Receiver<String>),
     /// Channel for current changes
     current_channel: (broadcast::Sender<String>, broadcast::Receiver<String>),
+
+    topics: Topics,
 }
 
 impl Clone for PowerSupplyClient {
@@ -53,12 +56,7 @@ impl Clone for PowerSupplyClient {
                 self.current_channel.0.clone(),
                 self.current_channel.1.resubscribe(),
             ),
-            topic_control_oe: self.topic_control_oe.clone(),
-            topic_control_oe_cmd: self.topic_control_oe_cmd.clone(),
-            topic_control_voltage: self.topic_control_voltage.clone(),
-            topic_control_voltage_cmd: self.topic_control_voltage_cmd.clone(),
-            topic_control_current: self.topic_control_current.clone(),
-            topic_control_current_cmd: self.topic_control_current_cmd.clone(),
+            topics: self.topics.clone(),
         }
     }
 }
@@ -175,19 +173,6 @@ impl PowerSupplyClient {
         client: RumqttCustomAsyncClient,
         event_loop: rumqttc::EventLoop,
     ) -> Self {
-        // Prepare MQTT topics
-        let topic_control_oe = client.topic_with_prefix("control/oe");
-        let topic_control_oe_cmd = client.topic_with_prefix("control/oe/cmd");
-        // let topic_control_oe_error = psu_topic(psu_name.clone(), "control/oe/error");
-        let topic_control_voltage = client.topic_with_prefix("control/voltage");
-        let topic_control_voltage_cmd = client.topic_with_prefix("control/voltage/cmd");
-        let topic_control_current = client.topic_with_prefix("control/current");
-        let topic_control_current_cmd = client.topic_with_prefix("control/current/cmd");
-        // let topic_measure_voltage_refresh_freq =
-        //     psu_topic(psu_name.clone(), "measure/voltage/refresh_freq");
-        // let topic_measure_current_refresh_freq =
-        //     psu_topic(psu_name.clone(), "measure/current/refresh_freq");
-
         let (oe_tx, oe_rx) = broadcast::channel(32);
 
         let obj = Self {
@@ -200,15 +185,7 @@ impl PowerSupplyClient {
             voltage_channel: broadcast::channel(32),
             current_channel: broadcast::channel(32),
 
-            topic_control_oe,
-            topic_control_oe_cmd,
-            // topic_control_oe_error,
-            topic_control_voltage,
-            topic_control_voltage_cmd,
-            topic_control_current,
-            topic_control_current_cmd,
-            // topic_measure_voltage_refresh_freq,
-            // topic_measure_current_refresh_freq,
+            topics: Topics::new(&psu_name),
         };
 
         let _task_handler = tokio::spawn(Self::task_loop(
