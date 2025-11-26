@@ -36,21 +36,6 @@ pub struct PowerSupplyClient {
     voltage_channel: (broadcast::Sender<String>, broadcast::Receiver<String>),
     /// Channel for current changes
     current_channel: (broadcast::Sender<String>, broadcast::Receiver<String>),
-
-    /// psu/{name}/control/oe
-    topic_control_oe: String,
-    /// psu/{name}/control/oe/cmd
-    topic_control_oe_cmd: String,
-
-    /// psu/{name}/control/voltage
-    topic_control_voltage: String,
-    /// psu/{name}/control/voltage/cmd
-    topic_control_voltage_cmd: String,
-
-    /// psu/{name}/control/current
-    topic_control_current: String,
-    /// psu/{name}/control/current/cmd
-    topic_control_current_cmd: String,
 }
 
 impl Clone for PowerSupplyClient {
