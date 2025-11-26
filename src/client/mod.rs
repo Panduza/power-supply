@@ -17,6 +17,8 @@ pub use data::MutableData;
 mod error;
 pub use error::ClientError;
 
+use crate::payload::PowerStatePayload;
+
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 
 /// Client for interacting with a power supply via MQTT
