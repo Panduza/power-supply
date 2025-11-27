@@ -17,6 +17,7 @@ pub use data::MutableData;
 mod error;
 pub use error::ClientError;
 
+use crate::payload::PowerState;
 use crate::payload::PowerStatePayload;
 use crate::topics::Topics;
 
@@ -227,9 +228,11 @@ impl PowerSupplyClient {
     /// Enable the power supply output
     pub async fn enable_output(&self) -> anyhow::Result<()> {
         trace!("[{}] Enabling output", self.psu_name);
-        let payload = Bytes::from("ON");
         self.mqtt_client
-            .publish(self.topic_control_oe_cmd.clone(), payload)
+            .publish(
+                self.topics.state_cmd.clone(),
+                PowerStatePayload::new(PowerState::On).to_json_bytes()?,
+            )
             .await?;
         Ok(())
     }

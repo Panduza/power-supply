@@ -5,31 +5,27 @@ use crate::constants::SERVER_TYPE_NAME;
 pub struct Topics {
     // ---
     /// Topic for status updates
-    status: String,
-
+    pub status: String,
     /// Topic for error messages
     /// pza_id match the one from the command that caused the error
-    error: String,
-
+    pub error: String,
     // ---
     /// Topic to send state change commands
     /// /state/cmd
-    state_cmd: String,
+    pub state_cmd: String,
     /// Topic to receive state updates, acknowledgments from server
     /// /state
-    state: String,
-
+    pub state: String,
     // ---
     /// /voltage/cmd
-    voltage_cmd: String,
+    pub voltage_cmd: String,
     /// /voltage
-    voltage: String,
-
+    pub voltage: String,
     // ---
     /// /current/cmd
-    current_cmd: String,
+    pub current_cmd: String,
     /// /current
-    current: String,
+    pub current: String,
 }
 
 impl Topics {
