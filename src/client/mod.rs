@@ -1,12 +1,10 @@
 use bytes::Bytes;
-use rumqttc::{AsyncClient, MqttOptions};
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::sync::Mutex;
+use tracing::error;
 use tracing::trace;
+use tracing::warn;
 
 mod builder;
 pub use builder::PowerSupplyClientBuilder;
@@ -17,8 +15,10 @@ pub use data::MutableData;
 mod error;
 pub use error::ClientError;
 
+use crate::payload::CurrentPayload;
 use crate::payload::PowerState;
 use crate::payload::PowerStatePayload;
+use crate::payload::VoltagePayload;
 use crate::topics::Topics;
 
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
@@ -70,15 +70,11 @@ impl PowerSupplyClient {
     }
 
     /// Task loop to handle MQTT events and update client state
-    async fn task_loop(
-        client: PowerSupplyClient,
-        mut event_loop: rumqttc::EventLoop,
-        sub_topics: Vec<String>,
-    ) {
+    async fn task_loop(client: PowerSupplyClient, mut event_loop: rumqttc::EventLoop) {
         // Subscribe to all relevant topics
         client
             .mqtt_client
-            .subscribe_to_all(sub_topics.clone())
+            .subscribe_to_all(client.topics.vec_sub_client())
             .await;
 
         loop {
@@ -124,46 +120,77 @@ impl PowerSupplyClient {
 
     /// Handle incoming MQTT messages and update internal state
     async fn handle_incoming_message(&self, topic: &String, payload: Bytes) {
-        if topic == &self.topic_control_oe {
-            let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
-            let enabled = msg.trim().eq_ignore_ascii_case("ON");
+        let id = self.topics.topic_to_id(topic);
 
-            // Update internal state
-            {
-                let mut data = self.mutable_data.lock().await;
-                data.enabled = enabled;
+        match id {
+            None => {
+                error!("[{}] Unknown topic received: {}", self.psu_name, topic);
+                return;
             }
-
-            // Broadcast to all listeners
-            self.oe_channel.0.send(enabled).expect("channel error");
-        } else if topic == &self.topic_control_voltage {
-            let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
-            let voltage_str = msg.trim().to_string();
-
-            // Update internal state
-            {
-                let mut data = self.mutable_data.lock().await;
-                data.voltage = voltage_str.clone();
+            Some(crate::topics::TopicId::Status) => {
+                // Handle status updates
+                trace!("[{}] Status update received", self.psu_name);
             }
-
-            self.voltage_channel
-                .0
-                .send(voltage_str.clone())
-                .expect("channel error");
-        } else if topic == &self.topic_control_current {
-            let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
-            let current_str = msg.trim().to_string();
-
-            // Update internal state
-            {
-                let mut data = self.mutable_data.lock().await;
-                data.current = current_str.clone();
+            Some(crate::topics::TopicId::Error) => {
+                // Handle error messages
+                let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
+                error!("[{}] Error received: {}", self.psu_name, msg);
             }
+            Some(crate::topics::TopicId::State) => {
+                // Handle state updates (ON/OFF)
+                let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
+                let enabled = msg.trim().eq_ignore_ascii_case("ON");
 
-            self.current_channel
-                .0
-                .send(current_str.clone())
-                .expect("channel error");
+                // Update internal state
+                {
+                    let mut data = self.mutable_data.lock().await;
+                    data.enabled = enabled;
+                }
+
+                // Broadcast to all listeners
+                self.oe_channel.0.send(enabled).expect("channel error");
+            }
+            Some(crate::topics::TopicId::Voltage) => {
+                // Handle voltage updates
+                let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
+                let voltage_str = msg.trim().to_string();
+
+                // Update internal state
+                {
+                    let mut data = self.mutable_data.lock().await;
+                    data.voltage = voltage_str.clone();
+                }
+
+                self.voltage_channel
+                    .0
+                    .send(voltage_str.clone())
+                    .expect("channel error");
+            }
+            Some(crate::topics::TopicId::Current) => {
+                // Handle current updates
+                let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
+                let current_str = msg.trim().to_string();
+
+                // Update internal state
+                {
+                    let mut data = self.mutable_data.lock().await;
+                    data.current = current_str.clone();
+                }
+
+                self.current_channel
+                    .0
+                    .send(current_str.clone())
+                    .expect("channel error");
+            }
+            Some(crate::topics::TopicId::StateCmd)
+            | Some(crate::topics::TopicId::VoltageCmd)
+            | Some(crate::topics::TopicId::CurrentCmd) => {
+                // These are command topics that the client sends to, not receives from
+                warn!(
+                    "[{}] Unexpected command topic received: {}",
+                    self.psu_name, topic
+                );
+            }
         }
     }
 
@@ -178,6 +205,7 @@ impl PowerSupplyClient {
         let (oe_tx, oe_rx) = broadcast::channel(32);
 
         let obj = Self {
+            topics: Topics::new(&psu_name),
             psu_name,
             mqtt_client: client,
 
@@ -186,19 +214,9 @@ impl PowerSupplyClient {
             oe_channel: (oe_tx, oe_rx),
             voltage_channel: broadcast::channel(32),
             current_channel: broadcast::channel(32),
-
-            topics: Topics::new(&psu_name),
         };
 
-        let _task_handler = tokio::spawn(Self::task_loop(
-            obj.clone(),
-            event_loop,
-            vec![
-                obj.topic_control_oe.clone(),
-                obj.topic_control_voltage.clone(),
-                obj.topic_control_current.clone(),
-            ],
-        ));
+        let _task_handler = tokio::spawn(Self::task_loop(obj.clone(), event_loop));
         obj
     }
 
@@ -229,12 +247,11 @@ impl PowerSupplyClient {
     pub async fn enable_output(&self) -> anyhow::Result<()> {
         trace!("[{}] Enabling output", self.psu_name);
         self.mqtt_client
-            .publish(
-                self.topics.state_cmd.clone(),
+            .pubsh(
+                &self.topics.state_cmd,
                 PowerStatePayload::new(PowerState::On).to_json_bytes()?,
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     // ------------------------------------------------------------------------
@@ -242,41 +259,38 @@ impl PowerSupplyClient {
     /// Disable the power supply output
     pub async fn disable_output(&self) -> anyhow::Result<()> {
         trace!("[{}] Disabling output", self.psu_name);
-        let payload = Bytes::from("OFF");
         self.mqtt_client
-            .publish(self.topic_control_oe_cmd.clone(), payload)
-            .await?;
-        Ok(())
+            .pubsh(
+                &self.topics.state_cmd,
+                PowerStatePayload::new(PowerState::Off).to_json_bytes()?,
+            )
+            .await
     }
 
     // ------------------------------------------------------------------------
 
     /// Set the voltage of the power supply
-    pub async fn set_voltage(&self, voltage: String) -> Result<(), ClientError> {
-        let payload = Bytes::from(voltage);
-        if let Err(e) = self
-            .mqtt_client
-            .publish(self.topic_control_voltage_cmd.clone(), payload)
+    pub async fn set_voltage(&self, voltage: String) -> anyhow::Result<()> {
+        trace!("[{}] Setting voltage to {}", self.psu_name, voltage);
+        self.mqtt_client
+            .pubsh(
+                &self.topics.voltage_cmd,
+                VoltagePayload::new(voltage).to_json_bytes()?,
+            )
             .await
-        {
-            return Err(ClientError::MqttError(e.to_string()));
-        }
-        Ok(())
     }
 
     // ------------------------------------------------------------------------
 
     /// Set the current limit of the power supply
-    pub async fn set_current(&self, current: String) -> Result<(), ClientError> {
-        let payload = Bytes::from(current);
-        if let Err(e) = self
-            .mqtt_client
-            .publish(self.topic_control_current_cmd.clone(), payload)
+    pub async fn set_current(&self, current: String) -> anyhow::Result<()> {
+        trace!("[{}] Setting current to {}", self.psu_name, current);
+        self.mqtt_client
+            .pubsh(
+                &self.topics.current_cmd,
+                CurrentPayload::new(current).to_json_bytes()?,
+            )
             .await
-        {
-            return Err(ClientError::MqttError(e.to_string()));
-        }
-        Ok(())
     }
 
     // ------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 use crate::constants;
 use crate::server::drivers::PowerSupplyDriver;
 use bytes::Bytes;
+use pza_power_supply_client::topics::TopicId;
+use pza_power_supply_client::topics::Topics;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 use std::sync::Arc;
@@ -22,30 +24,8 @@ pub struct MqttRunner {
     /// Driver MqttRunner
     driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
 
-    /// psu/{name}/status
-    topic_status: String,
-    /// psu/{name}/error
-    topic_error: String,
-
-    /// psu/{name}/control/oe
-    topic_control_oe: String,
-    /// psu/{name}/control/oe/cmd"
-    topic_control_oe_cmd: String,
-
-    /// psu/{name}/control/voltage
-    topic_control_voltage: String,
-    /// psu/{name}/control/voltage/cmd
-    topic_control_voltage_cmd: String,
-
-    /// psu/{name}/control/voltage
-    topic_control_current: String,
-    /// psu/{name}/control/current/cmd
-    topic_control_current_cmd: String,
-
-    /// psu/{name}/measure/voltage/refresh_freq
-    topic_measure_voltage_refresh_freq: String,
-    /// psu/{name}/measure/current/refresh_freq
-    topic_measure_current_refresh_freq: String,
+    /// MQTT topics used by the runner
+    topics: Topics,
 }
 
 impl MqttRunner {
@@ -67,20 +47,9 @@ impl MqttRunner {
 
         // Create runner object
         let runner = MqttRunner {
+            topics: Topics::new(&name),
             name: name.clone(),
             driver,
-            topic_status: custom_client.topic_with_prefix("status"),
-            topic_error: custom_client.topic_with_prefix("error"),
-            topic_control_oe: custom_client.topic_with_prefix("control/oe"),
-            topic_control_oe_cmd: custom_client.topic_with_prefix("control/oe/cmd"),
-            topic_control_voltage: custom_client.topic_with_prefix("control/voltage"),
-            topic_control_voltage_cmd: custom_client.topic_with_prefix("control/voltage/cmd"),
-            topic_control_current: custom_client.topic_with_prefix("control/current"),
-            topic_control_current_cmd: custom_client.topic_with_prefix("control/current/cmd"),
-            topic_measure_voltage_refresh_freq: custom_client
-                .topic_with_prefix("measure/voltage/refresh_freq"),
-            topic_measure_current_refresh_freq: custom_client
-                .topic_with_prefix("measure/current/refresh_freq"),
             client: custom_client,
         };
 
@@ -98,13 +67,7 @@ impl MqttRunner {
         // Subscribe to all relevant topics
         runner
             .client
-            .subscribe_to_all(vec![
-                runner.topic_control_oe_cmd.clone(),
-                runner.topic_control_voltage_cmd.clone(),
-                runner.topic_control_current_cmd.clone(),
-                runner.topic_measure_voltage_refresh_freq.clone(),
-                runner.topic_measure_current_refresh_freq.clone(),
-            ])
+            .subscribe_to_all(runner.topics.vec_sub_server())
             .await;
 
         runner.initialize().await;
@@ -140,7 +103,7 @@ impl MqttRunner {
         self.client
             .client
             .publish(
-                self.topic_control_oe.clone(),
+                self.topics.state.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
                 Bytes::from(if oe_value { "ON" } else { "OFF" }),
@@ -176,7 +139,7 @@ impl MqttRunner {
         self.client
             .client
             .publish(
-                self.topic_control_voltage.clone(),
+                self.topics.voltage.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
                 Bytes::from(voltage),
@@ -212,7 +175,7 @@ impl MqttRunner {
         self.client
             .client
             .publish(
-                self.topic_control_current.clone(),
+                self.topics.current.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
                 Bytes::from(current),
@@ -244,7 +207,7 @@ impl MqttRunner {
             self.client
                 .client
                 .publish(
-                    self.topic_control_oe.clone(),
+                    self.topics.state.clone(),
                     rumqttc::QoS::AtLeastOnce,
                     true,
                     Bytes::from("ERROR"),
@@ -262,7 +225,7 @@ impl MqttRunner {
         self.client
             .client
             .publish(
-                self.topic_control_oe.clone(),
+                self.topics.state.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
                 payload_back,
@@ -290,7 +253,7 @@ impl MqttRunner {
         self.client
             .client
             .publish(
-                self.topic_control_voltage.clone(),
+                self.topics.voltage.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
                 payload_back,
@@ -314,7 +277,7 @@ impl MqttRunner {
         self.client
             .client
             .publish(
-                self.topic_control_current.clone(),
+                self.topics.current.clone(),
                 rumqttc::QoS::AtLeastOnce,
                 true,
                 payload,
@@ -328,30 +291,25 @@ impl MqttRunner {
     /// Handle incoming MQTT messages
     /// TODO => handle error return here
     async fn handle_incoming_message(&self, topic: &String, payload: Bytes) {
-        // ON/OFF Output Enable
-        if topic.eq(&self.topic_control_oe_cmd) {
-            self.handle_output_enable_command(payload).await;
-        }
-        // Set Voltage
-        else if topic.eq(&self.topic_control_voltage_cmd) {
-            self.handle_voltage_command(payload).await;
-        }
-        // Set Current
-        else if topic.eq(&self.topic_control_current_cmd) {
-            self.handle_current_command(payload).await;
-        }
-        // Set Measurement Refresh Frequencies
-        else if topic.eq(&self.topic_measure_voltage_refresh_freq) {
-            let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(_freq) = cmd.parse::<u64>() {
-                // Set voltage measurement refresh frequency
-                // (Implementation depends on the driver capabilities)
+        let id = self.topics.topic_to_id(topic);
+
+        match id {
+            Some(TopicId::StateCmd) => {
+                self.handle_output_enable_command(payload).await;
             }
-        } else if topic.eq(&self.topic_measure_current_refresh_freq) {
-            let cmd = String::from_utf8(payload.to_vec()).unwrap();
-            if let Ok(_freq) = cmd.parse::<u64>() {
-                // Set current measurement refresh frequency
-                // (Implementation depends on the driver capabilities)
+            Some(TopicId::VoltageCmd) => {
+                self.handle_voltage_command(payload).await;
+            }
+            Some(TopicId::CurrentCmd) => {
+                self.handle_current_command(payload).await;
+            }
+            _ => {
+                // Unknown or unhandled topic
+                trace!(
+                    "[{}] Received message on unhandled topic: {}",
+                    self.name,
+                    topic
+                );
             }
         }
     }

@@ -1,10 +1,13 @@
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 
+/// Power state of a power supply
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PowerState {
+    /// Power supply is turned on
     #[serde(rename = "ON")]
     On,
+    /// Power supply is turned off
     #[serde(rename = "OFF")]
     Off,
 }
