@@ -97,23 +97,28 @@ impl Clone for PowerSupplyClient {
 
 impl PowerSupplyClient {
     // ------------------------------------------------------------------------------
+
     /// Creates a new builder for configuring PowerSupplyClient instances.
     pub fn builder() -> PowerSupplyClientBuilder {
         PowerSupplyClientBuilder::default()
     }
 
+    // ------------------------------------------------------------------------------
+
     /// Creates a new PowerSupplyClient with existing MQTT client and event loop.
     ///
     /// Automatically starts the background task loop for handling MQTT events.
-    pub fn new_with_client(
+    fn new_from_builder(
         psu_name: String,
         client: RumqttCustomAsyncClient,
         event_loop: rumqttc::EventLoop,
     ) -> Self {
+        // Initialize broadcast channels for state updates
         let (state_tx, state_rx) = broadcast::channel::<Arc<PowerStatePayload>>(32);
         let (voltage_tx, voltage_rx) = broadcast::channel::<Arc<VoltagePayload>>(32);
         let (current_tx, current_rx) = broadcast::channel::<Arc<CurrentPayload>>(32);
 
+        // Create the client instance
         let obj = Self {
             topics: Topics::new(&psu_name),
             psu_name,
@@ -126,6 +131,7 @@ impl PowerSupplyClient {
             current_channel: (current_tx, current_rx),
         };
 
+        // Start the background task loop for handling MQTT events
         let _task_handler = tokio::spawn(Self::task_loop(obj.clone(), event_loop));
         obj
     }
@@ -143,40 +149,21 @@ impl PowerSupplyClient {
             .subscribe_to_all(client.topics.vec_sub_client())
             .await;
 
+        // Event loop to process incoming MQTT messages
         loop {
             while let Ok(event) = event_loop.poll().await {
-                // println!("Notification = {:?}", event);
-                // match notification {
-                //     Ok(event) => {
                 match event {
-                    rumqttc::Event::Incoming(incoming) => {
-                        // println!("Incoming = {:?}", incoming);
-
-                        match incoming {
-                            // rumqttc::Packet::Connect(_) => todo!(),
-                            // rumqttc::Packet::ConnAck(_) => todo!(),
-                            rumqttc::Packet::Publish(packet) => {
-                                // println!("Publish = {:?}", packet);
-                                let topic = packet.topic;
-                                let payload = packet.payload;
-
-                                client.handle_incoming_message(&topic, payload).await;
-                            }
-
-                            _ => {}
+                    rumqttc::Event::Incoming(incoming) => match incoming {
+                        rumqttc::Packet::Publish(packet) => {
+                            let topic = packet.topic;
+                            let payload = packet.payload;
+                            client.handle_incoming_message(&topic, payload).await;
                         }
-                    }
-                    rumqttc::Event::Outgoing(outgoing) => {
-                        // println!("Outgoing = {:?}", outgoing);
-                        match outgoing {
-                            // rumqttc::Outgoing::Publish(packet) => {
-                            //     // println!("Publish = {:?}", packet);
-                            // }
-                            _ => {}
-                        }
-                    } // }
-                      // }
-                      // Err(_) => todo!(),
+                        _ => {}
+                    },
+                    rumqttc::Event::Outgoing(outgoing) => match outgoing {
+                        _ => {}
+                    },
                 }
             }
         }
