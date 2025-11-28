@@ -1,5 +1,5 @@
 pub mod client;
-mod constants;
+pub mod constants;
 pub mod path;
 pub mod payload;
 pub mod topics;

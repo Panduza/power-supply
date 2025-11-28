@@ -48,7 +48,7 @@ impl MqttRunner {
             client,
             rumqttc::QoS::AtMostOnce,
             true,
-            format!("{}/{}", constants::MQTT_TOPIC_PREFIX, name),
+            format!("{}/{}", constants::SERVER_TYPE_NAME, name),
         );
 
         // Create runner object

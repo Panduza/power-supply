@@ -66,4 +66,31 @@ impl ServerMainConfig {
 
         pza_toolkit::config::read_config::<ServerMainConfig>(&config_path)
     }
+
+    /// List MCP server URLs from the configuration
+    ///
+    pub fn list_mcp_servers_urls(&self) -> Vec<String> {
+        let mut urls = Vec::new();
+
+        if let Some(devices) = &self.devices {
+            for (name, config) in devices {
+                let url = format!(
+                    "http://{}:{}/{}/{}",
+                    self.mcp.host,
+                    self.mcp.port,
+                    pza_power_supply_client::constants::SERVER_TYPE_NAME,
+                    name
+                );
+                urls.push(url);
+            }
+        }
+
+        urls
+    }
+
+    /// List MCP server URLs as a JSON string
+    pub fn list_mcp_servers_urls_as_json_string(&self) -> String {
+        let urls = self.list_mcp_servers_urls();
+        serde_json::to_string_pretty(&urls).unwrap_or_else(|_| "[]".to_string())
+    }
 }

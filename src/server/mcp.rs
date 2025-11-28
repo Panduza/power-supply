@@ -1,10 +1,10 @@
 mod tools;
 
 use axum::Router;
+use pza_power_supply_client::constants;
 use rmcp::transport::{
     streamable_http_server::session::local::LocalSessionManager, StreamableHttpService,
 };
-use std::io::Error as IoError;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::oneshot;
@@ -27,7 +27,7 @@ impl McpServer {
     ///
     pub async fn run(config: ServerMainConfig, psu_names: Vec<String>) -> anyhow::Result<()> {
         // Bind and serve the application
-        let bind_address = "127.0.0.1:3000";
+        let bind_address = format!("{}:{}", config.mcp.host, config.mcp.port);
         let listener = TcpListener::bind(&bind_address).await?;
 
         //
@@ -45,13 +45,16 @@ impl McpServer {
             );
 
             // MCP endpoint - using streamable_http_server for MCP protocol handling
-            app = app.nest_service(format!("/power-supply/{}", &psu_name).as_str(), mcp_service);
+            app = app.nest_service(
+                format!("/{}/{}", constants::SERVER_TYPE_NAME, &psu_name).as_str(),
+                mcp_service,
+            );
 
             //
             tracing::info!(
                 "MCP server listening on {}{}",
                 bind_address,
-                format!("/power-supply/{}", &psu_name)
+                format!("/{}/{}", constants::SERVER_TYPE_NAME, &psu_name)
             );
         }
 

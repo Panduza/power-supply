@@ -6,6 +6,7 @@ use crate::server::mqtt::MqttRunner;
 use anyhow::Ok;
 use pza_toolkit::rumqtt::broker::start_broker_in_thread;
 use pza_toolkit::task_monitor::TaskMonitor;
+use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::watch;
 use tokio::sync::Mutex;
@@ -13,13 +14,16 @@ use tracing::error;
 use tracing::info;
 
 // Global state for sharing data between background services and GUI
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ServerState {
     /// Factory instance
     pub factory: Arc<Mutex<Factory>>,
 
     /// Server configuration
     pub server_config: Arc<Mutex<ServerMainConfig>>,
+
+    ///
+    task_monitor: Arc<Mutex<Option<TaskMonitor>>>,
 
     /// Names of available instances
     pub instances: Arc<Mutex<Vec<String>>>,
@@ -32,6 +36,17 @@ pub struct ServerState {
 
     /// Watch channel receiver for ready signal
     ready_receiver: watch::Receiver<bool>,
+}
+
+impl Debug for ServerState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ServerState")
+            .field("factory", &"Arc<Mutex<Factory>>")
+            .field("server_config", &"Arc<Mutex<ServerMainConfig>>")
+            .field("instances", &"Arc<Mutex<Vec<String>>>")
+            .field("args", &self.args)
+            .finish()
+    }
 }
 
 impl PartialEq for ServerState {
@@ -55,6 +70,7 @@ impl ServerState {
         Self {
             factory,
             server_config,
+            task_monitor: Arc::new(Mutex::new(None)),
             instances: Arc::new(Mutex::new(Vec::new())),
             args,
             ready_sender: Arc::new(Mutex::new(Some(ready_sender))),
@@ -70,6 +86,7 @@ impl ServerState {
     }
 
     // ------------------------------------------------------------------------------
+
     /// Start background runtime services
     pub async fn start_services(&self) -> anyhow::Result<()> {
         // Start built-in MQTT broker if configured
@@ -118,6 +135,9 @@ impl ServerState {
             }
         }
 
+        // Store the TaskMonitor instance
+        self.task_monitor.lock().await.replace(task_monitor.clone());
+
         // Monitor task events
         loop {
             let event_recv = runner_tasks_event_receiver.recv().await;
@@ -134,6 +154,8 @@ impl ServerState {
             }
         }
     }
+
+    // ------------------------------------------------------------------------------
 
     pub async fn instances_names(&self) -> Vec<String> {
         let instances = self.instances.lock().await;
