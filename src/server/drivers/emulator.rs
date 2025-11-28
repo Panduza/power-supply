@@ -93,6 +93,11 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
     async fn set_voltage(&mut self, voltage: String) -> anyhow::Result<()> {
         info!("Emulator Driver: set_voltage = {}", voltage);
 
+        // Special Test Feature: Simulate panic on specific voltage value
+        if voltage == "9999.9999" {
+            panic!("Simulated panic triggered by voltage 9999.9999");
+        }
+
         // Parse voltage value
         let voltage_value: f32 = voltage
             .parse()
@@ -124,10 +129,18 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
         Ok(())
     }
 
+    // ------------------------------------------------------------------------------
+
+    /// Maximum number of decimal places supported for voltage settings
+    fn supported_voltage_decimals(&self) -> usize {
+        2 // Emulator supports 2 decimal places for voltage
+    }
+
     /// Get the security minimum voltage
     fn security_min_voltage(&self) -> Option<f32> {
         self.security_min_voltage
     }
+
     fn security_max_voltage(&self) -> Option<f32> {
         self.security_max_voltage
     }
@@ -177,27 +190,19 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
         Ok(())
     }
 
+    // ------------------------------------------------------------------------------
+
+    /// Maximum number of decimal places supported for current settings
+    fn supported_current_decimals(&self) -> usize {
+        3 // Emulator supports 3 decimal places for current
+    }
+
     /// Get the security minimum current
     fn security_min_current(&self) -> Option<f32> {
         self.security_min_current
     }
+
     fn security_max_current(&self) -> Option<f32> {
         self.security_max_current
-    }
-
-    //--------------------------------------------------------------------------
-
-    /// Measure the voltage
-    async fn measure_voltage(&mut self) -> anyhow::Result<String> {
-        info!("Emulator Driver: measure_voltage");
-        Ok("0".into())
-    }
-
-    //--------------------------------------------------------------------------
-
-    /// Measure the current
-    async fn measure_current(&mut self) -> anyhow::Result<String> {
-        info!("Emulator Driver: measure_current");
-        Ok("0".into())
     }
 }

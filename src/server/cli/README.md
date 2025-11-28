@@ -9,10 +9,10 @@ CLI allow the user to configure the application.
 
 ```bash
 # long
-panduza --list
+pza-power-supply --list
 
 # short
-panduza -l
+pza-power-supply -l
 ```
 
 - Command to start a control box TUI
@@ -22,10 +22,10 @@ instance_name is optional, by default the application will choose the first inst
 
 ```bash
 # long
-panduza [instance_name]
+pza-power-supply [instance_name]
 
 # short
-panduza [instance_name]
+pza-power-supply [instance_name]
 ```
 
 - Command to disable the TUI
@@ -33,8 +33,15 @@ panduza [instance_name]
 When script call the application, it is important to be able to disable the TUI and start only server services.
 
 ```bash
-panduza -–disable-tui
+pza-power-supply -–disable-tui
 ```
+
+- Command to force disable MCP servers
+
+```bash
+pza-power-supply -–disable-mcp
+```
+
 
 ## Technical Requirements
 

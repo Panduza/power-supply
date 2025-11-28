@@ -60,7 +60,9 @@ ka3005p = "0.7.0"
 once_cell = "1.21.3"
 # ---
 # Panduza toolkit dependency
-pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.1" }
+# pza-toolkit = { git = "https://github.com/Panduza/toolkit", tag = "0.1.1" }
+pza-toolkit = { git = "https://github.com/Panduza/toolkit", branch = "main" }
+# pza-toolkit = { path = "../toolkit" }
 # ---
 # Random string generator
 rand = "0.8.5"

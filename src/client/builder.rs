@@ -42,7 +42,7 @@ impl PowerSupplyClientBuilder {
             .clone()
             .ok_or_else(|| anyhow::anyhow!("Power supply name not set"))?;
 
-        Ok(PowerSupplyClient::new_with_client(
+        Ok(PowerSupplyClient::new_from_builder(
             name.clone(),
             RumqttCustomAsyncClient::new(
                 client,
