@@ -29,8 +29,18 @@ impl CurrentPayload {
         }
     }
 
+    /// Create a new CurrentPayload as a response to a command with the given pza_id
+    pub fn from_current_as_response(current: String, pza_id: String) -> Self {
+        Self { pza_id, current }
+    }
+
     /// Serialize the CurrentPayload to JSON bytes
     pub fn to_json_bytes(&self) -> anyhow::Result<Bytes> {
         Ok(Bytes::from(serde_json::to_string(self)?))
+    }
+
+    /// Deserialize a CurrentPayload from JSON bytes
+    pub fn from_json_bytes(bytes: Bytes) -> anyhow::Result<Self> {
+        Ok(serde_json::from_slice(&bytes)?)
     }
 }

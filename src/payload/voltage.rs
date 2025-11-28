@@ -29,8 +29,18 @@ impl VoltagePayload {
         }
     }
 
+    /// Create a new VoltagePayload as a response to a command with the given pza_id
+    pub fn from_voltage_as_response(voltage: String, pza_id: String) -> Self {
+        Self { pza_id, voltage }
+    }
+
     /// Serialize the VoltagePayload to JSON bytes
     pub fn to_json_bytes(&self) -> anyhow::Result<Bytes> {
         Ok(Bytes::from(serde_json::to_string(self)?))
+    }
+
+    /// Deserialize a VoltagePayload from JSON bytes
+    pub fn from_json_bytes(bytes: Bytes) -> anyhow::Result<Self> {
+        Ok(serde_json::from_slice(&bytes)?)
     }
 }

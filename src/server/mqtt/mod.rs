@@ -9,6 +9,7 @@ use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::error;
 use tracing::trace;
 
 #[derive(Debug)]
@@ -226,97 +227,119 @@ impl MqttRunner {
     // --------------------------------------------------------------------------------
 
     /// Handle voltage setting commands
-    async fn handle_voltage_command(&self, payload: Bytes) {
-        let cmd = String::from_utf8(payload.to_vec()).unwrap();
+    async fn handle_voltage_command(&self, payload: Bytes) -> anyhow::Result<()> {
+        // Deserialize the command payload
+        let cmd = pza_power_supply_client::payload::VoltagePayload::from_json_bytes(payload)?;
+        trace!("[{}] Handling voltage command: {}", self.name, cmd.voltage);
+
+        // Handle voltage setting
         let mut driver = self.driver.lock().await;
-        driver
-            .set_voltage(cmd)
-            .await
-            .expect("Failed to set voltage");
+        driver.set_voltage(cmd.voltage.clone()).await?;
 
         // Read back the actual set voltage to confirm
-        let voltage = driver.get_voltage().await.expect("Failed to get voltage");
-        let payload_back = Bytes::from(voltage);
+        let voltage = driver.get_voltage().await?;
+        let payload_back =
+            pza_power_supply_client::payload::VoltagePayload::from_voltage_as_response(
+                voltage, cmd.pza_id,
+            )
+            .to_json_bytes()?;
 
         // Confirm the new state by publishing it
         self.client
-            .client
-            .publish(
-                self.topics.voltage.clone(),
-                rumqttc::QoS::AtLeastOnce,
-                true,
-                payload_back,
-            )
+            .pubsh(&self.topics.voltage, payload_back)
             .await
             .unwrap();
+        Ok(())
     }
 
     // --------------------------------------------------------------------------------
 
     /// Handle current setting commands
-    async fn handle_current_command(&self, payload: Bytes) {
-        let cmd = String::from_utf8(payload.to_vec()).unwrap();
+    async fn handle_current_command(&self, payload: Bytes) -> anyhow::Result<()> {
+        // Deserialize the command payload
+        let cmd = pza_power_supply_client::payload::CurrentPayload::from_json_bytes(payload)?;
+        trace!("[{}] Handling current command: {}", self.name, cmd.current);
+
+        // Handle current setting
         let mut driver = self.driver.lock().await;
-        driver
-            .set_current(cmd)
-            .await
-            .expect("Failed to set current");
+        driver.set_current(cmd.current.clone()).await?;
+
+        // Read back the actual set current to confirm
+        let current = driver.get_current().await?;
+        let payload_back =
+            pza_power_supply_client::payload::CurrentPayload::from_current_as_response(
+                current, cmd.pza_id,
+            )
+            .to_json_bytes()?;
 
         // Confirm the new state by publishing it
         self.client
-            .client
-            .publish(
-                self.topics.current.clone(),
-                rumqttc::QoS::AtLeastOnce,
-                true,
-                payload,
-            )
+            .pubsh(&self.topics.current, payload_back)
             .await
             .unwrap();
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------------------
+
+    /// Handle error and send error response via MQTT
+    async fn handle_command_error(
+        &self,
+        error: anyhow::Error,
+        payload: &Bytes,
+        command_type: &str,
+    ) {
+        // Try to parse payload as a simple json and try to extract pza_id for error response
+        let pza_id = match serde_json::from_slice::<serde_json::Value>(payload) {
+            Ok(json_value) => json_value
+                .get("pza_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("????")
+                .to_string(),
+            Err(_) => "????".to_string(),
+        };
+
+        // Prepare and send error response
+        let error_payload =
+            pza_power_supply_client::payload::ErrorPayload::from_message_as_response(
+                format!("Invalid {} command payload: {}", command_type, error),
+                pza_id,
+            )
+            .to_json_bytes()
+            .expect("Failed to serialize error payload");
+
+        self.client
+            .pubsh(&self.topics.error, error_payload)
+            .await
+            .expect("Failed to publish error payload");
+
+        error!(
+            "[{}] Error handling {} command: {}",
+            self.name, command_type, error
+        );
     }
 
     // --------------------------------------------------------------------------------
 
     /// Handle incoming MQTT messages
-    /// TODO => handle error return here
     async fn handle_incoming_message(&self, topic: &String, payload: Bytes) {
         let id = self.topics.topic_to_id(topic);
 
         match id {
             Some(TopicId::StateCmd) => {
                 if let Err(e) = self.handle_state_command(payload.clone()).await {
-                    // Try to parse payload as a simple json and try to extract pza_id for error response
-                    let pza_id = match serde_json::from_slice::<serde_json::Value>(&payload) {
-                        Ok(json_value) => json_value
-                            .get("pza_id")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("????")
-                            .to_string(),
-                        Err(_) => "????".to_string(),
-                    };
-
-                    // Prepare and send error response
-                    let error_payload =
-                        pza_power_supply_client::payload::ErrorPayload::from_message_as_response(
-                            format!("Invalid state command payload: {}", e),
-                            pza_id,
-                        )
-                        .to_json_bytes()
-                        .expect("Failed to serialize error payload");
-
-                    self.client
-                        .pubsh(&self.topics.error, error_payload)
-                        .await
-                        .expect("Failed to publish error payload");
-
-                    trace!("[{}] Error handling state command: {}", self.name, e);
+                    self.handle_command_error(e, &payload, "state").await;
                 }
             }
             Some(TopicId::VoltageCmd) => {
-                self.handle_voltage_command(payload).await;
+                if let Err(e) = self.handle_voltage_command(payload.clone()).await {
+                    self.handle_command_error(e, &payload, "voltage").await;
+                }
             }
             Some(TopicId::CurrentCmd) => {
-                self.handle_current_command(payload).await;
+                if let Err(e) = self.handle_current_command(payload.clone()).await {
+                    self.handle_command_error(e, &payload, "current").await;
+                }
             }
             _ => {
                 // Unknown or unhandled topic
