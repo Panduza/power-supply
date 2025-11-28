@@ -13,12 +13,17 @@ pub struct ErrorPayload {
 }
 
 impl ErrorPayload {
-    /// Create a new ErrorPayload
-    pub fn new(message: String) -> Self {
+    /// Create a new ErrorPayload from a message
+    pub fn from_message(message: String) -> Self {
         Self {
             pza_id: super::generate_pza_id(),
             message,
         }
+    }
+
+    /// Create a new ErrorPayload as a response to a command with the given pza_id
+    pub fn from_message_as_response(message: String, pza_id: String) -> Self {
+        Self { pza_id, message }
     }
 
     /// Serialize the ErrorPayload to JSON bytes

@@ -1,6 +1,8 @@
 use crate::constants;
 use crate::server::drivers::PowerSupplyDriver;
 use bytes::Bytes;
+use pza_power_supply_client::payload::PowerState;
+use pza_power_supply_client::payload::PowerStatePayload;
 use pza_power_supply_client::topics::TopicId;
 use pza_power_supply_client::topics::Topics;
 use pza_toolkit::rumqtt::client::init_client;
@@ -188,50 +190,37 @@ impl MqttRunner {
     // --------------------------------------------------------------------------------
 
     /// Handle output enable/disable commands
-    async fn handle_output_enable_command(&self, payload: Bytes) {
+    async fn handle_state_command(&self, payload: Bytes) -> anyhow::Result<()> {
+        // Deserialize the command payload
+        let cmd = PowerStatePayload::from_json_bytes(payload)?;
+        trace!("[{}] Handling state command: {:?}", self.name, cmd.state);
+
         // Handle ON/OFF payload
-        let cmd = String::from_utf8(payload.to_vec()).unwrap();
         let mut driver = self.driver.lock().await;
-        if cmd == "ON" {
-            driver
-                .enable_output()
-                .await
-                .expect("Failed to enable output");
-        } else if cmd == "OFF" {
-            driver
-                .disable_output()
-                .await
-                .expect("Failed to disable output");
-        } else {
-            // Invalid command
-            self.client
-                .client
-                .publish(
-                    self.topics.state.clone(),
-                    rumqttc::QoS::AtLeastOnce,
-                    true,
-                    Bytes::from("ERROR"),
-                )
-                .await
-                .unwrap();
-            return;
+        if cmd.state == PowerState::On {
+            driver.enable_output().await?;
+        } else if cmd.state == PowerState::Off {
+            driver.disable_output().await?;
         }
 
         // Read back the actual output enable state to confirm
-        let oe_value = driver.output_enabled().await.expect("Failed to get state");
-        let payload_back = Bytes::from(if oe_value { "ON" } else { "OFF" });
+        let oe_value = driver.output_enabled().await?;
+        let payload_back = PowerStatePayload::from_state_as_response(
+            if oe_value {
+                PowerState::On
+            } else {
+                PowerState::Off
+            },
+            cmd.pza_id,
+        )
+        .to_json_bytes()?;
 
         // Confirm the new state by publishing it
         self.client
-            .client
-            .publish(
-                self.topics.state.clone(),
-                rumqttc::QoS::AtLeastOnce,
-                true,
-                payload_back,
-            )
+            .pubsh(&self.topics.state, payload_back)
             .await
             .unwrap();
+        Ok(())
     }
 
     // --------------------------------------------------------------------------------
@@ -295,7 +284,7 @@ impl MqttRunner {
 
         match id {
             Some(TopicId::StateCmd) => {
-                self.handle_output_enable_command(payload).await;
+                self.handle_state_command(payload).await;
             }
             Some(TopicId::VoltageCmd) => {
                 self.handle_voltage_command(payload).await;

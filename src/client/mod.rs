@@ -249,7 +249,7 @@ impl PowerSupplyClient {
         self.mqtt_client
             .pubsh(
                 &self.topics.state_cmd,
-                PowerStatePayload::new(PowerState::On).to_json_bytes()?,
+                PowerStatePayload::from_state(PowerState::On).to_json_bytes()?,
             )
             .await
     }
@@ -262,7 +262,7 @@ impl PowerSupplyClient {
         self.mqtt_client
             .pubsh(
                 &self.topics.state_cmd,
-                PowerStatePayload::new(PowerState::Off).to_json_bytes()?,
+                PowerStatePayload::from_state(PowerState::Off).to_json_bytes()?,
             )
             .await
     }
