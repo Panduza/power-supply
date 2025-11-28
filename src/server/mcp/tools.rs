@@ -20,7 +20,6 @@ use tracing::debug;
 use tracing::info;
 
 use pza_power_supply_client::PowerSupplyClient;
-use pza_power_supply_client::PowerSupplyClientBuilder;
 
 use crate::server::config::ServerMainConfig;
 
@@ -58,7 +57,7 @@ impl PowerSupplyService {
     //--------------------------------------------------------------------------
 
     pub fn new(config: ServerMainConfig, psu_name: String) -> anyhow::Result<Self> {
-        let client = PowerSupplyClientBuilder::default()
+        let client = PowerSupplyClient::builder()
             .with_ip(config.broker.tcp.unwrap().clone())
             .with_power_supply_name(psu_name.clone())
             .build()?;

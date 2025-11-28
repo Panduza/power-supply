@@ -67,6 +67,10 @@ mosquitto_pub -h 127.0.0.1 -t "power-supply/emulator/control/voltage/cmd" -m "5.
 mosquitto_pub -h 127.0.0.1 -t "power-supply/emulator/control/current/cmd" -m "1.0"
 ```
 
+```bash
+cargo test --test mqtt
+```
+
 ### MCP Control (with GitHub Copilot)
 
 Configure Copilot to use the MCP endpoint:

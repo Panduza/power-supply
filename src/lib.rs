@@ -5,4 +5,3 @@ pub mod payload;
 pub mod topics;
 
 pub use client::PowerSupplyClient;
-pub use client::PowerSupplyClientBuilder;

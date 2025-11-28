@@ -16,7 +16,7 @@ use crossterm::terminal::disable_raw_mode;
 use crossterm::terminal::enable_raw_mode;
 use crossterm::terminal::EnterAlternateScreen;
 use crossterm::terminal::LeaveAlternateScreen;
-use pza_power_supply_client::PowerSupplyClientBuilder;
+use pza_power_supply_client::PowerSupplyClient;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::Alignment;
 use ratatui::layout::Constraint;
@@ -141,7 +141,7 @@ impl App {
     /// typically due to MQTT connection issues.
     pub async fn initialize_clients(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         for widget in &mut self.widgets {
-            match PowerSupplyClientBuilder::default()
+            match PowerSupplyClient::builder()
                 .with_power_supply_name(widget.instance_name.clone())
                 .build()
             {
