@@ -45,6 +45,12 @@ pub async fn run_server() {
     let server_config = ServerMainConfig::from_user_file()
         .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err));
 
+    // Handle MCP server listing and exit if requested
+    if args.mcp_list {
+        println!("{}", server_config.list_mcp_servers_urls_as_json_string());
+        return; // Exit after listing
+    }
+
     // Create factory
     let factory = crate::server::factory::Factory::initialize();
 

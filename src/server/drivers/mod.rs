@@ -10,7 +10,7 @@ pub trait PowerSupplyDriver: Send + Sync {
     /// Initialize the driver
     async fn initialize(&mut self) -> anyhow::Result<()>;
     /// Shutdown the driver
-    async fn shutdown(&mut self) -> anyhow::Result<()>;
+    // async fn shutdown(&mut self) -> anyhow::Result<()>;
 
     // --- Output control ---
 
@@ -30,7 +30,7 @@ pub trait PowerSupplyDriver: Send + Sync {
 
     // Decimals Support
     // Maximum number of decimal places supported for voltage settings
-    fn supported_voltage_decimals(&self) -> usize;
+    // fn supported_voltage_decimals(&self) -> usize;
 
     // Security limits
     fn security_min_voltage(&self) -> Option<f32>;
@@ -43,7 +43,7 @@ pub trait PowerSupplyDriver: Send + Sync {
 
     // Decimals Support
     // Maximum number of decimal places supported for current settings
-    fn supported_current_decimals(&self) -> usize;
+    // fn supported_current_decimals(&self) -> usize;
 
     // Security limits
     fn security_min_current(&self) -> Option<f32>;

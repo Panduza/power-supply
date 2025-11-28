@@ -10,10 +10,6 @@ use clap::Parser;
 #[derive(Parser, Debug, Clone, PartialEq)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    /// List power supply instance names
-    #[arg(short = 'l', long)]
-    pub list: bool,
-
     /// Disable the TUI and start only server services (for script usage)
     #[arg(long = "disable-tui")]
     pub disable_tui: bool,
@@ -21,6 +17,10 @@ pub struct Args {
     /// Disable MCP servers (for script usage)
     #[arg(long = "disable-mcp")]
     pub disable_mcp: bool,
+
+    /// List available MCP servers and exit
+    #[arg(long = "mcp-list")]
+    pub mcp_list: bool,
 
     /// Optional instance name for TUI control (positional argument)
     /// If not specified, the application will choose the first instance available

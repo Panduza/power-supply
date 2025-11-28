@@ -1,11 +1,8 @@
+use crate::server::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
 use std::{collections::HashMap, sync::Arc};
 use thiserror::Error as ThisError;
 use tokio::sync::Mutex;
 use tracing::error;
-use tracing::info;
-
-use crate::path::factory_manifest_file;
-use crate::server::{config::PowerSupplyConfig, drivers::PowerSupplyDriver};
 
 #[derive(ThisError, Debug, Clone)]
 pub enum FactoryError {
@@ -56,15 +53,6 @@ impl Factory {
         );
 
         // ----------------------------------------------------------
-
-        // Write factory manifest to file
-        if let Err(err) = factory.write_manifest_to_file() {
-            error!("Failed to write factory manifest: {}", err);
-        } else {
-            info!("Factory manifest written successfully");
-        }
-
-        // ----------------------------------------------------------
         factory
     }
 
@@ -86,28 +74,5 @@ impl Factory {
         } else {
             Err(FactoryError::NoDriver(config.model))
         }
-    }
-
-    /// Write the manifest data to the factory manifest file
-    pub fn write_manifest_to_file(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // Ensure the user root directory exists
-        pza_toolkit::path::ensure_user_root_dir_exists()?;
-
-        // Get the factory manifest file path
-        let manifest_file_path =
-            factory_manifest_file().ok_or("Unable to determine factory manifest file path")?;
-
-        info!(
-            "Writing factory manifest to: {}",
-            manifest_file_path.display()
-        );
-
-        // Serialize the manifest data to pretty JSON
-        let json_content = serde_json::to_string_pretty(&self.manifest)?;
-
-        // Write to file
-        std::fs::write(manifest_file_path, json_content)?;
-
-        Ok(())
     }
 }

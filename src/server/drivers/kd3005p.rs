@@ -59,11 +59,11 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
         Ok(())
     }
-    /// Shutdown the driver
-    async fn shutdown(&mut self) -> anyhow::Result<()> {
-        info!("Emulator Driver: shutdown");
-        Ok(())
-    }
+    // /// Shutdown the driver
+    // async fn shutdown(&mut self) -> anyhow::Result<()> {
+    //     info!("Emulator Driver: shutdown");
+    //     Ok(())
+    // }
 
     /// Get the output enabled state
     async fn output_enabled(&mut self) -> anyhow::Result<bool> {
@@ -200,10 +200,10 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     // ------------------------------------------------------------------------------
 
-    /// Maximum number of decimal places supported for voltage settings
-    fn supported_voltage_decimals(&self) -> usize {
-        2 // KD3005P supports 2 decimal places for voltage
-    }
+    // /// Maximum number of decimal places supported for voltage settings
+    // fn supported_voltage_decimals(&self) -> usize {
+    //     2 // KD3005P supports 2 decimal places for voltage
+    // }
 
     /// Get the security minimum voltage
     fn security_min_voltage(&self) -> Option<f32> {
@@ -294,10 +294,10 @@ impl PowerSupplyDriver for Kd3005pDriver {
 
     // ------------------------------------------------------------------------------
 
-    /// Maximum number of decimal places supported for current settings
-    fn supported_current_decimals(&self) -> usize {
-        3 // KD3005P supports 3 decimal places for current
-    }
+    // /// Maximum number of decimal places supported for current settings
+    // fn supported_current_decimals(&self) -> usize {
+    //     3 // KD3005P supports 3 decimal places for current
+    // }
 
     /// Get the security minimum current
     fn security_min_current(&self) -> Option<f32> {

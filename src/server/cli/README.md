@@ -5,16 +5,6 @@ CLI allow the user to configure the application.
 
 ## Functional Requirements
 
-- Command to list power supply instance names
-
-```bash
-# long
-pza-power-supply --list
-
-# short
-pza-power-supply -l
-```
-
 - Command to start a control box TUI
 
 TUI should be by default, if the user wants to interact it must be easy and short to write.
@@ -42,16 +32,18 @@ pza-power-supply -–disable-tui
 pza-power-supply -–disable-mcp
 ```
 
+- Scan devices pluged to the computer and return a json representation on stdout.
+
+```bash
+pza-power-supply -–scan
+```
+
+- Scan devices pluged to the computer and return a json representation on stdout.
+
+```bash
+pza-power-supply -–mcp-list
+```
 
 ## Technical Requirements
 
 - Use crate `clap`
-
-
-## NOTES for later improvement
-
-DO NOT PROCESS THIS
-
-–-identity must print the identity on stdout and update the identity file.
-–-scan must print the scan results on stdout.
-
