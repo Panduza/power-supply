@@ -1,3 +1,4 @@
+use crate::server::cli::Args as CliArgs;
 use crate::server::config::ServerMainConfig;
 use crate::server::factory::Factory;
 use crate::server::mcp::McpServer;
@@ -22,6 +23,9 @@ pub struct ServerState {
     /// Names of available instances
     pub instances: Arc<Mutex<HashMap<String, MqttRunnerHandler>>>,
 
+    /// Command line arguments
+    pub args: CliArgs,
+
     /// Watch channel sender for ready signal
     ready_sender: Arc<Mutex<Option<watch::Sender<bool>>>>,
 
@@ -34,18 +38,24 @@ impl PartialEq for ServerState {
         Arc::ptr_eq(&self.factory, &other.factory)
             && Arc::ptr_eq(&self.server_config, &other.server_config)
             && Arc::ptr_eq(&self.instances, &other.instances)
+            && self.args == other.args
             && Arc::ptr_eq(&self.ready_sender, &other.ready_sender)
     }
 }
 
 impl ServerState {
     /// Create a new ServerState instance
-    pub fn new(factory: Arc<Mutex<Factory>>, server_config: Arc<Mutex<ServerMainConfig>>) -> Self {
+    pub fn new(
+        factory: Arc<Mutex<Factory>>,
+        server_config: Arc<Mutex<ServerMainConfig>>,
+        args: CliArgs,
+    ) -> Self {
         let (ready_sender, ready_receiver) = watch::channel(false);
         Self {
             factory,
             server_config,
             instances: Arc::new(Mutex::new(HashMap::new())),
+            args,
             ready_sender: Arc::new(Mutex::new(Some(ready_sender))),
             ready_receiver,
         }
@@ -85,10 +95,14 @@ impl ServerState {
             *self.instances.lock().await = instances;
         }
 
-        {
+        // Start MCP server only if not disabled
+        if !self.args.disable_mcp {
             let instance_names = self.instances_names().await;
             let ccc = self.server_config.as_ref().lock().await.clone();
             McpServer::run(ccc, instance_names).await?;
+            info!("Started MCP server");
+        } else {
+            info!("MCP server disabled by CLI flag");
         }
 
         // Emit ready signal after all services are initialized

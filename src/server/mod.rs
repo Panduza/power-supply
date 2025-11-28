@@ -52,6 +52,7 @@ pub async fn run_server() {
     let server_state = ServerState::new(
         Arc::new(Mutex::new(factory)),
         Arc::new(Mutex::new(server_config)),
+        args.clone(),
     );
 
     // Store server state in global storage
@@ -71,10 +72,10 @@ pub async fn run_server() {
     });
 
     // Start TUI at the end if requested by user
-    if !args.disable_tui {
+    if !server_state.args.disable_tui {
         // Note: Tracing is not initialized when TUI is enabled to avoid
         // log output interfering with the terminal user interface
-        let instance_name = args.instance_name.filter(|s| !s.is_empty());
+        let instance_name = server_state.args.instance_name.filter(|s| !s.is_empty());
         if let Err(e) = tui::run_tui(instance_name).await {
             eprintln!("TUI error: {}", e); // Use eprintln since tracing is not available
         }
