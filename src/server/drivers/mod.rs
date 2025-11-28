@@ -28,6 +28,10 @@ pub trait PowerSupplyDriver: Send + Sync {
     /// Set the voltage setting
     async fn set_voltage(&mut self, voltage: String) -> anyhow::Result<()>;
 
+    // Decimals Support
+    // Maximum number of decimal places supported for voltage settings
+    fn supported_voltage_decimals(&self) -> usize;
+
     // Security limits
     fn security_min_voltage(&self) -> Option<f32>;
     fn security_max_voltage(&self) -> Option<f32>;
@@ -37,14 +41,11 @@ pub trait PowerSupplyDriver: Send + Sync {
     /// Set the current setting
     async fn set_current(&mut self, current: String) -> anyhow::Result<()>;
 
+    // Decimals Support
+    // Maximum number of decimal places supported for current settings
+    fn supported_current_decimals(&self) -> usize;
+
     // Security limits
     fn security_min_current(&self) -> Option<f32>;
     fn security_max_current(&self) -> Option<f32>;
-
-    // --- Measurements ---
-
-    /// Measure the output voltage
-    async fn measure_voltage(&mut self) -> anyhow::Result<String>;
-    /// Measure the output current
-    async fn measure_current(&mut self) -> anyhow::Result<String>;
 }

@@ -1,8 +1,10 @@
 use crate::constants;
 use crate::server::drivers::PowerSupplyDriver;
 use bytes::Bytes;
+use pza_power_supply_client::payload::CurrentPayload;
 use pza_power_supply_client::payload::PowerState;
 use pza_power_supply_client::payload::PowerStatePayload;
+use pza_power_supply_client::payload::VoltagePayload;
 use pza_power_supply_client::topics::TopicId;
 use pza_power_supply_client::topics::Topics;
 use pza_toolkit::rumqtt::client::init_client;
@@ -97,21 +99,19 @@ impl MqttRunner {
 
     /// Initialize the runner (if needed)
     async fn initialize(&self) -> anyhow::Result<()> {
+        // Initialize the driver
         let mut driver = self.driver.lock().await;
-
         driver.initialize().await?;
 
         // Publish initial output enable state
         let oe_value = driver.output_enabled().await?;
-        self.client
-            .client
-            .publish(
-                self.topics.state.clone(),
-                rumqttc::QoS::AtLeastOnce,
-                true,
-                Bytes::from(if oe_value { "ON" } else { "OFF" }),
-            )
-            .await?;
+        let state_payload = PowerStatePayload::from_state(if oe_value {
+            PowerState::On
+        } else {
+            PowerState::Off
+        })
+        .to_json_bytes()?;
+        self.client.pubsh(&self.topics.state, state_payload).await?;
 
         // Get and check initial voltage setting
         let mut voltage = driver.get_voltage().await?;
@@ -139,14 +139,9 @@ impl MqttRunner {
             }
         }
 
+        let voltage_payload = VoltagePayload::from_string(voltage).to_json_bytes()?;
         self.client
-            .client
-            .publish(
-                self.topics.voltage.clone(),
-                rumqttc::QoS::AtLeastOnce,
-                true,
-                Bytes::from(voltage),
-            )
+            .pubsh(&self.topics.voltage, voltage_payload)
             .await?;
 
         // Get and check initial current setting
@@ -175,14 +170,9 @@ impl MqttRunner {
             }
         }
 
+        let current_payload = CurrentPayload::from_string(current).to_json_bytes()?;
         self.client
-            .client
-            .publish(
-                self.topics.current.clone(),
-                rumqttc::QoS::AtLeastOnce,
-                true,
-                Bytes::from(current),
-            )
+            .pubsh(&self.topics.current, current_payload)
             .await?;
 
         Ok(())
@@ -229,7 +219,7 @@ impl MqttRunner {
     /// Handle voltage setting commands
     async fn handle_voltage_command(&self, payload: Bytes) -> anyhow::Result<()> {
         // Deserialize the command payload
-        let cmd = pza_power_supply_client::payload::VoltagePayload::from_json_bytes(payload)?;
+        let cmd = VoltagePayload::from_json_bytes(payload)?;
         trace!("[{}] Handling voltage command: {}", self.name, cmd.voltage);
 
         // Handle voltage setting
@@ -239,10 +229,7 @@ impl MqttRunner {
         // Read back the actual set voltage to confirm
         let voltage = driver.get_voltage().await?;
         let payload_back =
-            pza_power_supply_client::payload::VoltagePayload::from_voltage_as_response(
-                voltage, cmd.pza_id,
-            )
-            .to_json_bytes()?;
+            VoltagePayload::from_voltage_as_response(voltage, cmd.pza_id).to_json_bytes()?;
 
         // Confirm the new state by publishing it
         self.client
@@ -257,7 +244,7 @@ impl MqttRunner {
     /// Handle current setting commands
     async fn handle_current_command(&self, payload: Bytes) -> anyhow::Result<()> {
         // Deserialize the command payload
-        let cmd = pza_power_supply_client::payload::CurrentPayload::from_json_bytes(payload)?;
+        let cmd = CurrentPayload::from_json_bytes(payload)?;
         trace!("[{}] Handling current command: {}", self.name, cmd.current);
 
         // Handle current setting
@@ -267,10 +254,7 @@ impl MqttRunner {
         // Read back the actual set current to confirm
         let current = driver.get_current().await?;
         let payload_back =
-            pza_power_supply_client::payload::CurrentPayload::from_current_as_response(
-                current, cmd.pza_id,
-            )
-            .to_json_bytes()?;
+            CurrentPayload::from_current_as_response(current, cmd.pza_id).to_json_bytes()?;
 
         // Confirm the new state by publishing it
         self.client

@@ -198,6 +198,13 @@ impl PowerSupplyDriver for Kd3005pDriver {
         Ok(())
     }
 
+    // ------------------------------------------------------------------------------
+
+    /// Maximum number of decimal places supported for voltage settings
+    fn supported_voltage_decimals(&self) -> usize {
+        2 // KD3005P supports 2 decimal places for voltage
+    }
+
     /// Get the security minimum voltage
     fn security_min_voltage(&self) -> Option<f32> {
         self.config.security_min_voltage
@@ -285,28 +292,20 @@ impl PowerSupplyDriver for Kd3005pDriver {
         Ok(())
     }
 
+    // ------------------------------------------------------------------------------
+
+    /// Maximum number of decimal places supported for current settings
+    fn supported_current_decimals(&self) -> usize {
+        3 // KD3005P supports 3 decimal places for current
+    }
+
     /// Get the security minimum current
     fn security_min_current(&self) -> Option<f32> {
         self.config.security_min_current
     }
+
     /// Get the security maximum current
     fn security_max_current(&self) -> Option<f32> {
         self.config.security_max_current
-    }
-
-    //--------------------------------------------------------------------------
-
-    /// Measure the voltage
-    async fn measure_voltage(&mut self) -> anyhow::Result<String> {
-        info!("Kd3005p Driver: measure_voltage");
-        Ok("0".into())
-    }
-
-    //--------------------------------------------------------------------------
-
-    /// Measure the current
-    async fn measure_current(&mut self) -> anyhow::Result<String> {
-        info!("Kd3005p Driver: measure_current");
-        Ok("0".into())
     }
 }

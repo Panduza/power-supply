@@ -13,8 +13,8 @@ pub struct VoltagePayload {
 }
 
 impl VoltagePayload {
-    /// Create a new VoltagePayload
-    pub fn new(voltage: String) -> Self {
+    /// Create a new VoltagePayload from a voltage value
+    pub fn from_string(voltage: String) -> Self {
         Self {
             pza_id: super::generate_pza_id(),
             voltage,

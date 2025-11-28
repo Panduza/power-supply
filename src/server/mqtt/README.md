@@ -59,7 +59,6 @@ mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pz
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pzad":"B","stat":"OFF"}'
 ```
 
-
 - [ ] Set Voltage via MQTT
 To set the voltage, publish the following JSON payload to the voltage command topic:
 

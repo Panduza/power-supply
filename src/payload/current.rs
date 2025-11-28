@@ -13,8 +13,8 @@ pub struct CurrentPayload {
 }
 
 impl CurrentPayload {
-    /// Create a new CurrentPayload
-    pub fn new(current: String) -> Self {
+    /// Create a new CurrentPayload from a current value
+    pub fn from_string(current: String) -> Self {
         Self {
             pza_id: super::generate_pza_id(),
             current,

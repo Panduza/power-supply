@@ -275,7 +275,7 @@ impl PowerSupplyClient {
         self.mqtt_client
             .pubsh(
                 &self.topics.voltage_cmd,
-                VoltagePayload::new(voltage).to_json_bytes()?,
+                VoltagePayload::from_string(voltage).to_json_bytes()?,
             )
             .await
     }
@@ -288,7 +288,7 @@ impl PowerSupplyClient {
         self.mqtt_client
             .pubsh(
                 &self.topics.current_cmd,
-                CurrentPayload::new(current).to_json_bytes()?,
+                CurrentPayload::from_string(current).to_json_bytes()?,
             )
             .await
     }
