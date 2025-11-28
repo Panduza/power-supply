@@ -6,7 +6,6 @@ use crate::server::mqtt::MqttRunner;
 use anyhow::Ok;
 use pza_toolkit::rumqtt::broker::start_broker_in_thread;
 use pza_toolkit::task_monitor::TaskMonitor;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::watch;
 use tokio::sync::Mutex;
