@@ -21,19 +21,33 @@ pub struct StatusPayload {
     pub pza_id: String,
     /// Current status of the power supply instance
     pub status: Status,
+    /// Optional panic message if status is Panicking
+    pub panic_message: Option<String>,
 }
 
 impl StatusPayload {
     /// Create a new StatusPayload
-    pub fn new(status: Status) -> Self {
+    pub fn from_status(status: Status) -> Self {
         Self {
             pza_id: super::generate_pza_id(),
             status,
+            panic_message: None,
         }
+    }
+
+    /// Set the panic message for Panicking status
+    pub fn with_panic_message(mut self, message: String) -> Self {
+        self.panic_message = Some(message);
+        self
     }
 
     /// Serialize the StatusPayload to JSON bytes
     pub fn to_json_bytes(&self) -> anyhow::Result<Bytes> {
         Ok(Bytes::from(serde_json::to_string(self)?))
+    }
+
+    /// Deserialize a StatusPayload from JSON bytes
+    pub fn from_json_bytes(bytes: Bytes) -> anyhow::Result<Self> {
+        Ok(serde_json::from_slice(&bytes)?)
     }
 }

@@ -7,6 +7,7 @@ mod voltage;
 pub use current::CurrentPayload;
 pub use error::ErrorPayload;
 pub use power_state::{PowerState, PowerStatePayload};
+pub use status::Status;
 pub use status::StatusPayload;
 pub use voltage::VoltagePayload;
 

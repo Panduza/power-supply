@@ -1,15 +1,5 @@
-use anyhow::Result;
-use bytes::Bytes;
-use pza_power_supply_client::payload::{
-    CurrentPayload, PowerState, PowerStatePayload, VoltagePayload,
-};
-use pza_power_supply_client::topics::Topics;
 use pza_power_supply_client::PowerSupplyClient;
-use pza_toolkit::rumqtt::broker::start_broker_in_thread;
-use pza_toolkit::rumqtt::client::init_client;
-use rumqttc::{Event, Packet, QoS};
 use std::time::Duration;
-use tokio::time::timeout;
 
 use pza_toolkit::config::IPEndpointConfig;
 

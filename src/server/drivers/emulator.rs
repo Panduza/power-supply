@@ -93,6 +93,11 @@ impl PowerSupplyDriver for PowerSupplyEmulator {
     async fn set_voltage(&mut self, voltage: String) -> anyhow::Result<()> {
         info!("Emulator Driver: set_voltage = {}", voltage);
 
+        // Special Test Feature: Simulate panic on specific voltage value
+        if voltage == "9999.9999" {
+            panic!("Simulated panic triggered by voltage 9999.9999");
+        }
+
         // Parse voltage value
         let voltage_value: f32 = voltage
             .parse()

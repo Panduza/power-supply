@@ -3,12 +3,14 @@ use crate::server::config::ServerMainConfig;
 use crate::server::factory::Factory;
 use crate::server::mcp::McpServer;
 use crate::server::mqtt::MqttRunner;
-use crate::server::mqtt::MqttRunnerHandler;
+use anyhow::Ok;
 use pza_toolkit::rumqtt::broker::start_broker_in_thread;
+use pza_toolkit::task_monitor::TaskMonitor;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::watch;
 use tokio::sync::Mutex;
+use tracing::error;
 use tracing::info;
 
 // Global state for sharing data between background services and GUI
@@ -21,7 +23,7 @@ pub struct ServerState {
     pub server_config: Arc<Mutex<ServerMainConfig>>,
 
     /// Names of available instances
-    pub instances: Arc<Mutex<HashMap<String, MqttRunnerHandler>>>,
+    pub instances: Arc<Mutex<Vec<String>>>,
 
     /// Command line arguments
     pub args: CliArgs,
@@ -54,7 +56,7 @@ impl ServerState {
         Self {
             factory,
             server_config,
-            instances: Arc::new(Mutex::new(HashMap::new())),
+            instances: Arc::new(Mutex::new(Vec::new())),
             args,
             ready_sender: Arc::new(Mutex::new(Some(ready_sender))),
             ready_receiver,
@@ -81,15 +83,18 @@ impl ServerState {
         }
 
         //
+        let (task_monitor, mut task_monitor_event_receiver) = TaskMonitor::new("MQTT Runners");
+
+        // Start MQTT runners for each configured device
         {
-            let mut instances = HashMap::new();
+            let mut instances = Vec::new();
             let factory = self.factory.lock().await;
             info!("Starting server runtime services...");
             if let Some(devices) = &self.server_config.lock().await.devices {
                 for (name, device_config) in devices {
                     let instance = factory.instanciate_driver(device_config.clone())?;
-
-                    instances.insert(name.clone(), MqttRunner::start(name.clone(), instance)?);
+                    instances.push(name.clone());
+                    MqttRunner::start(name.clone(), task_monitor.clone(), instance).await?;
                 }
             }
             *self.instances.lock().await = instances;
@@ -114,14 +119,25 @@ impl ServerState {
             }
         }
 
+        // Monitor task events
         loop {
-            // Placeholder for service tasks
-            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+            let event_recv = task_monitor_event_receiver.recv().await;
+            match event_recv {
+                Some(event) => {
+                    error!("TaskMonitor event: {:?}", event);
+                    // Handle the event as needed
+                }
+                None => {
+                    error!("TaskMonitor pipe closed");
+                    // Handle the error as needed
+                    return Ok(());
+                }
+            }
         }
     }
 
     pub async fn instances_names(&self) -> Vec<String> {
         let instances = self.instances.lock().await;
-        instances.keys().cloned().collect()
+        instances.clone()
     }
 }

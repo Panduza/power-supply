@@ -59,16 +59,23 @@ mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pz
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pzad":"B","stat":"OFF"}'
 ```
 
-- [ ] Set Voltage via MQTT
+- [x] Set Voltage via MQTT
 To set the voltage, publish the following JSON payload to the voltage command topic:
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/voltage/cmd" -m '{"pza_id":"C","voltage":"12.0"}'
 ```
 
-- [ ] Set Current via MQTT
+- [x] Set Current via MQTT
 To set the current, publish the following JSON payload to the current command topic:
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/current/cmd" -m '{"pza_id":"D","current":"2.5"}'
 ```
+
+- [ ] Handle driver panic
+
+```bash
+mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/voltage/cmd" -m '{"pza_id":"C","voltage":"9999.9999"}'
+```
+
