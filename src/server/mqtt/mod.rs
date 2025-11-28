@@ -284,7 +284,33 @@ impl MqttRunner {
 
         match id {
             Some(TopicId::StateCmd) => {
-                self.handle_state_command(payload).await;
+                if let Err(e) = self.handle_state_command(payload.clone()).await {
+                    // Try to parse payload as a simple json and try to extract pza_id for error response
+                    let pza_id = match serde_json::from_slice::<serde_json::Value>(&payload) {
+                        Ok(json_value) => json_value
+                            .get("pza_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("????")
+                            .to_string(),
+                        Err(_) => "????".to_string(),
+                    };
+
+                    // Prepare and send error response
+                    let error_payload =
+                        pza_power_supply_client::payload::ErrorPayload::from_message_as_response(
+                            format!("Invalid state command payload: {}", e),
+                            pza_id,
+                        )
+                        .to_json_bytes()
+                        .expect("Failed to serialize error payload");
+
+                    self.client
+                        .pubsh(&self.topics.error, error_payload)
+                        .await
+                        .expect("Failed to publish error payload");
+
+                    trace!("[{}] Error handling state command: {}", self.name, e);
+                }
             }
             Some(TopicId::VoltageCmd) => {
                 self.handle_voltage_command(payload).await;

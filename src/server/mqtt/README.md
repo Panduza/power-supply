@@ -28,6 +28,8 @@ To enable output, publish the following JSON payload to the state command topic:
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pza_id":"A","state":"ON"}'
 ```
 
+Check the same payload appear in `power-supply/emulator/state`
+
 - [x] Disable Output via MQTT
 To disable output, publish the following JSON payload to the state command topic:
 
@@ -35,19 +37,23 @@ To disable output, publish the following JSON payload to the state command topic
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pza_id":"B","state":"OFF"}'
 ```
 
-- [ ] Push some errors on enum values
+Check the same payload appear in `power-supply/emulator/state`
+
+- [x] Push some errors on enum values
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pza_id":"B","state":"OF"}'
 ```
 
-- [ ] Push some errors on keys
+Check for error in `power-supply/emulator/error`, with the same pza_id and describing this error.
+
+- [x] Push some errors on keys
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pza_id":"B","stat":"OFF"}'
 ```
 
-- [ ] Push some errors on pza_id
+- [x] Push some errors on pza_id
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "power-supply/emulator/state/cmd" -m '{"pzad":"B","stat":"OFF"}'
