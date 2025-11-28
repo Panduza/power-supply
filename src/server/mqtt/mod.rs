@@ -11,7 +11,6 @@ use pza_power_supply_client::topics::TopicId;
 use pza_power_supply_client::topics::Topics;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
-use pza_toolkit::task_monitor;
 use pza_toolkit::task_monitor::TaskMonitor;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -64,7 +63,7 @@ impl MqttRunner {
         let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
         let task_monitor_handle_sender = task_monitor.handle_sender();
         task_monitor_handle_sender
-            .send((format!("MqttRunner-{}", name), task_handler))
+            .send((name, task_handler))
             .await?;
         Ok(())
     }
@@ -105,7 +104,7 @@ impl MqttRunner {
             .subscribe_to_all(runner.topics.vec_sub_server())
             .await;
 
-        runner.initialize().await;
+        runner.initialize().await.unwrap();
 
         // Move to initializing status
         runner.move_to_status(Status::Running, None).await;

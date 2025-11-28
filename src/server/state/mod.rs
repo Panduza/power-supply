@@ -83,7 +83,7 @@ impl ServerState {
         }
 
         //
-        let (task_monitor, mut task_monitor_event_receiver) = TaskMonitor::new("MQTT Runners");
+        let (task_monitor, mut runner_tasks_event_receiver) = TaskMonitor::new("MQTT Runners");
 
         // Start MQTT runners for each configured device
         {
@@ -121,7 +121,7 @@ impl ServerState {
 
         // Monitor task events
         loop {
-            let event_recv = task_monitor_event_receiver.recv().await;
+            let event_recv = runner_tasks_event_receiver.recv().await;
             match event_recv {
                 Some(event) => {
                     error!("TaskMonitor event: {:?}", event);
