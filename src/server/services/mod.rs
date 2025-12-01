@@ -127,7 +127,7 @@ impl Services {
 
         {
             // Start TUI service only if not disabled
-            if !self.server_config.tui.enable.unwrap_or(true) {
+            if self.server_config.tui.enable.unwrap_or(true) {
                 info!("Starting TUI service...");
                 let tui_handle = TuiService::start();
                 task_monitor
@@ -156,11 +156,25 @@ impl Services {
             let event_recv = runner_tasks_event_receiver.recv().await;
             match event_recv {
                 Some(event) => {
-                    error!("TaskMonitor event: {:?}", event);
+                    match event {
+                        pza_toolkit::task_monitor::Event::TaskMonitorError(_) => todo!(),
+                        pza_toolkit::task_monitor::Event::TaskStopProperly(event_body) => {
+                            if event_body.task_name == "tui" {
+                                // Here you can implement logic to shut down other services gracefully
+                                // For now, we just exit the loop
+
+                                return Ok(());
+                            }
+                        }
+                        pza_toolkit::task_monitor::Event::TaskStopWithPain(event_body) => todo!(),
+                        pza_toolkit::task_monitor::Event::TaskPanicOMG(event_body) => todo!(),
+                        _ => {}
+                    }
+
                     // Handle the event as needed
                 }
                 None => {
-                    error!("TaskMonitor pipe closed");
+                    eprintln!("TaskMonitor pipe closed");
                     // Handle the error as needed
                     return Ok(());
                 }

@@ -52,6 +52,7 @@ pub struct TuiService {
 impl TuiService {
     /// Starts the TUI service in a separate task
     pub fn start() -> JoinHandle<Result<(), anyhow::Error>> {
+        println!("Starting TUI service...");
         let handle = tokio::spawn(Self::render_loop());
 
         handle
@@ -78,6 +79,7 @@ impl TuiService {
     pub fn handle_input(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc => {
+                println!("Quitting TUI...");
                 self.should_quit = true;
             }
             _ => {}
@@ -94,7 +96,28 @@ impl TuiService {
     async fn render_loop() -> anyhow::Result<()> {
         let mut app = TuiService { should_quit: false };
 
+        // Setup terminal
+        let mut stdout = io::stdout();
+        enable_raw_mode()?;
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+        let backend = CrosstermBackend::new(stdout);
+        let mut terminal = Terminal::new(backend)?;
+
         loop {
+            terminal.draw(|f| {
+                let chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(1)
+                    .constraints([
+                        Constraint::Min(8),    // Main content
+                        Constraint::Length(3), // Help bar
+                    ])
+                    .split(f.area());
+
+                let loading_paragraph = Paragraph::new("Loading TUI...");
+                f.render_widget(loading_paragraph, chunks[0]);
+            })?;
+
             // Handle events
             if event::poll(Duration::from_millis(50))? {
                 if let Event::Key(key) = event::read()? {
@@ -107,11 +130,22 @@ impl TuiService {
             }
 
             if app.should_quit() {
-                return Ok(());
+                break;
             }
-
-            tokio::time::sleep(Duration::from_millis(100)).await;
         }
+
+        println!("Exiting TUI service...");
+
+        // Restore terminal
+        disable_raw_mode()?;
+        execute!(
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )?;
+        terminal.show_cursor()?;
+
+        Ok(())
     }
 }
 //     /// Create a new application instance with power supply instances
@@ -229,12 +263,6 @@ impl TuiService {
 //     let server_state = SERVER_STATE_STORAGE
 //         .get()
 //         .ok_or("Server state not initialized")?;
-
-//     let mut stdout = io::stdout();
-//     enable_raw_mode()?;
-//     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-//     let backend = CrosstermBackend::new(stdout);
-//     let mut terminal = Terminal::new(backend)?;
 
 //     // Wait for state ready signal while showing loading screen
 //     let mut ready_receiver = server_state.ready_receiver();
