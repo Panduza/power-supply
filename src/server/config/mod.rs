@@ -61,7 +61,7 @@ impl ServerMainConfig {
     /// Load the global configuration from the configuration file
     ///
     pub fn from_user_file() -> anyhow::Result<Self> {
-        let config_path = crate::path::server_config_file()
+        let config_path = super::path::server_config_file()
             .ok_or_else(|| anyhow::anyhow!("Failed to determine server configuration file path"))?;
 
         pza_toolkit::config::read_config::<ServerMainConfig>(&config_path)
@@ -78,7 +78,7 @@ impl ServerMainConfig {
                     "http://{}:{}/{}/{}",
                     self.mcp.host,
                     self.mcp.port,
-                    pza_power_supply_client::constants::SERVER_TYPE_NAME,
+                    pza_power_supply_client::SERVER_TYPE_NAME,
                     name
                 );
                 urls.push(url);

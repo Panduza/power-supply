@@ -4,6 +4,7 @@ pub mod drivers;
 pub mod factory;
 pub mod mcp;
 pub mod mqtt;
+mod path;
 pub mod state;
 pub mod tui;
 

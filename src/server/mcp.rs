@@ -1,7 +1,7 @@
 mod tools;
 
 use axum::Router;
-use pza_power_supply_client::constants;
+use pza_power_supply_client::SERVER_TYPE_NAME;
 use rmcp::transport::{
     streamable_http_server::session::local::LocalSessionManager, StreamableHttpService,
 };
@@ -46,7 +46,7 @@ impl McpServer {
 
             // MCP endpoint - using streamable_http_server for MCP protocol handling
             app = app.nest_service(
-                format!("/{}/{}", constants::SERVER_TYPE_NAME, &psu_name).as_str(),
+                format!("/{}/{}", SERVER_TYPE_NAME, &psu_name).as_str(),
                 mcp_service,
             );
 
@@ -54,7 +54,7 @@ impl McpServer {
             tracing::info!(
                 "MCP server listening on {}{}",
                 bind_address,
-                format!("/{}/{}", constants::SERVER_TYPE_NAME, &psu_name)
+                format!("/{}/{}", SERVER_TYPE_NAME, &psu_name)
             );
         }
 

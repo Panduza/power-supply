@@ -1,4 +1,3 @@
-use crate::constants;
 use crate::server::drivers::PowerSupplyDriver;
 use bytes::Bytes;
 use pza_power_supply_client::payload::CurrentPayload;
@@ -7,8 +6,9 @@ use pza_power_supply_client::payload::PowerStatePayload;
 use pza_power_supply_client::payload::Status;
 use pza_power_supply_client::payload::StatusPayload;
 use pza_power_supply_client::payload::VoltagePayload;
-use pza_power_supply_client::topics::TopicId;
-use pza_power_supply_client::topics::Topics;
+use pza_power_supply_client::TopicId;
+use pza_power_supply_client::Topics;
+use pza_power_supply_client::SERVER_TYPE_NAME;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 use pza_toolkit::task_monitor::TaskMonitor;
@@ -48,7 +48,7 @@ impl MqttRunner {
             client,
             rumqttc::QoS::AtMostOnce,
             true,
-            format!("{}/{}", constants::SERVER_TYPE_NAME, name),
+            format!("{}/{}", SERVER_TYPE_NAME, name),
         );
 
         // Create runner object

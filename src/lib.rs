@@ -1,7 +1,6 @@
 pub mod client;
-pub mod constants;
-pub mod path;
+mod constants;
 pub mod payload;
-pub mod topics;
 
 pub use client::PowerSupplyClient;
+pub use constants::{TopicId, Topics, SERVER_TYPE_NAME};
