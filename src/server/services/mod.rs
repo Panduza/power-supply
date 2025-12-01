@@ -1,5 +1,6 @@
 mod mcp;
 mod runners;
+mod tui;
 use crate::server::cli::Args as CliArgs;
 use crate::server::config::ServerConfig;
 use crate::server::services::runners::RunnersService;
