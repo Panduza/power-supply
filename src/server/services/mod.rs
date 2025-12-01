@@ -4,6 +4,7 @@ mod tui;
 use crate::server::cli::Args as CliArgs;
 use crate::server::config::ServerConfig;
 use crate::server::services::runners::RunnersService;
+use crate::server::services::tui::TuiService;
 // use crate::server::factory::Factory;
 // use crate::server::mcp::McpServer;
 // use crate::server::mqtt::MqttRunner;
@@ -122,6 +123,20 @@ impl Services {
         {
             McpService::start(self.server_config.clone()).await?;
             info!("Started MCP server");
+        }
+
+        {
+            // Start TUI service only if not disabled
+            if !self.server_config.tui.enable.unwrap_or(true) {
+                info!("Starting TUI service...");
+                let tui_handle = TuiService::start();
+                task_monitor
+                    .handle_sender()
+                    .send(("tui".to_string(), tui_handle))
+                    .await?;
+            } else {
+                info!("TUI service is disabled in configuration");
+            }
         }
 
         // // Emit ready signal after all services are initialized

@@ -45,6 +45,7 @@ impl Default for ServerConfig {
         // Return the default global configuration
         Self {
             tui: tui::TuiConfig {
+                enable: Some(true),
                 power_toggle_key: Some("p".to_string()),
             },
             mcp: McpConfig {

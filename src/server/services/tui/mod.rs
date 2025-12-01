@@ -3,6 +3,7 @@
 /// Provides a simple TUI for power supply control and monitoring.
 mod psi_widget;
 
+use std::any;
 use std::io;
 use std::time::Duration;
 
@@ -34,11 +35,12 @@ use ratatui::widgets::Paragraph;
 use ratatui::Terminal;
 
 use psi_widget::PowerSupplyInstanceWidget;
+use tokio::task::JoinHandle;
 
 /// Application state for the TUI
 pub struct TuiService {
-    //     /// Whether the application should quit
-    //     should_quit: bool,
+    /// Whether the application should quit
+    should_quit: bool,
     //     /// Power supply instance widgets
     //     widgets: Vec<PowerSupplyInstanceWidget>,
     //     /// Currently selected widget index
@@ -49,14 +51,65 @@ pub struct TuiService {
 
 impl TuiService {
     /// Starts the TUI service in a separate task
-    pub async fn start() -> anyhow::Result<()> {
-        tokio::spawn(Self::render_loop());
+    pub fn start() -> JoinHandle<Result<(), anyhow::Error>> {
+        let handle = tokio::spawn(Self::render_loop());
 
-        Ok(())
+        handle
+    }
+
+    // ------------------------------------------------------------------------------
+
+    /// Handle keyboard input events
+    ///
+    /// Processes keyboard input and updates application state accordingly.
+    /// Supports navigation between widgets and power toggle commands.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The keyboard key that was pressed
+    ///
+    /// # Supported Keys
+    ///
+    /// * `q` or `Esc` - Quit the application
+    /// * `Space` or `Enter` - Toggle power state (default keys)
+    /// * Configured power toggle key - Toggle power state (from TUI config)
+    /// * `Up Arrow` - Navigate to previous widget
+    /// * `Down Arrow` - Navigate to next widget
+    pub fn handle_input(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Esc => {
+                self.should_quit = true;
+            }
+            _ => {}
+        }
+    }
+
+    // ------------------------------------------------------------------------------
+
+    /// Check if the application should quit
+    pub fn should_quit(&self) -> bool {
+        self.should_quit
     }
 
     async fn render_loop() -> anyhow::Result<()> {
+        let mut app = TuiService { should_quit: false };
+
         loop {
+            // Handle events
+            if event::poll(Duration::from_millis(50))? {
+                if let Event::Key(key) = event::read()? {
+                    match key.code {
+                        _ => {
+                            app.handle_input(key.code);
+                        }
+                    }
+                }
+            }
+
+            if app.should_quit() {
+                return Ok(());
+            }
+
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
     }
@@ -73,63 +126,6 @@ impl TuiService {
 //             widgets,
 //             selected_widget: 0,
 //             tui_config,
-//         }
-//     }
-
-//     // ------------------------------------------------------------------------------
-
-//     /// Check if the application should quit
-//     pub fn should_quit(&self) -> bool {
-//         self.should_quit
-//     }
-
-//     // ------------------------------------------------------------------------------
-
-//     /// Handle keyboard input events
-//     ///
-//     /// Processes keyboard input and updates application state accordingly.
-//     /// Supports navigation between widgets and power toggle commands.
-//     ///
-//     /// # Arguments
-//     ///
-//     /// * `key` - The keyboard key that was pressed
-//     ///
-//     /// # Supported Keys
-//     ///
-//     /// * `q` or `Esc` - Quit the application
-//     /// * `Space` or `Enter` - Toggle power state (default keys)
-//     /// * Configured power toggle key - Toggle power state (from TUI config)
-//     /// * `Up Arrow` - Navigate to previous widget
-//     /// * `Down Arrow` - Navigate to next widget
-//     pub fn handle_input(&mut self, key: KeyCode) {
-//         match key {
-//             KeyCode::Char('q') | KeyCode::Esc => {
-//                 self.should_quit = true;
-//             }
-//             KeyCode::Char(' ') | KeyCode::Enter => {
-//                 // Toggle power state of selected widget (default keys)
-//                 // Power toggle is handled in the main event loop
-//             }
-//             KeyCode::Char(c) => {
-//                 // Check if this character matches the configured power toggle key
-//                 if let Some(ref toggle_key) = self.tui_config.power_toggle_key {
-//                     if toggle_key.len() == 1 && toggle_key.chars().next() == Some(c) {
-//                         // Toggle power state of selected widget (configured key)
-//                         // Power toggle is handled in the main event loop
-//                     }
-//                 }
-//             }
-//             KeyCode::Up => {
-//                 if self.selected_widget > 0 {
-//                     self.selected_widget -= 1;
-//                 }
-//             }
-//             KeyCode::Down => {
-//                 if self.selected_widget < self.widgets.len().saturating_sub(1) {
-//                     self.selected_widget += 1;
-//                 }
-//             }
-//             _ => {}
 //         }
 //     }
 
