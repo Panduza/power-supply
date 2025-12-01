@@ -36,6 +36,9 @@ pub enum Commands {
         #[command(flatten)]
         services: ServicesOverrides,
     },
+
+    /// Display the version of the application
+    Version,
 }
 
 /// Grouping for flags that control which services to disable when running.
