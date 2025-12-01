@@ -60,12 +60,12 @@ impl Default for ServerMainConfig {
 impl ServerMainConfig {
     /// Load the global configuration from the configuration file
     ///
-    pub fn from_user_file() -> anyhow::Result<Self> {
-        let config_path = super::path::server_config_file()
-            .ok_or_else(|| anyhow::anyhow!("Failed to determine server configuration file path"))?;
+    // pub fn from_user_file() -> anyhow::Result<Self> {
+    //     let config_path = super::path::server_config_file()
+    //         .ok_or_else(|| anyhow::anyhow!("Failed to determine server configuration file path"))?;
 
-        pza_toolkit::config::read_config::<ServerMainConfig>(&config_path)
-    }
+    //     pza_toolkit::config::read_config::<ServerMainConfig>(&config_path)
+    // }
 
     /// List MCP server URLs from the configuration
     ///
