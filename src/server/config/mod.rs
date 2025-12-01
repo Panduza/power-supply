@@ -75,7 +75,7 @@ impl ServerConfig {
 
     /// List MCP server URLs from the configuration
     ///
-    pub fn list_mcp_servers_urls(&self) -> Vec<String> {
+    fn list_mcp_servers_urls(&self) -> Vec<String> {
         let mut urls = Vec::new();
 
         if let Some(runners) = &self.runners {
@@ -95,9 +95,15 @@ impl ServerConfig {
     }
 
     /// List MCP server URLs as a JSON string
-    pub fn list_mcp_servers_urls_as_json_string(&self) -> String {
+    fn list_mcp_servers_urls_as_json_string(&self) -> String {
         let urls = self.list_mcp_servers_urls();
         serde_json::to_string_pretty(&urls).unwrap_or_else(|_| "[]".to_string())
+    }
+
+    /// Print MCP server URLs to stdout
+    pub fn print_mcp_servers_urls(&self) {
+        let urls_json = self.list_mcp_servers_urls_as_json_string();
+        println!("{}", urls_json);
     }
 
     /// Apply service overrides from CLI arguments

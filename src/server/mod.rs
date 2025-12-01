@@ -15,10 +15,6 @@ use config::ServerConfig;
 // pub use state::ServerState;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, Level};
-
-// pub static SERVER_STATE_STORAGE: once_cell::sync::OnceCell<Arc<ServerState>> =
-//     once_cell::sync::OnceCell::new();
 
 /// Run the power supply server
 pub async fn run_server() {
@@ -33,8 +29,9 @@ pub async fn run_server() {
         } => {
             // Handle the 'list' command
             if mcps {
-                println!("Listing MCP servers...");
-                // Implementation for listing MCP servers goes here
+                ServerConfig::from_user_file()
+                    .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err))
+                    .print_mcp_servers_urls();
             }
             if drivers {
                 println!("Listing drivers...");
@@ -66,51 +63,4 @@ pub async fn run_server() {
             }
         }
     }
-
-    // // Handle MCP server listing and exit if requested
-    // if args.mcp_list {
-    //     println!("{}", server_config.list_mcp_servers_urls_as_json_string());
-    //     return; // Exit after listing
-    // }
-
-    // // Create global app state
-    // let server_state = ServerState::new(
-    //     Arc::new(Mutex::new(factory)),
-    //     Arc::new(Mutex::new(server_config)),
-    //     args.clone(),
-    // );
-
-    // // Store server state in global storage
-    // SERVER_STATE_STORAGE
-    //     .set(Arc::new(server_state.clone()))
-    //     .unwrap();
-
-    // // Start server services in a separated task
-    // let services_handle = tokio::spawn(async move {
-    //     SERVER_STATE_STORAGE
-    //         .get()
-    //         .expect("Failed to get server state")
-    //         .clone()
-    //         .start_services()
-    //         .await
-    //         .expect("Server services crash");
-    // });
-
-    // // Start TUI at the end if requested by user
-    // if !server_state.args.disable_tui {
-    //     // Note: Tracing is not initialized when TUI is enabled to avoid
-    //     // log output interfering with the terminal user interface
-    //     let instance_name = server_state.args.instance_name.filter(|s| !s.is_empty());
-    //     if let Err(e) = tui::run_tui(instance_name).await {
-    //         eprintln!("TUI error: {}", e); // Use eprintln since tracing is not available
-    //     }
-    //     // Cancel server services when TUI exits
-    //     services_handle.abort();
-    // } else {
-    //     info!("Server is running...");
-    //     // Wait for server services to complete
-    //     services_handle
-    //         .await
-    //         .expect("Server services stopped unexpectedly");
-    // }
 }
