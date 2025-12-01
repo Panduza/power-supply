@@ -9,6 +9,7 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::oneshot;
 use tower_http::cors::CorsLayer;
+use tracing::info;
 
 use tools::PowerSupplyService;
 
@@ -53,8 +54,8 @@ impl McpService {
             );
 
             //
-            tracing::info!(
-                "MCP server listening on {}{}",
+            info!(
+                "MCP server listening on http://{}{}",
                 bind_address,
                 format!("/{}/{}", SERVER_TYPE_NAME, &psu_name)
             );
