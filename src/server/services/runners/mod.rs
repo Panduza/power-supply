@@ -32,6 +32,7 @@ impl RunnersService {
         info!("Starting server runtime services...");
         if let Some(devices) = &server_config.runners {
             for (name, device_config) in devices {
+                info!("Starting runner for device '{}'", name);
                 // Instanciate the driver
                 let instance = factory.instanciate_driver(device_config.clone())?;
 

@@ -31,8 +31,8 @@ pub struct Services {
     /// Factory instance
     pub drivers_factory: Arc<Mutex<drivers::Factory>>,
 
-    ///
-    task_monitor: Arc<Mutex<Option<TaskMonitor>>>,
+    /// Runners service instance
+    runners: Option<Arc<Mutex<RunnersService>>>,
 
     /// Watch channel sender for ready signal
     ready_sender: Arc<Mutex<Option<watch::Sender<bool>>>>,
@@ -68,8 +68,7 @@ impl Services {
         Self {
             server_config,
             drivers_factory,
-            task_monitor: Arc::new(Mutex::new(None)),
-
+            runners: None,
             ready_sender: Arc::new(Mutex::new(Some(ready_sender))),
             ready_receiver,
         }
@@ -85,7 +84,7 @@ impl Services {
     // ------------------------------------------------------------------------------
 
     /// Start background runtime services
-    pub async fn start(&self) -> anyhow::Result<()> {
+    pub async fn start(&mut self) -> anyhow::Result<()> {
         // Monitoring
         let (mut task_monitor, mut runner_tasks_event_receiver) = TaskMonitor::new("services");
 
@@ -112,6 +111,7 @@ impl Services {
                         self.drivers_factory.clone(),
                     )
                     .await?;
+                    self.runners = Some(Arc::new(Mutex::new(runners)));
                     task_monitor
                         .handle_sender()
                         .send(("runners".to_string(), handle))

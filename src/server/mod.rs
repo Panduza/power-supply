@@ -57,7 +57,8 @@ pub async fn run_server() {
             let factory = drivers::Factory::initialize();
 
             // Create Services instance
-            let services = services::Services::new(server_config, Arc::new(Mutex::new(factory)));
+            let mut services =
+                services::Services::new(server_config, Arc::new(Mutex::new(factory)));
 
             // Start services
             if let Err(e) = services.start().await {
@@ -65,12 +66,6 @@ pub async fn run_server() {
             }
         }
     }
-
-    // // Configure tracing only if TUI is not going to be used
-    // // This prevents tracing output from interfering with the TUI display
-    // if args.disable_tui {
-
-    // }
 
     // // Handle MCP server listing and exit if requested
     // if args.mcp_list {
