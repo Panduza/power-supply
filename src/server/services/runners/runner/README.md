@@ -13,6 +13,7 @@
 - Topics are managed via the shared `Topics` struct for consistency
 - Async event loop for handling MQTT events and updating state
 
+
 ## Auto Testing Scenarios
 
 HERE ARE THE TEST AGENT CAN CODE TO TEST THE MODULE FUNCTIONALITIES.

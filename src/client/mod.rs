@@ -26,7 +26,8 @@ use crate::payload::PowerState;
 use crate::payload::PowerStatePayload;
 use crate::payload::PzaId;
 use crate::payload::VoltagePayload;
-use crate::topics::Topics;
+use crate::TopicId;
+use crate::Topics;
 
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
 
@@ -183,16 +184,16 @@ impl PowerSupplyClient {
                 error!("[{}] Unknown topic received: {}", self.psu_name, topic);
                 return;
             }
-            Some(crate::topics::TopicId::Status) => {
+            Some(TopicId::Status) => {
                 // Handle status updates
                 trace!("[{}] Status update received", self.psu_name);
             }
-            Some(crate::topics::TopicId::Error) => {
+            Some(TopicId::Error) => {
                 // Handle error messages
                 let msg = String::from_utf8(payload.to_vec()).unwrap_or_default();
                 error!("[{}] Error received: {}", self.psu_name, msg);
             }
-            Some(crate::topics::TopicId::State) => {
+            Some(TopicId::State) => {
                 // Handle state updates (PowerStatePayload)
                 match PowerStatePayload::from_json_bytes(payload) {
                     Ok(state_payload) => {
@@ -215,7 +216,7 @@ impl PowerSupplyClient {
                     }
                 }
             }
-            Some(crate::topics::TopicId::Voltage) => {
+            Some(TopicId::Voltage) => {
                 // Handle voltage updates
                 match VoltagePayload::from_json_bytes(payload) {
                     Ok(voltage_payload) => {
@@ -236,7 +237,7 @@ impl PowerSupplyClient {
                     }
                 }
             }
-            Some(crate::topics::TopicId::Current) => {
+            Some(TopicId::Current) => {
                 // Handle current updates
                 match CurrentPayload::from_json_bytes(payload) {
                     Ok(current_payload) => {
@@ -257,9 +258,7 @@ impl PowerSupplyClient {
                     }
                 }
             }
-            Some(crate::topics::TopicId::StateCmd)
-            | Some(crate::topics::TopicId::VoltageCmd)
-            | Some(crate::topics::TopicId::CurrentCmd) => {
+            Some(TopicId::StateCmd) | Some(TopicId::VoltageCmd) | Some(TopicId::CurrentCmd) => {
                 // These are command topics that the client sends to, not receives from
                 warn!(
                     "[{}] Unexpected command topic received: {}",

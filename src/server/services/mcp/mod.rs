@@ -1,7 +1,7 @@
 mod tools;
 
 use axum::Router;
-use pza_power_supply_client::constants;
+use pza_power_supply_client::SERVER_TYPE_NAME;
 use rmcp::transport::{
     streamable_http_server::session::local::LocalSessionManager, StreamableHttpService,
 };
@@ -9,14 +9,15 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::oneshot;
 use tower_http::cors::CorsLayer;
+use tracing::info;
 
 use tools::PowerSupplyService;
 
-use crate::server::config::ServerMainConfig;
+use crate::server::config::ServerConfig;
 
-pub struct McpServer {}
+pub struct McpService {}
 
-impl McpServer {
+impl McpService {
     //
     // Must take a list of psu names to manage
     // for each name
@@ -25,13 +26,15 @@ impl McpServer {
 
     /// Starts the server with the given service
     ///
-    pub async fn run(config: ServerMainConfig, psu_names: Vec<String>) -> anyhow::Result<()> {
+    pub async fn start(config: ServerConfig) -> anyhow::Result<()> {
         // Bind and serve the application
         let bind_address = format!("{}:{}", config.mcp.host, config.mcp.port);
         let listener = TcpListener::bind(&bind_address).await?;
 
         //
         let mut app = Router::new().layer(CorsLayer::permissive());
+
+        let psu_names = config.runner_names();
 
         //
         for psu_name in psu_names {
@@ -46,15 +49,15 @@ impl McpServer {
 
             // MCP endpoint - using streamable_http_server for MCP protocol handling
             app = app.nest_service(
-                format!("/{}/{}", constants::SERVER_TYPE_NAME, &psu_name).as_str(),
+                format!("/{}/{}", SERVER_TYPE_NAME, &psu_name).as_str(),
                 mcp_service,
             );
 
             //
-            tracing::info!(
-                "MCP server listening on {}{}",
+            info!(
+                "MCP server listening on http://{}{}",
                 bind_address,
-                format!("/{}/{}", constants::SERVER_TYPE_NAME, &psu_name)
+                format!("/{}/{}", SERVER_TYPE_NAME, &psu_name)
             );
         }
 

@@ -1,4 +1,3 @@
-use crate::constants;
 use crate::server::drivers::PowerSupplyDriver;
 use bytes::Bytes;
 use pza_power_supply_client::payload::CurrentPayload;
@@ -7,52 +6,53 @@ use pza_power_supply_client::payload::PowerStatePayload;
 use pza_power_supply_client::payload::Status;
 use pza_power_supply_client::payload::StatusPayload;
 use pza_power_supply_client::payload::VoltagePayload;
-use pza_power_supply_client::topics::TopicId;
-use pza_power_supply_client::topics::Topics;
+use pza_power_supply_client::TopicId;
+use pza_power_supply_client::Topics;
+use pza_power_supply_client::SERVER_TYPE_NAME;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
-use pza_toolkit::task_monitor::TaskMonitor;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 use tracing::error;
 use tracing::trace;
 
-/// MQTT MqttRunner for handling power supply commands and measurements
-pub struct MqttRunner {
+/// MQTT Runner for handling power supply commands and measurements
+pub struct Runner {
     /// MQTT client
     client: RumqttCustomAsyncClient,
-    /// MqttRunner name
+    /// Runner name
     name: String,
 
     status: Option<Status>,
 
-    /// Driver MqttRunner
+    /// Driver Runner
     driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
 
     /// MQTT topics used by the runner
     topics: Topics,
 }
 
-impl MqttRunner {
+impl Runner {
     // --------------------------------------------------------------------------------
 
     /// Start the runner
     pub async fn start(
         name: String,
-        task_monitor: TaskMonitor,
+
         driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<JoinHandle<Result<(), anyhow::Error>>> {
         let (client, event_loop) = init_client("tttt");
 
         let custom_client = RumqttCustomAsyncClient::new(
             client,
             rumqttc::QoS::AtMostOnce,
             true,
-            format!("{}/{}", constants::SERVER_TYPE_NAME, name),
+            format!("{}/{}", SERVER_TYPE_NAME, name),
         );
 
         // Create runner object
-        let runner = MqttRunner {
+        let runner = Runner {
             status: None,
             topics: Topics::new(&name),
             name: name.clone(),
@@ -60,12 +60,7 @@ impl MqttRunner {
             client: custom_client,
         };
 
-        let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
-        let task_monitor_handle_sender = task_monitor.handle_sender();
-        task_monitor_handle_sender
-            .send((name, task_handler))
-            .await?;
-        Ok(())
+        Ok(tokio::spawn(Self::task_loop(event_loop, runner)))
     }
 
     // --------------------------------------------------------------------------------
@@ -93,7 +88,7 @@ impl MqttRunner {
     /// The main async task loop for the MQTT runner
     async fn task_loop(
         mut event_loop: rumqttc::EventLoop,
-        mut runner: MqttRunner,
+        mut runner: Runner,
     ) -> anyhow::Result<()> {
         // Move to initializing status
         runner.move_to_status(Status::Initializing, None).await;
