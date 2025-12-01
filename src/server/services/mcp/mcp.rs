@@ -12,7 +12,7 @@ use tower_http::cors::CorsLayer;
 
 use tools::PowerSupplyService;
 
-use crate::server::config::ServerMainConfig;
+use crate::server::config::ServerConfig;
 
 pub struct McpServer {}
 
@@ -25,7 +25,7 @@ impl McpServer {
 
     /// Starts the server with the given service
     ///
-    pub async fn run(config: ServerMainConfig, psu_names: Vec<String>) -> anyhow::Result<()> {
+    pub async fn run(config: ServerConfig, psu_names: Vec<String>) -> anyhow::Result<()> {
         // Bind and serve the application
         let bind_address = format!("{}:{}", config.mcp.host, config.mcp.port);
         let listener = TcpListener::bind(&bind_address).await?;

@@ -7,9 +7,10 @@ pub mod drivers;
 // mod path;
 // pub mod state;
 // pub mod tui;
+pub mod services;
 
-use crate::server::config::ServerMainConfig;
 use clap::Parser;
+use config::ServerConfig;
 use pza_toolkit::dioxus::logger::LoggerBuilder;
 // pub use state::ServerState;
 use std::sync::Arc;
@@ -23,6 +24,47 @@ use tracing::{info, Level};
 pub async fn run_server() {
     // Parse CLI arguments first to determine if TUI will be used
     let args = cli::Args::parse();
+
+    match args.command {
+        cli::Commands::List {
+            mcps,
+            drivers,
+            devices,
+        } => {
+            // Handle the 'list' command
+            if mcps {
+                println!("Listing MCP servers...");
+                // Implementation for listing MCP servers goes here
+            }
+            if drivers {
+                println!("Listing drivers...");
+                // Implementation for listing drivers goes here
+            }
+            if devices {
+                println!("Listing devices...");
+                // Implementation for listing devices goes here
+            }
+        }
+        cli::Commands::Run { services } => {
+            // Load server configuration
+            let server_config = ServerConfig::from_user_file()
+                .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err));
+
+            // Load driver factory
+            let factory = drivers::Factory::initialize();
+
+            // Create Services instance
+            let services = services::Services::new(
+                Arc::new(Mutex::new(server_config)),
+                Arc::new(Mutex::new(factory)),
+            );
+
+            // Start services
+            if let Err(e) = services.start().await {
+                eprintln!("Failed to start services: {}", e);
+            }
+        }
+    }
 
     // // Configure tracing only if TUI is not going to be used
     // // This prevents tracing output from interfering with the TUI display
@@ -38,22 +80,11 @@ pub async fn run_server() {
     //         .expect("failed to init logger");
     // }
 
-    // // Ensure user root directory exists
-    // pza_toolkit::path::ensure_user_root_dir_exists()
-    //     .unwrap_or_else(|err| panic!("Failed to ensure user root directory exists: {}", err));
-
-    // // Parse server main config file
-    // let server_config = ServerMainConfig::from_user_file()
-    //     .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err));
-
     // // Handle MCP server listing and exit if requested
     // if args.mcp_list {
     //     println!("{}", server_config.list_mcp_servers_urls_as_json_string());
     //     return; // Exit after listing
     // }
-
-    // // Create factory
-    // let factory = crate::server::factory::Factory::initialize();
 
     // // Create global app state
     // let server_state = ServerState::new(

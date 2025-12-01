@@ -32,24 +32,32 @@ pub enum Commands {
 
     /// Run the power supply application (disable services with flags)
     Run {
-        /// Disable the TUI
-        #[arg(long = "no-tui")]
-        no_tui: bool,
-
-        /// Disable the embedded broker
-        #[arg(long = "no-broker")]
-        no_broker: bool,
-
-        /// Disable MCP servers
-        #[arg(long = "no-mcp")]
-        no_mcp: bool,
-
-        /// Disable runners
-        #[arg(long = "no-runners")]
-        no_runners: bool,
-
-        /// Disable traces
-        #[arg(long = "no-traces")]
-        no_traces: bool,
+        /// Service overrides (flags to disable individual services)
+        #[command(flatten)]
+        services: ServicesOverrides,
     },
+}
+
+/// Grouping for flags that control which services to disable when running.
+#[derive(clap::Args, Debug, Clone, PartialEq)]
+pub struct ServicesOverrides {
+    /// Disable the TUI
+    #[arg(long = "no-tui")]
+    pub no_tui: bool,
+
+    /// Disable the embedded broker
+    #[arg(long = "no-broker")]
+    pub no_broker: bool,
+
+    /// Disable MCP servers
+    #[arg(long = "no-mcp")]
+    pub no_mcp: bool,
+
+    /// Disable runners
+    #[arg(long = "no-runners")]
+    pub no_runners: bool,
+
+    /// Disable traces
+    #[arg(long = "no-traces")]
+    pub no_traces: bool,
 }

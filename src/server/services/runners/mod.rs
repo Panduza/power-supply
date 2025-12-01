@@ -1,370 +1,66 @@
-use crate::server::drivers::PowerSupplyDriver;
-use bytes::Bytes;
-use pza_power_supply_client::payload::CurrentPayload;
-use pza_power_supply_client::payload::PowerState;
-use pza_power_supply_client::payload::PowerStatePayload;
-use pza_power_supply_client::payload::Status;
-use pza_power_supply_client::payload::StatusPayload;
-use pza_power_supply_client::payload::VoltagePayload;
-use pza_power_supply_client::TopicId;
-use pza_power_supply_client::Topics;
-use pza_power_supply_client::SERVER_TYPE_NAME;
-use pza_toolkit::rumqtt::client::init_client;
-use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
+mod runner;
 use pza_toolkit::task_monitor::TaskMonitor;
+use std::fmt::Debug;
 use std::sync::Arc;
+use tokio::sync::watch;
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 use tracing::error;
-use tracing::trace;
+use tracing::info;
 
-/// MQTT MqttRunner for handling power supply commands and measurements
-pub struct MqttRunner {
-    /// MQTT client
-    client: RumqttCustomAsyncClient,
-    /// MqttRunner name
-    name: String,
+use super::drivers::Factory as DriverFactory;
+use crate::server::config::ServerConfig;
 
-    status: Option<Status>,
-
-    /// Driver MqttRunner
-    driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
-
-    /// MQTT topics used by the runner
-    topics: Topics,
+pub struct Runners {
+    ///
+    task_monitor: Arc<Mutex<Option<TaskMonitor>>>,
 }
 
-impl MqttRunner {
-    // --------------------------------------------------------------------------------
-
-    /// Start the runner
+impl Runners {
+    /// Start the runners services
     pub async fn start(
-        name: String,
-        task_monitor: TaskMonitor,
-        driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
-    ) -> anyhow::Result<()> {
-        let (client, event_loop) = init_client("tttt");
+        server_config: Arc<Mutex<ServerConfig>>,
+        drivers_factory: Arc<Mutex<DriverFactory>>,
+    ) -> anyhow::Result<(Self, JoinHandle<()>)> {
+        // Monitoring
+        let (task_monitor, mut runner_tasks_event_receiver) = TaskMonitor::new("runners");
 
-        let custom_client = RumqttCustomAsyncClient::new(
-            client,
-            rumqttc::QoS::AtMostOnce,
-            true,
-            format!("{}/{}", SERVER_TYPE_NAME, name),
-        );
-
-        // Create runner object
-        let runner = MqttRunner {
-            status: None,
-            topics: Topics::new(&name),
-            name: name.clone(),
-            driver,
-            client: custom_client,
-        };
-
-        let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
-        let task_monitor_handle_sender = task_monitor.handle_sender();
-        task_monitor_handle_sender
-            .send((name, task_handler))
-            .await?;
-        Ok(())
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// Move to a new status and publish the update
-    async fn move_to_status(&mut self, status: Status, panic_message: Option<String>) {
-        // Update internal status
-        self.status = Some(status);
-
-        // Prepare status payload
-        let mut payload = StatusPayload::from_status(self.status.clone().unwrap());
-        if let Some(message) = panic_message {
-            payload = payload.with_panic_message(message);
-        }
-
-        // Publish status update
-        self.client
-            .pubsh(&self.topics.status, payload.to_json_bytes().unwrap())
-            .await
-            .unwrap();
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// The main async task loop for the MQTT runner
-    async fn task_loop(
-        mut event_loop: rumqttc::EventLoop,
-        mut runner: MqttRunner,
-    ) -> anyhow::Result<()> {
-        // Move to initializing status
-        runner.move_to_status(Status::Initializing, None).await;
-
-        // Subscribe to all relevant topics
-        runner
-            .client
-            .subscribe_to_all(runner.topics.vec_sub_server())
-            .await;
-
-        runner.initialize().await.unwrap();
-
-        // Move to initializing status
-        runner.move_to_status(Status::Running, None).await;
-
-        loop {
-            while let Ok(event) = event_loop.poll().await {
-                match event {
-                    rumqttc::Event::Incoming(incoming) => match incoming {
-                        rumqttc::Packet::Publish(packet) => {
-                            let topic = packet.topic;
-                            let payload = packet.payload;
-                            trace!("[{}] Received message on topic: {}", runner.name, topic);
-                            runner.handle_incoming_message(&topic, payload).await;
-                        }
-                        _ => {}
-                    },
-                    rumqttc::Event::Outgoing(_outgoing) => {}
-                }
+        // Start MQTT runners for each configured device
+        let mut instances = Vec::new();
+        let factory = drivers_factory.lock().await;
+        info!("Starting server runtime services...");
+        if let Some(devices) = &server_config.lock().await.runners {
+            for (name, device_config) in devices {
+                let instance = factory.instanciate_driver(device_config.clone())?;
+                instances.push(name.clone());
+                // MqttRunner::start(name.clone(), task_monitor.clone(), instance).await?;
             }
         }
-    }
+        // .instances.lock().await = instances;
 
-    // --------------------------------------------------------------------------------
-
-    /// Initialize the runner (if needed)
-    async fn initialize(&self) -> anyhow::Result<()> {
-        // Initialize the driver
-        let mut driver = self.driver.lock().await;
-        driver.initialize().await?;
-
-        // Publish initial output enable state
-        let oe_value = driver.output_enabled().await?;
-        let state_payload = PowerStatePayload::from_state(if oe_value {
-            PowerState::On
-        } else {
-            PowerState::Off
-        })
-        .to_json_bytes()?;
-        self.client.pubsh(&self.topics.state, state_payload).await?;
-
-        // Get and check initial voltage setting
-        let mut voltage = driver.get_voltage().await?;
-        if let Ok(voltage_value) = voltage.parse::<f32>() {
-            let mut adjusted_voltage = voltage_value;
-
-            // Check against minimum voltage limit
-            if let Some(min_voltage) = driver.security_min_voltage() {
-                if voltage_value < min_voltage {
-                    adjusted_voltage = min_voltage;
+        let handle = tokio::spawn(async move {
+            loop {
+                let event_recv = runner_tasks_event_receiver.recv().await;
+                match event_recv {
+                    Some(event) => {
+                        error!("TaskMonitor event: {:?}", event);
+                        // Handle the event as needed
+                    }
+                    None => {
+                        error!("TaskMonitor pipe closed");
+                        // Handle the error as needed
+                        break;
+                    }
                 }
             }
+        });
 
-            // Check against maximum voltage limit
-            if let Some(max_voltage) = driver.security_max_voltage() {
-                if voltage_value > max_voltage {
-                    adjusted_voltage = max_voltage;
-                }
-            }
-
-            // If voltage was adjusted, set it in the driver
-            if adjusted_voltage != voltage_value {
-                voltage = adjusted_voltage.to_string();
-                let _ = driver.set_voltage(voltage.clone()).await;
-            }
-        }
-
-        let voltage_payload = VoltagePayload::from_string(voltage).to_json_bytes()?;
-        self.client
-            .pubsh(&self.topics.voltage, voltage_payload)
-            .await?;
-
-        // Get and check initial current setting
-        let mut current = driver.get_current().await?;
-        if let Ok(current_value) = current.parse::<f32>() {
-            let mut adjusted_current = current_value;
-
-            // Check against minimum current limit
-            if let Some(min_current) = driver.security_min_current() {
-                if current_value < min_current {
-                    adjusted_current = min_current;
-                }
-            }
-
-            // Check against maximum current limit
-            if let Some(max_current) = driver.security_max_current() {
-                if current_value > max_current {
-                    adjusted_current = max_current;
-                }
-            }
-
-            // If current was adjusted, set it in the driver
-            if adjusted_current != current_value {
-                current = adjusted_current.to_string();
-                let _ = driver.set_current(current.clone()).await;
-            }
-        }
-
-        let current_payload = CurrentPayload::from_string(current).to_json_bytes()?;
-        self.client
-            .pubsh(&self.topics.current, current_payload)
-            .await?;
-
-        Ok(())
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// Handle output enable/disable commands
-    async fn handle_state_command(&self, payload: Bytes) -> anyhow::Result<()> {
-        // Deserialize the command payload
-        let cmd = PowerStatePayload::from_json_bytes(payload)?;
-        trace!("[{}] Handling state command: {:?}", self.name, cmd.state);
-
-        // Handle ON/OFF payload
-        let mut driver = self.driver.lock().await;
-        if cmd.state == PowerState::On {
-            driver.enable_output().await?;
-        } else if cmd.state == PowerState::Off {
-            driver.disable_output().await?;
-        }
-
-        // Read back the actual output enable state to confirm
-        let oe_value = driver.output_enabled().await?;
-        let payload_back = PowerStatePayload::from_state_as_response(
-            if oe_value {
-                PowerState::On
-            } else {
-                PowerState::Off
+        //
+        Ok((
+            Self {
+                task_monitor: Arc::new(Mutex::new(Some(task_monitor))),
             },
-            cmd.pza_id,
-        )
-        .to_json_bytes()?;
-
-        // Confirm the new state by publishing it
-        self.client
-            .pubsh(&self.topics.state, payload_back)
-            .await
-            .unwrap();
-        Ok(())
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// Handle voltage setting commands
-    async fn handle_voltage_command(&self, payload: Bytes) -> anyhow::Result<()> {
-        // Deserialize the command payload
-        let cmd = VoltagePayload::from_json_bytes(payload)?;
-        trace!("[{}] Handling voltage command: {}", self.name, cmd.voltage);
-
-        // Handle voltage setting
-        let mut driver = self.driver.lock().await;
-        driver.set_voltage(cmd.voltage.clone()).await?;
-
-        // Read back the actual set voltage to confirm
-        let voltage = driver.get_voltage().await?;
-        let payload_back =
-            VoltagePayload::from_voltage_as_response(voltage, cmd.pza_id).to_json_bytes()?;
-
-        // Confirm the new state by publishing it
-        self.client
-            .pubsh(&self.topics.voltage, payload_back)
-            .await
-            .unwrap();
-        Ok(())
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// Handle current setting commands
-    async fn handle_current_command(&self, payload: Bytes) -> anyhow::Result<()> {
-        // Deserialize the command payload
-        let cmd = CurrentPayload::from_json_bytes(payload)?;
-        trace!("[{}] Handling current command: {}", self.name, cmd.current);
-
-        // Handle current setting
-        let mut driver = self.driver.lock().await;
-        driver.set_current(cmd.current.clone()).await?;
-
-        // Read back the actual set current to confirm
-        let current = driver.get_current().await?;
-        let payload_back =
-            CurrentPayload::from_current_as_response(current, cmd.pza_id).to_json_bytes()?;
-
-        // Confirm the new state by publishing it
-        self.client
-            .pubsh(&self.topics.current, payload_back)
-            .await
-            .unwrap();
-        Ok(())
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// Handle error and send error response via MQTT
-    async fn handle_command_error(
-        &self,
-        error: anyhow::Error,
-        payload: &Bytes,
-        command_type: &str,
-    ) {
-        // Try to parse payload as a simple json and try to extract pza_id for error response
-        let pza_id = match serde_json::from_slice::<serde_json::Value>(payload) {
-            Ok(json_value) => json_value
-                .get("pza_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("????")
-                .to_string(),
-            Err(_) => "????".to_string(),
-        };
-
-        // Prepare and send error response
-        let error_payload =
-            pza_power_supply_client::payload::ErrorPayload::from_message_as_response(
-                format!("Invalid {} command payload: {}", command_type, error),
-                pza_id,
-            )
-            .to_json_bytes()
-            .expect("Failed to serialize error payload");
-
-        self.client
-            .pubsh(&self.topics.error, error_payload)
-            .await
-            .expect("Failed to publish error payload");
-
-        error!(
-            "[{}] Error handling {} command: {}",
-            self.name, command_type, error
-        );
-    }
-
-    // --------------------------------------------------------------------------------
-
-    /// Handle incoming MQTT messages
-    async fn handle_incoming_message(&self, topic: &String, payload: Bytes) {
-        let id = self.topics.topic_to_id(topic);
-
-        match id {
-            Some(TopicId::StateCmd) => {
-                if let Err(e) = self.handle_state_command(payload.clone()).await {
-                    self.handle_command_error(e, &payload, "state").await;
-                }
-            }
-            Some(TopicId::VoltageCmd) => {
-                if let Err(e) = self.handle_voltage_command(payload.clone()).await {
-                    self.handle_command_error(e, &payload, "voltage").await;
-                }
-            }
-            Some(TopicId::CurrentCmd) => {
-                if let Err(e) = self.handle_current_command(payload.clone()).await {
-                    self.handle_command_error(e, &payload, "current").await;
-                }
-            }
-            _ => {
-                // Unknown or unhandled topic
-                trace!(
-                    "[{}] Received message on unhandled topic: {}",
-                    self.name,
-                    topic
-                );
-            }
-        }
+            handle,
+        ))
     }
 }

@@ -21,7 +21,7 @@ use tracing::info;
 
 use pza_power_supply_client::PowerSupplyClient;
 
-use crate::server::config::ServerMainConfig;
+use crate::server::config::ServerConfig;
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 struct VoltageParams {
@@ -56,7 +56,7 @@ pub struct PowerSupplyService {
 impl PowerSupplyService {
     //--------------------------------------------------------------------------
 
-    pub fn new(config: ServerMainConfig, psu_name: String) -> anyhow::Result<Self> {
+    pub fn new(config: ServerConfig, psu_name: String) -> anyhow::Result<Self> {
         let client = PowerSupplyClient::builder()
             .with_ip(config.broker.tcp.unwrap().clone())
             .with_power_supply_name(psu_name.clone())
