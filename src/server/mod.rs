@@ -11,7 +11,7 @@ pub mod services;
 
 use clap::Parser;
 use config::ServerConfig;
-use pza_toolkit::dioxus::logger::LoggerBuilder;
+
 // pub use state::ServerState;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -48,7 +48,10 @@ pub async fn run_server() {
         cli::Commands::Run { services } => {
             // Load server configuration
             let server_config = ServerConfig::from_user_file()
-                .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err));
+                .unwrap_or_else(|err| panic!("Failed to load server configuration: {}", err))
+                .apply_overrides(&services)
+                .setup_tracing()
+                .trace_config();
 
             // Load driver factory
             let factory = drivers::Factory::initialize();
@@ -66,15 +69,7 @@ pub async fn run_server() {
     // // Configure tracing only if TUI is not going to be used
     // // This prevents tracing output from interfering with the TUI display
     // if args.disable_tui {
-    //     LoggerBuilder::default()
-    //         .with_level(Level::TRACE)
-    //         // .display_target(true)
-    //         .filter_rumqttd()
-    //         .filter_dioxus_core()
-    //         .filter_dioxus_signals()
-    //         .filter_warnings()
-    //         .build()
-    //         .expect("failed to init logger");
+
     // }
 
     // // Handle MCP server listing and exit if requested

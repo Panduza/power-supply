@@ -14,6 +14,7 @@ use pza_toolkit::rumqtt::broker::start_broker_in_thread;
 use pza_toolkit::task_monitor::TaskMonitor;
 use std::fmt::Debug;
 use std::sync::Arc;
+use tokio::signal;
 use tokio::sync::watch;
 use tokio::sync::Mutex;
 use tracing::error;
@@ -86,7 +87,7 @@ impl Services {
     /// Start background runtime services
     pub async fn start(&self) -> anyhow::Result<()> {
         // Monitoring
-        let (task_monitor, mut runner_tasks_event_receiver) = TaskMonitor::new("services");
+        let (mut task_monitor, mut runner_tasks_event_receiver) = TaskMonitor::new("services");
 
         // Start built-in MQTT broker if configured
         {
@@ -148,35 +149,56 @@ impl Services {
         //     }
         // }
 
-        // // Store the TaskMonitor instance
-        // self.task_monitor.lock().await.replace(task_monitor.clone());
+        // Setup Ctrl+C signal handler
+        let mut ctrl_c = Box::pin(signal::ctrl_c());
 
-        // Monitor task events
+        // Monitor task events and signals
         loop {
-            let event_recv = runner_tasks_event_receiver.recv().await;
-            match event_recv {
-                Some(event) => {
-                    match event {
-                        pza_toolkit::task_monitor::Event::TaskMonitorError(_) => todo!(),
-                        pza_toolkit::task_monitor::Event::TaskStopProperly(event_body) => {
-                            if event_body.task_name == "tui" {
-                                // Here you can implement logic to shut down other services gracefully
-                                // For now, we just exit the loop
+            tokio::select! {
+                // Handle Ctrl+C signal
+                _ = ctrl_c.as_mut() => {
+                    info!("Received Ctrl+C signal, shutting down gracefully...");
 
-                                return Ok(());
+                    // Cancel all running tasks
+                    task_monitor.cancel_all_monitored_tasks().await;
+                    info!("All tasks have been cancelled");
+
+                    return Ok(());
+                }
+
+                // Handle task monitor events
+                event_recv = runner_tasks_event_receiver.recv() => {
+                    match event_recv {
+                        Some(event) => {
+                            match event {
+                                pza_toolkit::task_monitor::Event::TaskMonitorError(event_body) => {
+                                    // error!("Task monitor error: {}", event_body.error);
+                                }
+                                pza_toolkit::task_monitor::Event::TaskStopProperly(event_body) => {
+                                    info!("Task '{}' stopped properly", event_body.task_name);
+                                    if event_body.task_name == "tui" {
+                                        // TUI stopped, shut down other services gracefully
+                                        info!("TUI service stopped, shutting down other services...");
+                                        task_monitor.cancel_all_monitored_tasks().await;
+                                        return Ok(());
+                                    }
+                                }
+                                pza_toolkit::task_monitor::Event::TaskStopWithPain(event_body) => {
+                                    // error!("Task '{}' stopped with error: {:?}", event_body.task_name, event_body.error);
+                                    // Continue monitoring other tasks
+                                }
+                                pza_toolkit::task_monitor::Event::TaskPanicOMG(event_body) => {
+                                    // error!("Task '{}' panicked: {}", event_body.task_name, event_body.panic_info);
+                                    // Decide whether to restart the task or continue
+                                }
+                                _ => {}
                             }
                         }
-                        pza_toolkit::task_monitor::Event::TaskStopWithPain(event_body) => todo!(),
-                        pza_toolkit::task_monitor::Event::TaskPanicOMG(event_body) => todo!(),
-                        _ => {}
+                        None => {
+                            info!("TaskMonitor pipe closed, shutting down...");
+                            return Ok(());
+                        }
                     }
-
-                    // Handle the event as needed
-                }
-                None => {
-                    eprintln!("TaskMonitor pipe closed");
-                    // Handle the error as needed
-                    return Ok(());
                 }
             }
         }

@@ -3,18 +3,22 @@ mod path;
 mod power_supply;
 mod tui;
 
-pub use power_supply::PowerSupplyConfig;
-pub use tui::TuiConfig;
-
 use crate::server::config::mcp::McpConfig;
+pub use power_supply::PowerSupplyConfig;
 use pza_toolkit::config::MqttBrokerConfig;
+use pza_toolkit::dioxus::logger::LoggerBuilder;
+use serde::de;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::debug;
+use tracing::Level;
+use tracing_subscriber::field::debug;
+pub use tui::TuiConfig;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServerConfig {
     /// TUI configuration
-    pub tui: tui::TuiConfig,
+    pub tui: TuiConfig,
 
     /// MCP server configuration
     pub mcp: McpConfig,
@@ -98,14 +102,18 @@ impl ServerConfig {
 
     /// Apply service overrides from CLI arguments
     ///
-    pub fn apply_overrides(&mut self, overrides: &crate::server::cli::ServicesOverrides) {
+    pub fn apply_overrides(mut self, overrides: &crate::server::cli::ServicesOverrides) -> Self {
         // Apply overrides to the configuration as needed
         if overrides.no_mcp {
             self.mcp.enable = false;
         }
+        if overrides.no_tui {
+            self.tui.enable = Some(false);
+        }
         if overrides.no_runners {
             self.runners = None;
         }
+        self
     }
 
     /// Get the names of all configured runners
@@ -114,5 +122,34 @@ impl ServerConfig {
             Some(runners) => runners.keys().cloned().collect(),
             None => Vec::new(),
         }
+    }
+
+    /// Determine if tracing should be enabled based on TUI configuration
+    pub fn should_enable_tracing(&self) -> bool {
+        // Enable tracing if TUI is disabled
+        !self.tui.enable.unwrap_or(false)
+    }
+
+    /// Setup tracing based on the configuration
+    pub fn setup_tracing(self) -> Self {
+        if self.should_enable_tracing() {
+            LoggerBuilder::default()
+                .with_level(Level::TRACE)
+                // .display_target(true)
+                .filter_rumqttd()
+                .filter_dioxus_core()
+                .filter_dioxus_signals()
+                .filter_warnings()
+                .build()
+                .expect("failed to init logger");
+        }
+        self
+    }
+
+    /// Trace the current configuration for debugging purposes
+    pub fn trace_config(self) -> Self {
+        debug!("Configuration file path: {:?}", path::server_config_file());
+        debug!("Configuration after overrides: {:?}", self);
+        self
     }
 }
