@@ -106,4 +106,12 @@ impl ServerConfig {
             self.runners = None;
         }
     }
+
+    /// Get the names of all configured runners
+    pub fn runner_names(&self) -> Vec<String> {
+        match &self.runners {
+            Some(runners) => runners.keys().cloned().collect(),
+            None => Vec::new(),
+        }
+    }
 }

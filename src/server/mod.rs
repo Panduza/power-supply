@@ -54,10 +54,7 @@ pub async fn run_server() {
             let factory = drivers::Factory::initialize();
 
             // Create Services instance
-            let services = services::Services::new(
-                Arc::new(Mutex::new(server_config)),
-                Arc::new(Mutex::new(factory)),
-            );
+            let services = services::Services::new(server_config, Arc::new(Mutex::new(factory)));
 
             // Start services
             if let Err(e) = services.start().await {

@@ -11,9 +11,9 @@ use pza_power_supply_client::Topics;
 use pza_power_supply_client::SERVER_TYPE_NAME;
 use pza_toolkit::rumqtt::client::init_client;
 use pza_toolkit::rumqtt::client::RumqttCustomAsyncClient;
-use pza_toolkit::task_monitor::TaskMonitor;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 use tracing::error;
 use tracing::trace;
 
@@ -39,9 +39,9 @@ impl Runner {
     /// Start the runner
     pub async fn start(
         name: String,
-        task_monitor: TaskMonitor,
+
         driver: Arc<Mutex<dyn PowerSupplyDriver + Send + Sync>>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<JoinHandle<Result<(), anyhow::Error>>> {
         let (client, event_loop) = init_client("tttt");
 
         let custom_client = RumqttCustomAsyncClient::new(
@@ -60,12 +60,7 @@ impl Runner {
             client: custom_client,
         };
 
-        let task_handler = tokio::spawn(Self::task_loop(event_loop, runner));
-        let task_monitor_handle_sender = task_monitor.handle_sender();
-        task_monitor_handle_sender
-            .send((name, task_handler))
-            .await?;
-        Ok(())
+        Ok(tokio::spawn(Self::task_loop(event_loop, runner)))
     }
 
     // --------------------------------------------------------------------------------

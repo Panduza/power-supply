@@ -14,9 +14,9 @@ use tools::PowerSupplyService;
 
 use crate::server::config::ServerConfig;
 
-pub struct McpServer {}
+pub struct McpService {}
 
-impl McpServer {
+impl McpService {
     //
     // Must take a list of psu names to manage
     // for each name
@@ -25,13 +25,15 @@ impl McpServer {
 
     /// Starts the server with the given service
     ///
-    pub async fn run(config: ServerConfig, psu_names: Vec<String>) -> anyhow::Result<()> {
+    pub async fn start(config: ServerConfig) -> anyhow::Result<()> {
         // Bind and serve the application
         let bind_address = format!("{}:{}", config.mcp.host, config.mcp.port);
         let listener = TcpListener::bind(&bind_address).await?;
 
         //
         let mut app = Router::new().layer(CorsLayer::permissive());
+
+        let psu_names = config.runner_names();
 
         //
         for psu_name in psu_names {
