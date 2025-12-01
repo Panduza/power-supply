@@ -43,6 +43,7 @@ config = "0.15.17"
 # ---
 # Cross-platform terminal control
 crossterm = "0.29.0"
+tachyonfx = "0.20.1"
 # ---
 # Platform directories lookup
 dirs = "6.0.0"

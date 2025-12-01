@@ -1,6 +1,7 @@
 /// Terminal User Interface module
 ///
 /// Provides a simple TUI for power supply control and monitoring.
+mod loading;
 mod psi_widget;
 
 use std::any;
@@ -34,6 +35,7 @@ use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::Terminal;
 
+use loading::LoadingWidget;
 use psi_widget::PowerSupplyInstanceWidget;
 use tokio::task::JoinHandle;
 
@@ -41,6 +43,8 @@ use tokio::task::JoinHandle;
 pub struct TuiService {
     /// Whether the application should quit
     should_quit: bool,
+    /// Animation frame counter for loading widget
+    animation_frame: usize,
     //     /// Power supply instance widgets
     //     widgets: Vec<PowerSupplyInstanceWidget>,
     //     /// Currently selected widget index
@@ -94,7 +98,10 @@ impl TuiService {
     }
 
     async fn render_loop() -> anyhow::Result<()> {
-        let mut app = TuiService { should_quit: false };
+        let mut app = TuiService {
+            should_quit: false,
+            animation_frame: 0,
+        };
 
         // Setup terminal
         let mut stdout = io::stdout();
@@ -114,8 +121,10 @@ impl TuiService {
                     ])
                     .split(f.area());
 
-                let loading_paragraph = Paragraph::new("Loading TUI...");
-                f.render_widget(loading_paragraph, chunks[0]);
+                // Render animated loading widget
+                let loading_widget =
+                    LoadingWidget::new("Please wait, TUI is initializing...", app.animation_frame);
+                f.render_widget(loading_widget, chunks[0]);
             })?;
 
             // Handle events
@@ -132,6 +141,9 @@ impl TuiService {
             if app.should_quit() {
                 break;
             }
+
+            // Increment animation frame for border animation
+            app.animation_frame = app.animation_frame.wrapping_add(1);
         }
 
         println!("Exiting TUI service...");
