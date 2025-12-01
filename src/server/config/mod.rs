@@ -103,7 +103,9 @@ impl ServerConfig {
     /// Apply service overrides from CLI arguments
     ///
     pub fn apply_overrides(mut self, overrides: &crate::server::cli::ServicesOverrides) -> Self {
-        // Apply overrides to the configuration as needed
+        if self.tui.enable.is_none() {
+            self.tui.enable = Some(true);
+        }
         if overrides.no_mcp {
             self.mcp.enable = false;
         }
