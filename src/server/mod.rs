@@ -42,6 +42,10 @@ pub async fn run_server() {
                 // Implementation for listing devices goes here
             }
         }
+        cli::Commands::Version => {
+            // Display the version from Cargo.toml
+            println!("{}", env!("PKG_VERSION"));
+        }
         cli::Commands::Run { services } => {
             // Load server configuration
             let server_config = ServerConfig::from_user_file()

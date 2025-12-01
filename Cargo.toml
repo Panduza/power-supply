@@ -1,6 +1,6 @@
 [package]
 name = "pza-power-supply"
-version = "0.1.1"
+version = "0.1.1-rogue"
 authors = ["XdoctorwhoZ <xavier.rodriguezalvarez@gmail.com>"]
 edition = "2021"
 description = "Panduza Power Supply - Control Multi-Server for Power Supplies"
